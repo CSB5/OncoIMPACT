@@ -72,9 +72,38 @@ read_config( $configFile, \%config );
 print "done.\n";
 
 
-# Prep data
+# Prep output directory
 system("mkdir $config{'outDir'}") unless ( -s $config{'outDir'} );
 
+
+# Check validity of parameters in config file
+unless(-e $config{'outDir'} && -w $config{'outDir'}){
+	print STDERR "Aborting! Output directory does not exist or is unwritable. Please check the config file and try again.\n";
+	exit 1;
+}
+unless(-s $config{'scriptDir'}){
+	print STDERR "Aborting! Scripts directory does not exist or is empty. Please check the config file and try again.\n";
+	exit 1;
+}
+unless ($config{'numThreads'} =~ /^\d+?$/) {
+    print STDERR "Aborting! numThreads is not given as an integer. Please check the config file and try again.\n";
+    exit 1;
+}
+unless(-s $config{'cnv'}){
+	print STDERR "Aborting! cnv file does not exist or is empty. Please check the config file and try again.\n";
+	exit 1;
+}
+unless(-s $config{'exp'}){
+	print STDERR "Aborting! exp file does not exist or is empty. Please check the config file and try again.\n";
+	exit 1;
+}
+unless(-s $config{'snp'}){
+	print STDERR "Aborting! snp file does not exist or is empty. Please check the config file and try again.\n";
+	exit 1;
+}
+
+
+# Prep data
 unless ( -s $config{'outDir'} . "/COMPLETE_SAMPLES" ) {
 	print "Preparing CNV data. Please wait...";
 	prep_cnv();
