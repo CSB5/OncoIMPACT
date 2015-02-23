@@ -13,7 +13,7 @@ Usage:
 
 
 Version:
-	0.9.1
+	0.9.2
 
 Author:
 	Burton Chia - chiakhb\@gis.a-star.edu.sg
@@ -27,15 +27,55 @@ if ( @ARGV == 0 ) {
 $flag_debug = 0;
 ( $configFile, $subsampleSize, $flag_debug ) = @ARGV;
 
+
+# Sanity check on user provided parameters
+unless(-s $configFile){
+	print STDERR "Aborting! Config file does not exist or is empty. Please check the config file and try again.\n";
+	exit 3;
+}
+if($subsampleSize > 1){
+	print STDERR "Aborting! Variable subsample size is greater than 1. Please ensure that this variable is a fraction and try again.\n";
+	exit 1;
+}
+if($flag_debug != 0 || $flag_debug != 1){
+	print STDERR "Aborting! Debug flag contains an invalid option. Please check the parameter provided and try again.\n";
+	exit 1;
+}
+
+
+# Check that dependent system programs are present
+print STDERR "[Dependencies] Checking the presence and version of required system programs\n" if $flag_debug;
+my $programPath;
+# awk
+chomp($programPath = `command -v awk`);
+if($programPath eq ""){
+	print STDERR "Aborting! System command 'awk' not found! Please ensure you are running this programme in a suitable environment.\n";
+	exit 2;
+} elsif($flag_debug){
+	print STDERR "[awk] Path: $programPath\n";
+	print STDERR "[awk] Version:" . `awk --version | head -n 1`;
+}
+# xargs
+chomp($programPath = `command -v xargs`);
+if($programPath eq ""){
+	print STDERR "Aborting! System command 'xargs' not found! Please ensure you are running this programme in a suitable environment.\n";
+	exit 2;
+} elsif($flag_debug){
+	print STDERR "[xargs] Path: $programPath\n";
+	print STDERR "[xargs] Version:" . `xargs --version | head -n 1`;
+}
+
+
 # Read config file
 print "Reading config file. Please wait...";
 read_config( $configFile, \%config );
 print "done.\n";
 
-# Prep data
-system("mkdir $config{'outDir'}") unless ( -d $config{'outDir'} );
 
-unless ( -d $config{'outDir'} . "/COMPLETE_SAMPLES" ) {
+# Prep data
+system("mkdir $config{'outDir'}") unless ( -s $config{'outDir'} );
+
+unless ( -s $config{'outDir'} . "/COMPLETE_SAMPLES" ) {
 	print "Preparing CNV data. Please wait...";
 	prep_cnv();
 	print "done.\n";
@@ -52,10 +92,13 @@ unless ( -d $config{'outDir'} . "/COMPLETE_SAMPLES" ) {
 	merge_and_clean();
 	print "done.\n";
 }
+
+
 # Run oncoIMPACT
 print "\nRunning oncoIMPACT. Please wait...";
 run_oncoIMPACT();
 print "done.\n";
+
 
 ### Sub-routines ###
 sub prep_cnv {
@@ -87,7 +130,7 @@ sub prep_cnv {
 	## Generate results
 	foreach $sample ( sort keys %ht ) {
 		$outDir = "$config{'outDir'}/$sample";
-		system("mkdir $outDir") unless ( -d "$outDir" );
+		system("mkdir $outDir") unless ( -s "$outDir" );
 
 #print STDERR "[prep_cnv] Writing results to file: $outDir/CNV_Data.txt\n";<STDIN>;
 		open( OUT, "> $outDir/CNV_Data.txt" );
@@ -190,12 +233,12 @@ sub prep_exp {
 
 sub merge_and_clean {
 	my $dir = $config{'outDir'} . "/COMPLETE_SAMPLES";
-	system("rm -r $dir") if ( -d $dir );
+	system("rm -r $dir") if ( -s $dir );
 	system("mkdir $dir");
 
 	#
 	$dir = $config{'outDir'} . "/INCOMPLETE_SAMPLES";
-	system("rm -r $dir") if ( -d $dir );
+	system("rm -r $dir") if ( -s $dir );
 	system("mkdir $dir");
 
 	opendir( DIR, "$config{'outDir'}" );
@@ -207,20 +250,23 @@ sub merge_and_clean {
 		$cnv_file   = "$sample_dir/CNV_Data.txt";
 		$snv_file   = "$sample_dir/SNP_Data.txt";
 		$expr_file  = "$sample_dir/EXPR_Data.txt";
-		if (   -e $cnv_file
-			&& -e $snv_file
-			&& -e $expr_file )
+		if (   -s $cnv_file
+			&& -s $snv_file
+			&& -s $expr_file )
 		{
 
 			$out_file_name = "$sample_dir/Genelist_Status.txt";
+			print STDERR "[System]cat $cnv_file $snv_file $expr_file > $out_file_name\n" if $flag_debug;
 			system("cat $cnv_file $snv_file $expr_file > $out_file_name");
+			print STDERR "[System]mv $sample_dir $config{'outDir'}/COMPLETE_SAMPLES/\n" if $flag_debug;
 			system("mv $sample_dir $config{'outDir'}/COMPLETE_SAMPLES/");
 		}
 		else {
-			if (   -e $cnv_file
-				|| -e $snv_file
-				|| -e $expr_file )
+			if (   -s $cnv_file
+				|| -s $snv_file
+				|| -s $expr_file )
 			{
+				print STDERR "[System]mv $sample_dir $config{'outDir'}/INCOMPLETE_SAMPLES/\n" if $flag_debug;
 				system("mv $sample_dir $config{'outDir'}/INCOMPLETE_SAMPLES/");
 			}
 		}
@@ -228,6 +274,7 @@ sub merge_and_clean {
 }    # end merge_and_clean
 
 sub run_oncoIMPACT {
+	print STDERR "[System]$config{'scriptDir'}/pathway_ana.pl ALL $config{'outDir'}/COMPLETE_SAMPLES $subsampleSize $config{'numThreads'} DRIVER_NET $config{'scriptDir'} &> $config{'outDir'}/run.log\n" if $flag_debug;
 	system(
 "$config{'scriptDir'}/pathway_ana.pl ALL $config{'outDir'}/COMPLETE_SAMPLES $subsampleSize $config{'numThreads'} DRIVER_NET $config{'scriptDir'} &> $config{'outDir'}/run.log"
 	);
@@ -239,7 +286,7 @@ sub run_oncoIMPACT {
 "echo -e \"GENE\tDRIVER_FREQUENCY\tDRIVER_SNV_FREQUENCY\tDRIVER_DELTION_FREQUENCY\tDRIVER_AMPLIFICATION_FREQUENCY\tCANCER_CENSUS\tPAN_CANCER\tIMPACT\tMUTATION_FREQUENCY\tSNV_FREQUENCY\tDELTION_FREQUENCY\tAMPLIFICATION_FREQUENCY\" > $final_res_file;
         sort -k15,15 -nr $config{'outDir'}/oncoIMPACT_analysis/GENE_LIST/ALTERATION.dat | awk '{if(\$15 != 0) print \$1\"\\t\"\$7\"\\t\"\$8\"\\t\"\$9\"\\t\"\$10\"\\t\"\$12\"\\t\"\$13\"\\t\"\$15\"\\t\"\$2\"\\t\"\$3\"\\t\"\$4\"\\t\"\$5}' >> $final_res_file";
 
-	#print $str;
+	print STDERR "[System]$str\n" if $flag_debug;
 	system("$str");
 
 	#<STDIN>;
