@@ -606,19 +606,7 @@ for($i = 0; $i < 2; $i++){
     }
     close(OUT_N);close(OUT_N_2);
     close(OUT_I);close(OUT_I_2);
-
-    $exe = "cat $out_dir/NAIVE_$out_file_name.dat $out_dir/$out_file_name.dat | sort | uniq -c | awk '{if(\$1 == 1) print \$2}' > $out_dir/NAIVE_NOT_$out_file_name.dat";
-    print STDERR $exe."\n";
-    print `$exe`;
-
-    $exe = "cat $out_dir/NAIVE_$out_file_name\_2.dat $out_dir/$out_file_name\_2.dat | sort | uniq -c | awk '{if(\$1 == 1) print \$2}' > $out_dir/NAIVE_NOT_$out_file_name\_2.dat";
-    print STDERR $exe."\n";
-    print `$exe`;
-
-    $exe = "cat $out_dir/NAIVE_$out_file_name\_5.dat $out_dir/$out_file_name.dat | sort | uniq -c | awk '{if(\$1 == 1) print \$2}' > $out_dir/NAIVE_NOT_$out_file_name\_5.dat";
-    print STDERR $exe."\n";
-    print `$exe`;
-
+    
 }
 #remove the infer gene from the naive gene list
 

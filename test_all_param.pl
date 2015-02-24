@@ -38,7 +38,7 @@ for ( $i = 0 ; $i < $nb_random_sample ; $i++ ) {
 	my $real_dir = "$test_param_dir/REAL_$i";
 	if ( !-d $real_dir ) {
 	    $exe = "ln -s REAL_ALL/ $test_param_dir/REAL_$i";
-	    print STDERR $exe . "\n";
+	    #print STDERR $exe . "\n";
 	    `$exe`;
 	}
     }
@@ -62,7 +62,7 @@ for ( $i = 0 ; $i < $nb_random_sample ; $i++ ) {
 close(OUT);
 
 foreach $cmd_file (@all_cmds) {
-    $cmd = "cat $cmd_file | xargs -I cmd --max-procs=$nb_process bash -c cmd > /dev/null \n";
+    $cmd = "cat $cmd_file | xargs -I cmd -P $nb_process bash -c cmd > /dev/null \n";
     print STDERR $cmd;
     print `$cmd`;
 }

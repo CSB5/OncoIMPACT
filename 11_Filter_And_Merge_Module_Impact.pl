@@ -6,12 +6,12 @@ use warnings;
 #in case of multiple pairs only the last one is outputed
 my ( $filter_type, $network_type, $explained_freq_file, $freq_threshold, $path_threshold, $hub_threshold, $out_file, $script_dir )  = @ARGV;
 
-print STDERR " *** $script_dir\n";
+#print STDERR " *** $script_dir\n";
 
 require "$script_dir/Construct_network.pl";
 
 my $NB_PARAM_SCRIPT = 8;
-print STDERR " *** out_file $out_file\n";
+#print STDERR " *** out_file $out_file\n";
 
 #read the recurrently explained file
 my %rec_explained = ();
@@ -33,6 +33,11 @@ while (<FILE>) {
 	}
 }
 close(FILE);
+
+if(keys(%rec_explained) + 0 == 0){
+    print STDERR " *** Aborting! There is no phenotype inferred for this data set.\n";
+    exit 2;
+}
 
 #Construct the graph
 my %gene_to_index;
@@ -119,7 +124,7 @@ my %alteration_freq;
 for ( my $i = $NB_PARAM_SCRIPT ; $i < @ARGV ; $i++ ) {
 	@tmp = split( /\,/, $ARGV[$i] );
 	$module_file = $tmp[1];
-	print STDERR " *** $i READ $module_file\n";    #<STDIN>;
+	#print STDERR " *** $i READ $module_file\n";    #<STDIN>;
 	open( FILE, $module_file );
 	while (<FILE>) {
 		chop $_;
@@ -246,8 +251,7 @@ else {
 	}
 }
 
-print STDERR " *** Nb driver gene inferred: "
-  . ( ( keys %driver_list ) + 0 ) . "\n";
+#print STDERR " *** Nb driver gene inferred: "  . ( ( keys %driver_list ) + 0 ) . "\n";
 
 #print STDERR "sample driver list\n";
 #foreach $d (keys %{$driver_list{"TCGA-10-0938-01"}}){

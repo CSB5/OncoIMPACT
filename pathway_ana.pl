@@ -43,7 +43,6 @@ if ( $step eq "DRIVER_INFERENCE" ) {
 my $basic_stats_path      = "$script_dir/plot_basic_stats.pl";
 my $sim_path              = "$script_dir/random_sample.pl";
 my $test_param_path       = "$script_dir/test_all_param.pl";
-my $compute_impact        = "$script_dir/compute_significant_impact.pl";
 my $compute_js_path       = "$script_dir/compute_all_js.pl";
 my $cluster_algo_path     = "$script_dir/10_Cluster_Algo.pl";
 my $phenotype_pvalue_path = "$script_dir/run_all_test_pvalue_table.pl";
@@ -97,9 +96,8 @@ if ($RUN_TEST_PARAM) {
 	$min_log2_fold_change_threshold = 1;
 
 	#To be changed for array data
-#	$max_log2_fold_change_threshold = 3;
-
- $max_log2_fold_change_threshold = 1;
+	$max_log2_fold_change_threshold = 3;
+	
 #
 #min should not have a sample median diff gene larger that 50% of the gene with an expression
 	for (
@@ -131,8 +129,8 @@ if ($RUN_TEST_PARAM) {
 	}
 
 	#for rna-seq data, need to changed
-	$min_log2_fold_change_threshold = 1;
-	$max_log2_fold_change_threshold = 3;
+	#$min_log2_fold_change_threshold = 1;
+	#$max_log2_fold_change_threshold = 1;
 
 	#1 run the simulation
 	#the simulation are perfomrmed only if the $test_param_dir is empty
@@ -146,14 +144,14 @@ if ($RUN_TEST_PARAM) {
 #2 Run the inference method with different parameters
 #this method do not re-run any the test of random/real sample that have been previously analysed (good in case of crash)
 	if ( !-e $js_file ) {
-	    $exe = "$test_param_path $test_param_dir $network_type $min_log2_fold_change_threshold $max_log2_fold_change_threshold $fraction_real_sample_used_parameter_inferance $NB_SIMULATED_DATA_SET_PARAMETER $nb_thread $script_dir 2> /dev/null";
+	    $exe = "$test_param_path $test_param_dir $network_type $min_log2_fold_change_threshold $max_log2_fold_change_threshold $fraction_real_sample_used_parameter_inferance $NB_SIMULATED_DATA_SET_PARAMETER $nb_thread $script_dir";
 	    run_exe($exe);
 	    
 	    #exit;
 	    
 #3 compute the JS distance of the explnained frequency of the genes of random data with the real data
 
-	    $exe = "$compute_js_path $test_param_dir $NB_SIMULATED_DATA_SET_PARAMETER $min_log2_fold_change_threshold $max_log2_fold_change_threshold $script_dir > $js_file 2> /dev/null";
+	    $exe = "$compute_js_path $test_param_dir $NB_SIMULATED_DATA_SET_PARAMETER $min_log2_fold_change_threshold $max_log2_fold_change_threshold $script_dir > $js_file";
 	    run_exe($exe);
 	    
 	    #compress the directory
@@ -167,6 +165,7 @@ open( FILE, $js_file );
 my $best_js          = 0;
 my $best_hub_value   = 0;
 my $best_depth_value = 0;
+my $best_log2_fold_change = 0;
 while (<FILE>) {
 	chop $_;
 	@line = split( /\t/, $_ );
@@ -180,10 +179,13 @@ while (<FILE>) {
 	}
 }
 
-# $best_hub_value = 25;
-# $best_depth_value = 12;
-# $best_log2_fold_change = $log2_fold_change_threshold;
-#print STDERR " *** FAKE $best_hub_value $best_depth_value END\n";#<STDIN>;
+#Check validity of parameter values
+if($best_log2_fold_change == 0 || $best_hub_value == 0 || $best_depth_value == 0){
+    print STDERR " *** Aborting! The paramater values are not correctly setted best_log2_fold_change:$best_log2_fold_change best_hub_value:$best_hub_value best_depth_value:$best_depth_value\n";
+    exit 2;
+}
+
+
 
 #print STDERR " *** $best_js $best_log2_fold_change $best_hub_value $best_depth_value END\n" ;    #<STDIN>;
 $res_dir =
@@ -222,10 +224,7 @@ if ($RUN_DYS_SIGNIFICANCE) {
 #	run_exe($exe);
 #    }
 
-#Compute the expression/mutation frequency for the best parameters
-#    $exe = "$compute_impact $test_impact_dir $network_type $best_depth_value $best_hub_value $best_log2_fold_change ALL $NB_SIMULATED_DATA_SET_PVALUE $nb_thread";
-#    run_exe($exe);
-#}
+
 
 if ($RUN_DRIVER_INFEREANCE) {
 	##########################################
@@ -234,8 +233,13 @@ if ($RUN_DRIVER_INFEREANCE) {
 
     $freq_gene = "$res_dir/exp_gene_freq_pvalue.dat";
     
+    if(! -e $freq_gene){
+	print STDERR " Aborting! The file $freq_gene does not exists\n";
+	exit 2;
+    }
+
     print STDERR "Construct Module [ Stringent Mode ]\n";
-    $exe = "$module_inference_path DRIVER_SAMPLE $network_type $freq_gene 0.05 $best_depth_value $best_hub_value $res_dir/FINAL_MODULE_SAMPLE.dat $script_dir $data_dir,$res_dir/MODULE.dat 2> /dev/null";
+    $exe = "$module_inference_path DRIVER_SAMPLE $network_type $freq_gene 0.05 $best_depth_value $best_hub_value $res_dir/FINAL_MODULE_SAMPLE.dat $script_dir $data_dir,$res_dir/MODULE.dat";
     run_exe($exe);
     #
     print STDERR "Output Result -> $main_result_dir/GENE_LIST_SAMPLE\n";
@@ -246,7 +250,7 @@ if ($RUN_DRIVER_INFEREANCE) {
     run_exe($exe);
     
     print STDERR "Construct Module [ Relaxed Mode ]\n";
-    $exe       = "$module_inference_path DRIVER_ALL  $network_type $freq_gene 0.05 $best_depth_value $best_hub_value $res_dir/FINAL_MODULE.dat $script_dir $data_dir,$res_dir/MODULE.dat 2> /dev/null";
+    $exe       = "$module_inference_path DRIVER_ALL  $network_type $freq_gene 0.05 $best_depth_value $best_hub_value $res_dir/FINAL_MODULE.dat $script_dir $data_dir,$res_dir/MODULE.dat";
     run_exe($exe);
     #
     print STDERR "Output Result -> $main_result_dir/GENE_LIST \n";

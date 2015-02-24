@@ -43,7 +43,7 @@ for(my $u = 0; $u < @fold_change_th; $u++){
 	    
 	    $res_file = "EXPLAINED_FREQ_DIFF_$fold_change_th[$u]/exp_gene_freq_$length_th[$k]_$hub_th[$j].dat.gz";
 	    
-	    print STDERR " *** $hub_th[$j] $length_th[$k]\n";
+	    #print STDERR " *** $hub_th[$j] $length_th[$k]\n";
 	    for(my $i = 0; $i < $nb_random_sample; $i++){
 		construct_distribution(\@random_distribution, "$test_param_dir/RANDOM_$i/$res_file");
 		construct_distribution(\@true_distribution, "$test_param_dir/REAL_$i/$res_file");
@@ -70,7 +70,7 @@ for(my $u = 0; $u < @fold_change_th; $u++){
 sub construct_distribution{
     my ($distribution, $file) = @_;
     
-    if(-e $file){
+    if(-e $file && -s $file){
 	#print STDERR " *** Use sample $file\n";
 	#Read $in_file\n";
 	open(FILE, "gunzip -c $file | ");
@@ -85,6 +85,15 @@ sub construct_distribution{
 	    }
 	}
 	close(FILE);
+    }
+    else{
+	if(! -e $file){
+	    print STDERR " *** Aborting! The file $file does not exists\n";
+	}
+	if(! -s $file){
+	    print STDERR " *** Aborting! the file $file is empty\n";
+	}
+	exit 2;
     }
 }
 
