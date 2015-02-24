@@ -19,25 +19,28 @@ Author:
 	Burton Chia - chiakhb\@gis.a-star.edu.sg
 	Denis Bertrandd - bertrandd\@gis.a-star.edu.sg\n";
 
-if ( @ARGV == 0 ) {
+if ( @ARGV <= 1 ) {
 	print $help_message;
 	exit 0;
 }
 
-$flag_debug = 0;
+
 ( $configFile, $subsampleSize, $flag_debug ) = @ARGV;
 
+$flag_debug = 0 if(! defined $flag_debug);
+
+print STDERR " *** flag_debug $flag_debug\n";
 
 # Sanity check on user provided parameters
 unless(-s $configFile){
 	print STDERR "Aborting! Config file does not exist or is empty. Please check the config file and try again.\n";
 	exit 3;
 }
-if($subsampleSize > 1){
-	print STDERR "Aborting! Variable subsample size is greater than 1. Please ensure that this variable is a fraction and try again.\n";
+if(! defined $subsampleSize || $subsampleSize > 1 || $subsampleSize <= 0 ){
+	print STDERR "Aborting! Variable subsample size should be between [0 and 1]. Please ensure that this variable is a fraction and try again.\n";
 	exit 1;
 }
-if($flag_debug != 0 || $flag_debug != 1){
+if($flag_debug != 0 && $flag_debug != 1){
 	print STDERR "Aborting! Debug flag contains an invalid option. Please check the parameter provided and try again.\n";
 	exit 1;
 }
@@ -46,24 +49,15 @@ if($flag_debug != 0 || $flag_debug != 1){
 # Check that dependent system programs are present
 print STDERR "[Dependencies] Checking the presence and version of required system programs\n" if $flag_debug;
 my $programPath;
-# awk
-chomp($programPath = `command -v awk`);
-if($programPath eq ""){
-	print STDERR "Aborting! System command 'awk' not found! Please ensure you are running this programme in a suitable environment.\n";
-	exit 2;
-} elsif($flag_debug){
-	print STDERR "[awk] Path: $programPath\n";
-	print STDERR "[awk] Version:" . `awk --version | head -n 1`;
-}
 # xargs
-chomp($programPath = `command -v xargs`);
-if($programPath eq ""){
-	print STDERR "Aborting! System command 'xargs' not found! Please ensure you are running this programme in a suitable environment.\n";
-	exit 2;
-} elsif($flag_debug){
-	print STDERR "[xargs] Path: $programPath\n";
-	print STDERR "[xargs] Version:" . `xargs --version | head -n 1`;
-}
+#chomp($programPath = `command -v xargs`);
+#if($programPath eq ""){
+#	print STDERR "Aborting! System command 'xargs' not found! Please ensure you are running this programme in a suitable environment.\n";#
+#	exit 2;
+#} elsif($flag_debug){
+#	print STDERR "[xargs] Path: $programPath\n";
+#	print STDERR "[xargs] Version:" . `xargs --version | head -n 1`;
+#}
 
 
 # Read config file
@@ -73,7 +67,7 @@ print "done.\n";
 
 
 # Prep output directory
-system("mkdir $config{'outDir'}") unless ( -s $config{'outDir'} );
+system("mkdir $config{'outDir'}") unless ( -d $config{'outDir'} );
 
 
 # Check validity of parameters in config file
@@ -90,15 +84,15 @@ unless ($config{'numThreads'} =~ /^\d+?$/) {
     exit 1;
 }
 unless(-s $config{'cnv'}){
-	print STDERR "Aborting! cnv file does not exist or is empty. Please check the config file and try again.\n";
+	print STDERR "Aborting! CNV file does not exist or is empty. Please check the config file and try again.\n";
 	exit 1;
 }
 unless(-s $config{'exp'}){
-	print STDERR "Aborting! exp file does not exist or is empty. Please check the config file and try again.\n";
+	print STDERR "Aborting! Expression file does not exist or is empty. Please check the config file and try again.\n";
 	exit 1;
 }
 unless(-s $config{'snp'}){
-	print STDERR "Aborting! snp file does not exist or is empty. Please check the config file and try again.\n";
+	print STDERR "Aborting! SNP file does not exist or is empty. Please check the config file and try again.\n";
 	exit 1;
 }
 unless($config{'testMode'} == 0 || $config{'testMode'} == 1){
@@ -322,7 +316,7 @@ sub run_oncoIMPACT {
 	$final_res_file = "$config{'outDir'}/driver_list.txt";
 	open(OUT, "> $final_res_file");
 	print OUT "GENE\tDRIVER_FREQUENCY\tDRIVER_SNV_FREQUENCY\tDRIVER_DELTION_FREQUENCY\tDRIVER_AMPLIFICATION_FREQUENCY\tCANCER_CENSUS\tPAN_CANCER\tIMPACT\tMUTATION_FREQUENCY\tSNV_FREQUENCY\tDELTION_FREQUENCY\tAMPLIFICATION_FREQUENCY\n";
-	open(IN, "sort -k15,15 -nr $config{'outDir'}/oncoIMPACT_analysis/GENE_LIST/ALTERATION.dat |")
+	open(IN, "sort -k15,15 -nr $config{'outDir'}/oncoIMPACT_analysis/GENE_LIST/ALTERATION.dat |");
 	
 	while(<IN>){
 		chomp(@temp = split(/\t/, $_));

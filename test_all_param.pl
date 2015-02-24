@@ -7,15 +7,24 @@ my (
 	$test_param_dir,                 $network_type,
 	$min_log2_fold_change_threshold, $max_log2_fold_change_threshold,
 	$flag_all_sample_use,            $nb_random_sample,
-	$nb_process,                     $script_dir
+	$nb_process,                     $script_dir, $test_case
 ) = @ARGV;
 
 #avg connexion 14
+
+my $min_hub = 10;
+my $max_hub = 100;
+
+if($test_case eq "TEST"){
+    $min_hub = 30;
+    $max_hub = 50;
+}
+
 my @hub_th;
 for ( my $i = 10 ; $i <= 100 ; $i += 5 ) {
 	push( @hub_th, $i );
 }
-push( @hub_th, 1000000 );
+push( @hub_th, 1000000 ) if($test_case ne "TEST");
 
 my @fold_change_th = ();
 for (

@@ -27,7 +27,7 @@ if($network_type eq "DRIVER_NET"){
 opendir(DIR, $sample_dir);
 @the_DATA_DIR = readdir(DIR);
 close(DIR);
-print STDERR " *** READ DIR\n";
+#print STDERR " *** READ DIR\n";
 foreach my $sample (@the_DATA_DIR){
     $mutation_file_name = "$sample_dir/$sample/Genelist_Status.txt";
     if(-e $mutation_file_name){
@@ -106,9 +106,9 @@ if($compute_pvalue){
 			else{
 			    $random_explained_freq = 0;
 			    foreach $s (@sample_analysed_ID){
-				if(! defined $line[$s]){
-				    print STDERR " *** $first value $s |$line[$s]|\n";#<STDIN>;
-				}
+				#if(! defined $line[$s]){
+				#print STDERR " *** $first value $s |$line[$s]|\n";#<STDIN>;
+				#}
 				$random_explained_freq += $line[$s];
 			    }
 			    push(@all_random_freq, $random_explained_freq);
@@ -162,9 +162,9 @@ if($compute_corrected_pvalue){
 	my $status = $parts[1];
 	if(exists $gene_to_index{$gene_name}){
 	    $gene_s = get_name($gene_to_index{$gene_name}, \@index_to_gene)."_".$status;
-	    if($line[0] ne $gene_s){
-		print STDERR " --- $line[0] -> $gene_s\n";#<STDIN>;
-	    }
+	    #if($line[0] ne $gene_s){
+	    #print STDERR " --- $line[0] -> $gene_s\n";#<STDIN>;
+	    #}
 	    
 	    if($all_explained_freq{$gene_s}->[5] >= $explained_freq_threshold){
 		$all_pvalue{$gene_s} = $line[2];
@@ -194,7 +194,7 @@ if($compute_corrected_pvalue){
     
     #output the final result file
     $sample_explained_pvalue_file = "$explained_file_body\_pvalue.dat";
-    print STDERR $sample_explained_file."\n".$sample_explained_pvalue_file."\n";#<STDIN>;
+    #print STDERR $sample_explained_file."\n".$sample_explained_pvalue_file."\n";#<STDIN>;
 
     open(OUT, ">$sample_explained_pvalue_file");
     foreach $gene (keys %all_explained_freq){

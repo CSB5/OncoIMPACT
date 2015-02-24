@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 use warnings;
 
-my ($test_param_dir, $nb_random_sample, $min_log2_fold_change_threshold, $max_log2_fold_change_threshold) = @ARGV;
+my ($test_param_dir, $nb_random_sample, $min_log2_fold_change_threshold, $max_log2_fold_change_threshold, $test_case) = @ARGV;
 
 my $OUT;
 my @nb_significant_true;
@@ -17,11 +17,18 @@ for(my $i = $min_log2_fold_change_threshold; $i <= $max_log2_fold_change_thresho
 }
 
 #Hub threshold possible value
+my $min_hub = 10;
+my $max_hub = 100;
+if($test_case eq "TEST"){
+    $min_hub = 30;
+    $max_hub = 50;
+}
+
 my @hub_th;
-for(my $i = 10; $i <= 100; $i += 5){
+for(my $i = $min_hub; $i <= $max_hub; $i += 5){
     push(@hub_th, $i);
 }
-push(@hub_th, 1000000);
+push(@hub_th, 1000000) if($test_case eq "TEST");;
 
 #path length possible value
 my @length_th = ();
@@ -62,7 +69,7 @@ for(my $u = 0; $u < @fold_change_th; $u++){
 	    
 	    $res = "$fold_change_th[$u]\t$hub_th[$j]\t$length_th[$k]\t".(sprintf("%.5f", $js))."\n";
 	    print $res;
-	    print STDERR $res;
+	    #print STDERR $res;
 	}
     }
 }
@@ -88,12 +95,11 @@ sub construct_distribution{
     }
     else{
 	if(! -e $file){
-	    print STDERR " *** Aborting! The file $file does not exists\n";
+	    print STDERR " *** Aborting! The file $file does not exists\n";exit 2; 
 	}
 	if(! -s $file){
-	    print STDERR " *** Aborting! the file $file is empty\n";
+	    print STDERR " *** Aborting! the file $file is empty\n";exit 2; 
 	}
-	exit 2; 
     }
 }
 
