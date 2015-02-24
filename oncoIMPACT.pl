@@ -101,6 +101,10 @@ unless(-s $config{'snp'}){
 	print STDERR "Aborting! snp file does not exist or is empty. Please check the config file and try again.\n";
 	exit 1;
 }
+unless($config{'testMode'} == 0 || $config{'testMode'} == 1){
+	print STDERR "Aborting! testMode option is not a valid flag - valid options are '0' or '1'. Please check the config file and try again.\n";
+	exit 1;
+}
 
 
 # Prep data
@@ -161,7 +165,7 @@ sub prep_cnv {
 		$outDir = "$config{'outDir'}/$sample";
 		system("mkdir $outDir") unless ( -s "$outDir" );
 
-#print STDERR "[prep_cnv] Writing results to file: $outDir/CNV_Data.txt\n";<STDIN>;
+		print STDERR "[prep_cnv] Writing results to file: $outDir/CNV_Data.txt\n" if $flag_debug;
 		open( OUT, "> $outDir/CNV_Data.txt" );
 		foreach $gene ( sort keys %{ $ht{$sample} } ) {
 			print OUT "${gene}_AMPL\t$ht{$sample}->{$gene}\n"
@@ -174,6 +178,7 @@ sub prep_cnv {
 		close(OUT);
 	}
 }    # end prep_cnv
+
 
 sub prep_snp {
 	my ( %ht, @samples, @temp, $sample, $gene, $outDir );
@@ -207,7 +212,7 @@ sub prep_snp {
 		$outDir = "$config{'outDir'}/$sample";
 		system("mkdir $outDir") unless ( -d "$outDir" );
 
-	  #print STDERR "[prep_snp] Writing results to file:$outDir/SNP_Data.txt\n";
+	  	print STDERR "[prep_snp] Writing results to file:$outDir/SNP_Data.txt\n" if $flag_debug;
 		open( OUT, "> $outDir/SNP_Data.txt" );
 		foreach $gene ( sort keys %{ $ht{$sample} } ) {
 			print OUT "${gene}_MUT\n" if ( $ht{$sample}->{$gene} == 1 );
@@ -216,11 +221,11 @@ sub prep_snp {
 	}
 }    # end prep_snp
 
+
 sub prep_exp {
 	my ( %ht, @samples, @temp, $sample, $gene, $outDir );
 	open( MATRIX, "$config{'exp'}" );
-	print STDERR "[prep_exp] Opening file: $config{'exp'}\n"
-	  if $flag_debug;    #<STDIN>;
+	print STDERR "[prep_exp] Opening file: $config{'exp'}\n" if $flag_debug;  
 
 	## Process header
 	chomp( @samples = split( /\t/, <MATRIX> ) );
@@ -248,7 +253,7 @@ sub prep_exp {
 		$outDir = "$config{'outDir'}/$sample";
 		system("mkdir $outDir") unless ( -d "$outDir" );
 
-#print STDERR  "[prep_exp] Writing results to file: $outDir/EXPR_Data.txt\n";<STDIN>;
+		print STDERR  "[prep_exp] Writing results to file: $outDir/EXPR_Data.txt\n" if $flag_debug;
 		open( OUT, "> $outDir/EXPR_Data.txt" );
 		foreach $gene ( sort keys %{ $ht{$sample} } ) {
 			print OUT "${gene}_UP\t$ht{$sample}->{$gene}\n"
@@ -260,12 +265,13 @@ sub prep_exp {
 	}
 }    # end prep_exp
 
+
 sub merge_and_clean {
+	my $sysCall;
 	my $dir = $config{'outDir'} . "/COMPLETE_SAMPLES";
 	system("rm -r $dir") if ( -s $dir );
 	system("mkdir $dir");
 
-	#
 	$dir = $config{'outDir'} . "/INCOMPLETE_SAMPLES";
 	system("rm -r $dir") if ( -s $dir );
 	system("mkdir $dir");
@@ -285,53 +291,58 @@ sub merge_and_clean {
 		{
 
 			$out_file_name = "$sample_dir/Genelist_Status.txt";
-			print STDERR "[System]cat $cnv_file $snv_file $expr_file > $out_file_name\n" if $flag_debug;
-			system("cat $cnv_file $snv_file $expr_file > $out_file_name");
-			print STDERR "[System]mv $sample_dir $config{'outDir'}/COMPLETE_SAMPLES/\n" if $flag_debug;
-			system("mv $sample_dir $config{'outDir'}/COMPLETE_SAMPLES/");
+			$sysCall = "cat $cnv_file $snv_file $expr_file > $out_file_name";
+			print STDERR "[System]$sysCall\n" if $flag_debug;
+			system($sysCall);
+			$sysCall = "mv $sample_dir $config{'outDir'}/COMPLETE_SAMPLES/";
+			print STDERR "[System]$sysCall\n" if $flag_debug;
+			system($sysCall);
 		}
 		else {
 			if (   -s $cnv_file
 				|| -s $snv_file
 				|| -s $expr_file )
 			{
-				print STDERR "[System]mv $sample_dir $config{'outDir'}/INCOMPLETE_SAMPLES/\n" if $flag_debug;
-				system("mv $sample_dir $config{'outDir'}/INCOMPLETE_SAMPLES/");
+				$sysCall = "mv $sample_dir $config{'outDir'}/INCOMPLETE_SAMPLES/";
+				print STDERR "[System]$sysCall\n" if $flag_debug;
+				system($sysCall);
 			}
 		}
 	}
 }    # end merge_and_clean
 
-sub run_oncoIMPACT {
-	print STDERR "[System]$config{'scriptDir'}/pathway_ana.pl ALL $config{'outDir'}/COMPLETE_SAMPLES $subsampleSize $config{'numThreads'} DRIVER_NET $config{'scriptDir'} &> $config{'outDir'}/run.log\n" if $flag_debug;
-	system(
-"$config{'scriptDir'}/pathway_ana.pl ALL $config{'outDir'}/COMPLETE_SAMPLES $subsampleSize $config{'numThreads'} DRIVER_NET $config{'scriptDir'} &> $config{'outDir'}/run.log"
-	);
 
-#print STDERR system("$config{'scriptDir'}/pathway_ana.pl ALL $config{'outDir'}/COMPLETE_SAMPLES $subsampleSize $config{'numThreads'} DRIVER_NET $config{'scriptDir'}");
+sub run_oncoIMPACT {
+	my ($sysCall, @temp);
+	$sysCall = "$config{'scriptDir'}/pathway_ana.pl ALL $config{'outDir'}/COMPLETE_SAMPLES $subsampleSize $config{'numThreads'} DRIVER_NET $config{'scriptDir'} &> $config{'outDir'}/run.log";
+	$sysCall = "$config{'scriptDir'}/pathway_ana.pl ALL $config{'outDir'}/COMPLETE_SAMPLES $subsampleSize $config{'numThreads'} DRIVER_NET $config{'scriptDir'} TEST &> $config{'outDir'}/run.log" if $config{'testMode'};
+	print STDERR "[System]$sysCall\n" if $flag_debug;
+	system($sysCall);
 
 	$final_res_file = "$config{'outDir'}/driver_list.txt";
-	$str            =
-"echo -e \"GENE\tDRIVER_FREQUENCY\tDRIVER_SNV_FREQUENCY\tDRIVER_DELTION_FREQUENCY\tDRIVER_AMPLIFICATION_FREQUENCY\tCANCER_CENSUS\tPAN_CANCER\tIMPACT\tMUTATION_FREQUENCY\tSNV_FREQUENCY\tDELTION_FREQUENCY\tAMPLIFICATION_FREQUENCY\" > $final_res_file;
-        sort -k15,15 -nr $config{'outDir'}/oncoIMPACT_analysis/GENE_LIST/ALTERATION.dat | awk '{if(\$15 != 0) print \$1\"\\t\"\$7\"\\t\"\$8\"\\t\"\$9\"\\t\"\$10\"\\t\"\$12\"\\t\"\$13\"\\t\"\$15\"\\t\"\$2\"\\t\"\$3\"\\t\"\$4\"\\t\"\$5}' >> $final_res_file";
-
-	print STDERR "[System]$str\n" if $flag_debug;
-	system("$str");
-
-	#<STDIN>;
+	open(OUT, "> $final_res_file");
+	print OUT "GENE\tDRIVER_FREQUENCY\tDRIVER_SNV_FREQUENCY\tDRIVER_DELTION_FREQUENCY\tDRIVER_AMPLIFICATION_FREQUENCY\tCANCER_CENSUS\tPAN_CANCER\tIMPACT\tMUTATION_FREQUENCY\tSNV_FREQUENCY\tDELTION_FREQUENCY\tAMPLIFICATION_FREQUENCY\n";
+	open(IN, "sort -k15,15 -nr $config{'outDir'}/oncoIMPACT_analysis/GENE_LIST/ALTERATION.dat |")
+	
+	while(<IN>){
+		chomp(@temp = split(/\t/, $_));
+		print OUT "$temp[0]\t$temp[6]\t$temp[7]\t$temp[8]\t$temp[9]\t$temp[11]\t$temp[12]\t$temp[14]\t$temp[1]\t$temp[2]\t$temp[3]\t$temp[4]\n" if($temp[14] != 0);
+	}
+	
+	close(OUT);
+	close(IN);
 	print "Final result in $final_res_file\n\n";
 }    # end run_oncoIMPACT
+
 
 sub read_config {
 	my ( $file, $hashRef ) = @_;
 	my @temp;
 	open( FILE, $file );
 
-	#print STDERR " *** read $file\n";
 	while (<FILE>) {
 		chop $_;
 
-		#next if (/^\s+$/ || /^#/);
 		@temp = split( /=/, $_ );
 		if ( @temp == 2 ) {
 			$hashRef->{ $temp[0] } = $temp[1];
