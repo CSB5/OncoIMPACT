@@ -299,14 +299,9 @@ sub merge_and_clean {
 			system($sysCall);
 		}
 		else {
-			if (   -s $cnv_file
-				|| -s $snv_file
-				|| -s $expr_file )
-			{
-				$sysCall = "mv $sample_dir $config{'outDir'}/INCOMPLETE_SAMPLES/";
-				print STDERR "[System]$sysCall\n" if $flag_debug;
-				system($sysCall);
-			}
+			$sysCall = "mv $sample_dir $config{'outDir'}/INCOMPLETE_SAMPLES/";
+			print STDERR "[System]$sysCall\n" if $flag_debug;
+			system($sysCall);
 		}
 	}
 }    # end merge_and_clean
