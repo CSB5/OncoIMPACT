@@ -7,8 +7,8 @@ my $OUT;
 my @nb_significant_true;
 
 #my @all_random_distribution = ();
-$col_dysregulated_count = 2;
-$col_explained_count = 4;
+$col_dysregulated_count = 0;
+$col_explained_count = 1;
 
 #Fold change threshold possible value
 my @fold_change_th = ();

@@ -201,97 +201,99 @@ print STDERR "\n";
 #Output the mutated gene set that explained each gene
 
 if ( !$flag_real ) {
-	foreach $depth_th (@length_th) {
-		$f = "$out_dir/exp_gene_freq_$depth_th\_$hub_th.dat.gz";
-		open( OUT, " | gzip -c >$f" );
+    foreach $depth_th (@length_th) {
+	$f = "$out_dir/exp_gene_freq_$depth_th\_$hub_th.dat.gz";
+	open( OUT, " | gzip -c >$f" );
 
-		#$OUT = $all_out{$depth_th};
-		for ( $i = 0 ; $i < @index_to_gene ; $i++ ) {
-			for ( my $dys_status = 0 ; $dys_status < 2 ; $dys_status++ ) {
-				my $res_exp =
-				  keys %{ $explained_gene_frequency_all_depth{$depth_th}->[$i]
-					  ->[$dys_status] };
-				my $res_dys =
-				  keys %{ $dysregulated_gene_frequency[$i]->[$dys_status] };
+	#$OUT = $all_out{$depth_th};
+	for ( $i = 0 ; $i < @index_to_gene ; $i++ ) {
+	    for ( my $dys_status = 0 ; $dys_status < 2 ; $dys_status++ ) {
+		my $res_exp =
+		    keys %{ $explained_gene_frequency_all_depth{$depth_th}->[$i]
+				->[$dys_status] };
+		my $res_dys =
+		    keys %{ $dysregulated_gene_frequency[$i]->[$dys_status] };
 
-			#print STDERR "".(sprintf("%.3f",$res_dys/$nb_sample))."\n";<STDIN>;
-				$g = get_name( $i, \@index_to_gene );
+		#print STDERR "".(sprintf("%.3f",$res_dys/$nb_sample))."\n";<STDIN>;
+		$g = get_name( $i, \@index_to_gene );
 
-				#print STDERR " *** gene_name: $g $i\n";<STDIN>;
-				print OUT "" 
-				  . $g . "_"
-				  . $dys_status_corress[$dys_status] . "\t"
-				  . ( @{ $connections[$i] } ) . "\t"
-				  . $res_dys . "\t"
-				  . ( sprintf( "%.3f", $res_dys / $nb_sample ) ) . "\t"
-				  . $res_exp . "\t"
-				  . ( sprintf( "%.3f", $res_exp / $nb_sample ) ) . "\n";
-			}
-		}
-		close(OUT);
+		#print STDERR " *** gene_name: $g $i\n";<STDIN>;
+		print OUT "" 
+		    #. $g . "_" . $dys_status_corress[$dys_status] . "\t"
+		    #. ( @{ $connections[$i] } ) . "\t"
+		    . $res_dys . "\t"
+		    #. ( sprintf( "%.3f", $res_dys / $nb_sample ) ) . "\t"
+		    . $res_exp 
+		    #. "\t"
+		    #. ( sprintf( "%.3f", $res_exp / $nb_sample ) ) 
+		    . "\n";
+	    }
 	}
+	close(OUT);
+    }
 }
 else {
-	opendir( DIR, $out_dir );
-	@the_PARAM_DIR = readdir(DIR);
-	close(DIR);
-	print STDERR " *** SECOND STEP @the_PARAM_DIR\n";
-	foreach my $real_sub_sample_dir (@the_PARAM_DIR) {
-		print STDERR " *** file name $real_sub_sample_dir\n";
-		if ( index( $real_sub_sample_dir, "REAL" ) != -1 ) {
+    opendir( DIR, $out_dir );
+    @the_PARAM_DIR = readdir(DIR);
+    close(DIR);
+    print STDERR " *** SECOND STEP @the_PARAM_DIR\n";
+    foreach my $real_sub_sample_dir (@the_PARAM_DIR) {
+	print STDERR " *** file name $real_sub_sample_dir\n";
+	if ( index( $real_sub_sample_dir, "REAL" ) != -1 ) {
 
-			#Get the sample of the real subsample data
-			opendir( DIR, "$out_dir/$real_sub_sample_dir" );
-			@the_real_sample_set = readdir(DIR);
-			close(DIR);
-			%the_real_sample_map = ();
-			foreach my $s (@the_real_sample_set) {
-				$the_real_sample_map{$s} = 1;
+	    #Get the sample of the real subsample data
+	    opendir( DIR, "$out_dir/$real_sub_sample_dir" );
+	    @the_real_sample_set = readdir(DIR);
+	    close(DIR);
+	    %the_real_sample_map = ();
+	    foreach my $s (@the_real_sample_set) {
+		$the_real_sample_map{$s} = 1;
+	    }
+	    $dir_res =
+		"$out_dir/$real_sub_sample_dir/EXPLAINED_FREQ_DIFF_$fold_change_threshold/";
+	    `mkdir $dir_res` if ( !-d $dir_res );
+
+	    foreach $depth_th (@length_th) {
+		$f = "$dir_res/exp_gene_freq_$depth_th\_$hub_th.dat.gz";
+		print STDERR " *** res_file $f\n";
+		open( OUT, " | gzip -c >$f" );
+		for ( $i = 0 ; $i < @index_to_gene ; $i++ ) {
+		    for ( my $dys_status = 0 ; $dys_status < 2 ; $dys_status++ )
+		    {
+			my $res_exp = 0;
+			my $res_dys = 0;
+			foreach my $s ( keys %the_real_sample_map ) {
+
+			    #print STDERR " *** sss $s\n";<STDIN>;
+			    $res_exp++
+				if (
+				    $explained_gene_frequency_all_depth{$depth_th}
+				    ->[$i]->[$dys_status]->{$s} );
+			    $res_dys++
+				if (
+				    $dysregulated_gene_frequency[$i]->[$dys_status]
+				    ->{$s} );
 			}
-			$dir_res =
-"$out_dir/$real_sub_sample_dir/EXPLAINED_FREQ_DIFF_$fold_change_threshold/";
-			`mkdir $dir_res` if ( !-d $dir_res );
-
-			foreach $depth_th (@length_th) {
-				$f = "$dir_res/exp_gene_freq_$depth_th\_$hub_th.dat.gz";
-				print STDERR " *** res_file $f\n";
-				open( OUT, " | gzip -c >$f" );
-				for ( $i = 0 ; $i < @index_to_gene ; $i++ ) {
-					for ( my $dys_status = 0 ; $dys_status < 2 ; $dys_status++ )
-					{
-						my $res_exp = 0;
-						my $res_dys = 0;
-						foreach my $s ( keys %the_real_sample_map ) {
-
-							#print STDERR " *** sss $s\n";<STDIN>;
-							$res_exp++
-							  if (
-								$explained_gene_frequency_all_depth{$depth_th}
-								->[$i]->[$dys_status]->{$s} );
-							$res_dys++
-							  if (
-								$dysregulated_gene_frequency[$i]->[$dys_status]
-								->{$s} );
-						}
 
 			#print STDERR "".(sprintf("%.3f",$res_dys/$nb_sample))."\n";<STDIN>;
-						$g = get_name( $i, \@index_to_gene );
-
-						#print STDERR " *** gene_name: $g $i\n";<STDIN>;
-						print OUT "" 
-						  . $g . "_"
-						  . $dys_status_corress[$dys_status] . "\t"
-						  . ( @{ $connections[$i] } ) . "\t"
-						  . $res_dys . "\t"
-						  . ( sprintf( "%.3f", $res_dys / $nb_sample ) ) . "\t"
-						  . $res_exp . "\t"
-						  . ( sprintf( "%.3f", $res_exp / $nb_sample ) ) . "\n";
-					}
-				}
-				close(OUT);
-			}
+			$g = get_name( $i, \@index_to_gene );
+			
+			#print STDERR " *** gene_name: $g $i\n";<STDIN>;
+			print OUT "" 
+			    #. $g . "_" . $dys_status_corress[$dys_status] . "\t"
+			    #. ( @{ $connections[$i] } ) . "\t"
+			    . $res_dys . "\t"
+			    #. ( sprintf( "%.3f", $res_dys / $nb_sample ) ) . "\t"
+			    . $res_exp 
+			    #. "\t"
+			    #. ( sprintf( "%.3f", $res_exp / $nb_sample ) ) 
+			    . "\n";
+		    }
 		}
+		close(OUT);
+	    }
 	}
+    }
 }
 
 #perform a breath first search to search from path of dysregulated gene of length <= $depth_th that do not contain hub_gene
