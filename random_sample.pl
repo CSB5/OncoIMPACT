@@ -38,37 +38,33 @@ my %gene_dys_to_index;
 my $ID_cmp = 0;
 print STDERR " *** read real samples\n";
 foreach my $dir_s (@the_DATA_DIR) {
-	$mutation_file_name      = "$data_dir/$dir_s/Genelist_Status.txt";
-	$mutation_file_name_cell = "$data_dir/$dir_s/Genelist_Status_cell.txt";
-	if ( -e $mutation_file_name || -e $mutation_file_name_cell ) {
-		if ( -e $mutation_file_name_cell ) {
-			$mutation_file_name = $mutation_file_name_cell;
+    $mutation_file_name      = "$data_dir/$dir_s/Genelist_Status.txt";
+    if ( -e $mutation_file_name ) {
+
+	open( FILE, "$mutation_file_name" );
+
+	#print STDERR "********** read file $mutation_file_name\n";#<STDIN>;
+
+	while (<FILE>) {
+	    chop($_);
+	    @line  = split( /\t/, $_ );
+	    @parts = split( /_/,  $line[0] );
+	    $gene_name = $parts[0];
+	    $status    = $parts[1];
+
+	    #count the dysregulated genes that belong to the network
+	    if ( ( $status eq "UP" || $status eq "DOWN" )
+		 && exists $gene_to_index{$gene_name} )
+	    {
+		if ( !exists $gene_dys_to_index{$gene_name} ) {
+		    $gene_dys_to_index{$gene_name} = $ID_cmp;
+		    $index_to_gene_dys[$ID_cmp] = $gene_name;
+		    $ID_cmp++;
 		}
-
-		open( FILE, "$mutation_file_name" );
-
-		#print STDERR "********** read file $mutation_file_name\n";#<STDIN>;
-
-		while (<FILE>) {
-			chop($_);
-			@line  = split( /\t/, $_ );
-			@parts = split( /_/,  $line[0] );
-			$gene_name = $parts[0];
-			$status    = $parts[1];
-
-			#count the dysregulated genes that belong to the network
-			if ( ( $status eq "UP" || $status eq "DOWN" )
-				&& exists $gene_to_index{$gene_name} )
-			{
-				if ( !exists $gene_dys_to_index{$gene_name} ) {
-					$gene_dys_to_index{$gene_name} = $ID_cmp;
-					$index_to_gene_dys[$ID_cmp] = $gene_name;
-					$ID_cmp++;
-				}
-			}
-		}
-		close(FILE);
+	    }
 	}
+	close(FILE);
+    }
 }
 
 #random data set that maintain the frequencies
@@ -76,24 +72,23 @@ my @all_random_mutation_ID   = ();
 my @all_random_expression_ID = ();
 print STDERR " *** construct random ID\n";
 for ( $i = 0 ; $i < $nb_random_sample ; $i++ ) {
-	$all_random_mutation_ID[$i]   = compute_random_ID( \@index_to_gene );
-	$all_random_expression_ID[$i] = compute_random_ID( \@index_to_gene_dys );
+    $all_random_mutation_ID[$i]   = compute_random_ID( \@index_to_gene );
+    $all_random_expression_ID[$i] = compute_random_ID( \@index_to_gene_dys );
 }
 
 my @all_real_dir = ();
 foreach my $dir_s (@the_DATA_DIR) {
-	$mutation_file_name      = "$data_dir/$dir_s/Genelist_Status.txt";
-	$mutation_file_name_cell = "$data_dir/$dir_s/Genelist_Status_cell.txt";
-	if ( -e $mutation_file_name || -e $mutation_file_name_cell ) {
-		push( @all_real_dir, $dir_s );
-	}
+    $mutation_file_name      = "$data_dir/$dir_s/Genelist_Status.txt";
+    if ( -e $mutation_file_name ) {
+	push( @all_real_dir, $dir_s );
+    }
 }
 
 #Compute the number of sample used
 $nb_real_sample_used = @all_real_dir;
 if ( $fraction_real_sample_used ne "ALL" ) {
-	$nb_real_sample_used =
-	  sprintf( "%.0f", $nb_real_sample_used * $fraction_real_sample_used );
+    $nb_real_sample_used =
+	sprintf( "%.0f", $nb_real_sample_used * $fraction_real_sample_used );
 }
 
 my @sample_mutated_gene_name = ();
@@ -104,12 +99,9 @@ print STDERR " *** write random samples\n";
 #Construct the REAL_ALL data set
 `mkdir $out_dir/REAL_ALL`;
 foreach my $dir_s (@all_real_dir) {
-	$mutation_file = "Genelist_Status_cell.txt";
-	if ( !-e "$data_dir/$dir_s/$mutation_file" ) {
-		$mutation_file = "Genelist_Status.txt";
-	}
-	`mkdir $out_dir/REAL_ALL/$dir_s/`;
-	`ln -s $data_dir/$dir_s/$mutation_file $out_dir/REAL_ALL/$dir_s/Genelist_Status.txt`;
+    $mutation_file = "Genelist_Status.txt";
+    `mkdir $out_dir/REAL_ALL/$dir_s/`;
+    `ln -s $data_dir/$dir_s/$mutation_file $out_dir/REAL_ALL/$dir_s/Genelist_Status.txt`;
 }
 
 for ( $i = 0 ; $i < $nb_random_sample ; $i++ ) {
@@ -138,17 +130,9 @@ for ( $i = 0 ; $i < $nb_random_sample ; $i++ ) {
     
     foreach my $dir_s (@real_data_set_used) {
 	
-#to find the real data gene status (pb with expression comming from cell article)
 	$mutation_file           = "Genelist_Status.txt";
 	$mutation_file_name      = "$data_dir/$dir_s/Genelist_Status.txt";
-	$mutation_file_name_cell = "$data_dir/$dir_s/Genelist_Status_cell.txt";
-	if ( -e $mutation_file_name || -e $mutation_file_name_cell ) {
-	    if ( -e $mutation_file_name_cell ) {
-		$mutation_file_name = $mutation_file_name_cell;
-		$mutation_file      = "Genelist_Status_cell.txt";
-	    }
-	}
-	
+		
 	#directory to store the random data
 	`mkdir $dir_name_rand/$dir_s`;
 	

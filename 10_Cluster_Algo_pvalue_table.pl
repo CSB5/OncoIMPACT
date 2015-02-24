@@ -78,60 +78,56 @@ my %BUG_not_present_in_network = ();
 
 print STDERR " *** READ DIR\n";
 foreach my $dir_sample (@the_DATA_DIR) {
-	$mutation_file_name      = "$data_dir/$dir_sample/Genelist_Status.txt";
-	$mutation_file_name_cell = "$data_dir/$dir_sample/Genelist_Status_cell.txt";
-	if ( -e $mutation_file_name || -e $mutation_file_name_cell ) {
-		if ( -e $mutation_file_name_cell ) {
-			$mutation_file_name = $mutation_file_name_cell;
-		}
+    $mutation_file_name      = "$data_dir/$dir_sample/Genelist_Status.txt";
+    if ( -e $mutation_file_name ) {
 
-		#initilazed the mutational/expression gene status
-		my @sample_gene_mutated_list = ();
-		my %sample_gene_mutated      = ();
-		my @sample_gene_dysregulated;
+	#initilazed the mutational/expression gene status
+	my @sample_gene_mutated_list = ();
+	my %sample_gene_mutated      = ();
+	my @sample_gene_dysregulated;
 
-		for ( my $i = 0 ; $i < @index_to_gene ; $i++ ) {
-			my @status_tab = ( 0, 0 );    #DOWN, UP
-			$sample_gene_dysregulated[$i] = \@status_tab;
+	for ( my $i = 0 ; $i < @index_to_gene ; $i++ ) {
+	    my @status_tab = ( 0, 0 );    #DOWN, UP
+	    $sample_gene_dysregulated[$i] = \@status_tab;
 
-			my @status_tab1 = ();
-			my @status_tab2 = ();
-			for ( my $j = 0 ; $j < 2 ; $j++ ) {
-				my @tab1 = ( 0, 0 ); #to store the 2 mutation impact value: sum_neigh sum_neigh_dys_value
-				$status_tab1[$j] = \@tab1;
+	    my @status_tab1 = ();
+	    my @status_tab2 = ();
+	    for ( my $j = 0 ; $j < 2 ; $j++ ) {
+		my @tab1 = ( 0, 0 ); #to store the 2 mutation impact value: sum_neigh sum_neigh_dys_value
+		$status_tab1[$j] = \@tab1;
 
-				my @tab2 = ( 0, 0 ); #to store the 2 mutation impact value: sum_neigh sum_neigh_dys_value
-				$status_tab2[$j] = \@tab2;
-			}
+		my @tab2 = ( 0, 0 ); #to store the 2 mutation impact value: sum_neigh sum_neigh_dys_value
+		$status_tab2[$j] = \@tab2;
+	    }
 
-			$sample_gene_mutated_list[$i] = 0;
-		}
-		my %all_explained_gene_set = ();
+	    $sample_gene_mutated_list[$i] = 0;
+	}
+	my %all_explained_gene_set = ();
 
-		$nb_sample++;
+	$nb_sample++;
 
-		push( @sample_order, $dir_sample );
+	push( @sample_order, $dir_sample );
 
-		open( FILE, "$mutation_file_name" );
+	open( FILE, "$mutation_file_name" );
 
-		#print STDERR "********** read file $mutation_file_name\n";#<STDIN>;
-		#read the file to obtain the dysregulated genes
-		while (<FILE>) {
-			chop($_);
-			@line = split( /\t/, $_ );
-			my @parts     = split( /_/, $line[0] );
-			my $gene_name = $parts[0];
-			my $status    = $parts[1];
-			if ( exists $gene_to_index{$gene_name} )
-			{ #filter out all the gene_name that do not belong to the input network
-				my $gene_ID = get_ID( $gene_name, \%gene_to_index );
+	#print STDERR "********** read file $mutation_file_name\n";#<STDIN>;
+	#read the file to obtain the dysregulated genes
+	while (<FILE>) {
+	    chop($_);
+	    @line = split( /\t/, $_ );
+	    my @parts     = split( /_/, $line[0] );
+	    my $gene_name = $parts[0];
+	    my $status    = $parts[1];
+	    if ( exists $gene_to_index{$gene_name} )
+	    { #filter out all the gene_name that do not belong to the input network
+		my $gene_ID = get_ID( $gene_name, \%gene_to_index );
 
 #if(get_name($gene_ID) ne $gene_name){
 #print "********* PROBLEM with gene_ID $gene_name != ".get_name($gene_ID)."\n";<STDIN>;
 #}
 
-				if ( $status eq "MUT" || $status eq "AMPL" || $status eq "DEL" )
-				{
+		if ( $status eq "MUT" || $status eq "AMPL" || $status eq "DEL" )
+		{
 
 #if($status eq "AMPL" || $status eq "DEL"){
 #print STDERR "*********** $dir_sample ".(get_name($gene_ID, \@index_to_gene))." ".$status."\n" ;
@@ -141,45 +137,45 @@ foreach my $dir_sample (@the_DATA_DIR) {
 #print STDERR "***********MUT $dir_sample ".(get_ID($gene_name))." ".$gene_name."\n";
 #<STDIN>;
 #}
-					$sample_gene_mutated{$gene_ID}                   = 1;
-					$sample_gene_mutated_list[$gene_ID]              = 1;
-					$mutated_gene_frequency[$gene_ID]->{$dir_sample} = 1;
-				}
-				else {
-					$fold_change = $line[1];
-					if ( ( $status eq "UP" || $status eq "DOWN" )
-						&& abs($fold_change) >= $log2_fold_change_threshold )
-					{
-						$status_ID = 0;
-						$status_ID = 1 if ( $status eq "UP" );
-						$sample_gene_dysregulated[$gene_ID]->[$status_ID] =
-						  $fold_change;
+		    $sample_gene_mutated{$gene_ID}                   = 1;
+		    $sample_gene_mutated_list[$gene_ID]              = 1;
+		    $mutated_gene_frequency[$gene_ID]->{$dir_sample} = 1;
+		}
+		else {
+		    $fold_change = $line[1];
+		    if ( ( $status eq "UP" || $status eq "DOWN" )
+			 && abs($fold_change) >= $log2_fold_change_threshold )
+		    {
+			$status_ID = 0;
+			$status_ID = 1 if ( $status eq "UP" );
+			$sample_gene_dysregulated[$gene_ID]->[$status_ID] =
+			    $fold_change;
 
 #$dysregulated_gene_frequency[$gene_ID]->[$status_ID]->{$dir_sample} = $gene_name;
 #print STDERR "|".$_."|\t".$sample_gene_dysregulated[$gene_ID]->[$status_ID]."\n";#<STDIN>;
-					}
-				}
-			}
-			else {
-				$BUG_not_present_in_network{$gene_name} = 1;
-			}
+		    }
 		}
-		close(FILE);
-
-	  #print STDERR " ------------------------------------------ $dir_sample\n";
-		$all_sample_gene_mutated_list{$dir_sample} = \@sample_gene_mutated_list;
-		$all_sample_gene_mutated{$dir_sample}      = \%sample_gene_mutated;
-		$all_sample_gene_dysregulated{$dir_sample} = \@sample_gene_dysregulated;
-
-		close(FILE);
-		#########################################################################################
-
-		if ( ( keys %sample_gene_mutated ) == 0 ) {
-			print STDERR "SAMPLE WITHOUT MUTATED GENES WEIRD !!!\n";
-			<STDIN>;
-		}
-
+	    }
+	    else {
+		$BUG_not_present_in_network{$gene_name} = 1;
+	    }
 	}
+	close(FILE);
+
+	#print STDERR " ------------------------------------------ $dir_sample\n";
+	$all_sample_gene_mutated_list{$dir_sample} = \@sample_gene_mutated_list;
+	$all_sample_gene_mutated{$dir_sample}      = \%sample_gene_mutated;
+	$all_sample_gene_dysregulated{$dir_sample} = \@sample_gene_dysregulated;
+
+	close(FILE);
+	#########################################################################################
+
+	if ( ( keys %sample_gene_mutated ) == 0 ) {
+	    print STDERR "SAMPLE WITHOUT MUTATED GENES WEIRD !!!\n";
+	    <STDIN>;
+	}
+
+    }
 }
 
 my @all_random_freq = ();

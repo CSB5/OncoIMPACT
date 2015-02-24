@@ -30,8 +30,7 @@ close(DIR);
 print STDERR " *** READ DIR\n";
 foreach my $sample (@the_DATA_DIR){
     $mutation_file_name = "$sample_dir/$sample/Genelist_Status.txt";
-    $mutation_file_name_cell = "$sample_dir/$sample/Genelist_Status_cell.txt";
-    if(-e $mutation_file_name || -e $mutation_file_name_cell){
+    if(-e $mutation_file_name){
 	$sample_analysed{$sample} = 1;
     }
 }

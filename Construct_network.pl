@@ -223,11 +223,7 @@ sub update_gene_index_using_data{
 
     foreach my $dir_sample (@the_DATA_DIR){
 	$mutation_file_name = "$data_dir/$dir_sample/Genelist_Status.txt";
-	$mutation_file_name_cell = "$data_dir/$dir_sample/Genelist_Status_cell.txt";
-	if(-e $mutation_file_name || -e $mutation_file_name_cell){
-	    if( -e $mutation_file_name_cell){
-		$mutation_file_name = $mutation_file_name_cell;
-	    }
+	if(-e $mutation_file_name){
 	    
 	    $nb_sample++;
 	    $nb_mutated_gene = 0;

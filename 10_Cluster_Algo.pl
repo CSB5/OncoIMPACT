@@ -177,67 +177,64 @@ my $nb_sample_to_test = -10;
 my %BUG_not_present_in_network = ();
 
 foreach my $dir_sample (@the_DATA_DIR) {
-	$mutation_file_name      = "$data_dir/$dir_sample/Genelist_Status.txt";
-	$mutation_file_name_cell = "$data_dir/$dir_sample/Genelist_Status_cell.txt";
-	if ( -e $mutation_file_name || -e $mutation_file_name_cell ) {
-		if ( -e $mutation_file_name_cell ) {
-			$mutation_file_name = $mutation_file_name_cell;
-		}
+    $mutation_file_name      = "$data_dir/$dir_sample/Genelist_Status.txt";
+    if ( -e $mutation_file_name ) {
+	
 
-		@sample_gene_mutated_list = ();
+	@sample_gene_mutated_list = ();
 
-		#initilazed the mutational/expression gene status
-		%sample_gene_mutated = ();
-		my @sample_gene_dysregulated;
-		my @sample_gene_explained_mutation_impact;
-		my @sample_gene_explained_mutation_number;
+	#initilazed the mutational/expression gene status
+	%sample_gene_mutated = ();
+	my @sample_gene_dysregulated;
+	my @sample_gene_explained_mutation_impact;
+	my @sample_gene_explained_mutation_number;
 
-		for ( my $i = 0 ; $i < @index_to_gene ; $i++ ) {
-			my @status_tab = ( 0, 0 );    #DOWN, UP
-			$sample_gene_dysregulated[$i] = \@status_tab;
+	for ( my $i = 0 ; $i < @index_to_gene ; $i++ ) {
+	    my @status_tab = ( 0, 0 );    #DOWN, UP
+	    $sample_gene_dysregulated[$i] = \@status_tab;
 
-			my @status_tab1 = ();
-			my @status_tab2 = ();
-			for ( my $j = 0 ; $j < 2 ; $j++ ) {
-				my @tab1 = ( 0, 0 )
-				  ; #to store the 2 mutation impact value: sum_neigh sum_neigh_dys_value
-				$status_tab1[$j] = \@tab1;
+	    my @status_tab1 = ();
+	    my @status_tab2 = ();
+	    for ( my $j = 0 ; $j < 2 ; $j++ ) {
+		my @tab1 = ( 0, 0 )
+		    ; #to store the 2 mutation impact value: sum_neigh sum_neigh_dys_value
+		$status_tab1[$j] = \@tab1;
 
-				my @tab2 = ( 0, 0 )
-				  ; #to store the 2 mutation impact value: sum_neigh sum_neigh_dys_value
-				$status_tab2[$j] = \@tab2;
-			}
-			$sample_gene_explained_mutation_impact[$i] = \@status_tab1;
-			$sample_gene_explained_mutation_number[$i] = \@status_tab2;
+		my @tab2 = ( 0, 0 )
+		    ; #to store the 2 mutation impact value: sum_neigh sum_neigh_dys_value
+		$status_tab2[$j] = \@tab2;
+	    }
+	    $sample_gene_explained_mutation_impact[$i] = \@status_tab1;
+	    $sample_gene_explained_mutation_number[$i] = \@status_tab2;
 
-			$sample_gene_mutated_list[$i] = 0;
-		}
-		my %all_explained_gene_set = ();
+	    $sample_gene_mutated_list[$i] = 0;
+	}
+	my %all_explained_gene_set = ();
 
-		$nb_sample++;
-		$nb_mutated_gene               = 0;
-		$nb_mutated_with_explained_set = 0;
-		$nb_explained_gene             = 0;
+	$nb_sample++;
+	$nb_mutated_gene               = 0;
+	$nb_mutated_with_explained_set = 0;
+	$nb_explained_gene             = 0;
 
-		open( FILE, "$mutation_file_name" );
-		#print STDERR " *** read file $mutation_file_name\n";    #<STDIN>;
-		    #read the file to obtain the dysregulated genes
-		while (<FILE>) {
-			chop($_);
-			@line = split( /\t/, $_ );
-			my @parts     = split( /_/, $line[0] );
-			my $gene_name = $parts[0];
-			my $status    = $parts[1];
-			if ( exists $gene_to_index{$gene_name} )
-			{ #filter out all the gene_name that do not belong to the input network
-				my $gene_ID = get_ID( $gene_name, \%gene_to_index );
+	open( FILE, "$mutation_file_name" );
+	#print STDERR " *** read file $mutation_file_name\n";    #<STDIN>;
+	#read the file to obtain the dysregulated genes
+	while (<FILE>) {
+	    chop($_);
+	    @line = split( /\t/, $_ );
+	    my @parts     = split( /_/, $line[0] );
+	    my $gene_name = $parts[0];
+	    my $status    = $parts[1];
+	    if ( exists $gene_to_index{$gene_name} )
+	    { #filter out all the gene_name that do not belong to the input network
+		my $gene_ID = get_ID( $gene_name, \%gene_to_index );
 
 #if(get_name($gene_ID) ne $gene_name){
 #print "********* PROBLEM with gene_ID $gene_name != ".get_name($gene_ID)."\n";<STDIN>;
 #}
 
-				if ( $status eq "MUT" || $status eq "AMPL" || $status eq "DEL" )
-				{
+		if ( $status eq "MUT" || $status eq "AMPL" || $status eq "DEL" )
+		{
 
 #if($status eq "AMPL" || $status eq "DEL"){
 #print STDERR "*********** $dir_sample ".(get_name($gene_ID, \@index_to_gene))." ".$status."\n" ;
@@ -247,178 +244,178 @@ foreach my $dir_sample (@the_DATA_DIR) {
 #print STDERR "***********MUT $dir_sample ".(get_ID($gene_name))." ".$gene_name."\n";
 #<STDIN>;
 #}
-					$sample_gene_mutated{$gene_ID}                   = 1;
-					$sample_gene_mutated_list[$gene_ID]              = 1;
-					$mutated_gene_frequency[$gene_ID]->{$dir_sample} = 1;
-				}
-				else {
-					$fold_change = $line[1];
-					if ( ( $status eq "UP" || $status eq "DOWN" )
-						&& abs($fold_change) >= $fold_change_threshold )
-					{
-						$status_ID = 0;
-						$status_ID = 1 if ( $status eq "UP" );
-						$sample_gene_dysregulated[$gene_ID]->[$status_ID] =
-						  $fold_change;
-						$dysregulated_gene_frequency[$gene_ID]->[$status_ID]
-						  ->{$dir_sample} = $gene_name;
+		    $sample_gene_mutated{$gene_ID}                   = 1;
+		    $sample_gene_mutated_list[$gene_ID]              = 1;
+		    $mutated_gene_frequency[$gene_ID]->{$dir_sample} = 1;
+		}
+		else {
+		    $fold_change = $line[1];
+		    if ( ( $status eq "UP" || $status eq "DOWN" )
+			 && abs($fold_change) >= $fold_change_threshold )
+		    {
+			$status_ID = 0;
+			$status_ID = 1 if ( $status eq "UP" );
+			$sample_gene_dysregulated[$gene_ID]->[$status_ID] =
+			    $fold_change;
+			$dysregulated_gene_frequency[$gene_ID]->[$status_ID]
+			    ->{$dir_sample} = $gene_name;
 
 #print STDERR "|".$_."|\t".$sample_gene_dysregulated[$gene_ID]->[$status_ID]."\t".$status_ID."\n";<STDIN>;
-					}
-				}
-			}
-			else {
-				$BUG_not_present_in_network{$gene_name} = 1;
-			}
+		    }
 		}
-		close(FILE);
+	    }
+	    else {
+		$BUG_not_present_in_network{$gene_name} = 1;
+	    }
+	}
+	close(FILE);
 
-		if ( ( keys %sample_gene_mutated ) == 0 ) {
-			print STDERR "SAMPLE WITHOUT MUTATED GENES WEIRD !!!\n";   #<STDIN>;
-		}
+	if ( ( keys %sample_gene_mutated ) == 0 ) {
+	    print STDERR "SAMPLE WITHOUT MUTATED GENES WEIRD !!!\n";   #<STDIN>;
+	}
 
-		foreach my $gene ( keys %sample_gene_mutated ) {
-			$module_str = "";
-			$nb_mutated_gene++;
+	foreach my $gene ( keys %sample_gene_mutated ) {
+	    $module_str = "";
+	    $nb_mutated_gene++;
 
-	#print "****MUT TTT $gene ".(get_name($gene))."\n";
-	#print STDERR "- construct explainend gene set for ".(get_name($gene))."\n";
-			for ( $i = 0 ; $i < @index_to_gene ; $i++ ) { $explored[$i] = -1; }
+	    #print "****MUT TTT $gene ".(get_name($gene))."\n";
+	    #print STDERR "- construct explainend gene set for ".(get_name($gene))."\n";
+	    for ( $i = 0 ; $i < @index_to_gene ; $i++ ) { $explored[$i] = -1; }
 
-			#my @false = ();
-			$explained_gene_set =
-			  construct_explained_gene_set_dijkstra( $gene,
-				\@sample_gene_dysregulated, \@sample_gene_mutated_list,
-				\@explored, $depth_th, $hub_th );
+	    #my @false = ();
+	    $explained_gene_set =
+		construct_explained_gene_set_dijkstra( $gene,
+						       \@sample_gene_dysregulated, \@sample_gene_mutated_list,
+						       \@explored, $depth_th, $hub_th );
 
 #$explained_gene_set = construct_explained_gene_set($gene, \@sample_gene_dysregulated, \@sample_gene_mutated_list, \@explored, $depth_th, $hub_th);
-			$mut_impact =
-			  compute_impact( $explained_gene_set, \@sample_gene_dysregulated );
+	    $mut_impact =
+		compute_impact( $explained_gene_set, \@sample_gene_dysregulated );
 
-			if ( @{$explained_gene_set} > 1 ) {
-				$flag_coint_dys_gene = 0;
+	    if ( @{$explained_gene_set} > 1 ) {
+		$flag_coint_dys_gene = 0;
 
-				#compute the frequency
-				foreach $eg ( @{$explained_gene_set} ) {
-					for ( my $dys_status = 0 ; $dys_status < 2 ; $dys_status++ )
-					{
-						if ( $sample_gene_dysregulated[$eg]->[$dys_status] )
-						{    #to remove the mutated genes and the jocker!
+		#compute the frequency
+		foreach $eg ( @{$explained_gene_set} ) {
+		    for ( my $dys_status = 0 ; $dys_status < 2 ; $dys_status++ )
+		    {
+			if ( $sample_gene_dysregulated[$eg]->[$dys_status] )
+			{    #to remove the mutated genes and the jocker!
 
-							if ( !$flag_coint_dys_gene ) {
-								$module_str .=
-								    $dir_sample . "\t"
-								  . ( get_name( $gene, \@index_to_gene ) )
-								  . "\t";
-								$nb_mutated_with_explained_set++;
+			    if ( !$flag_coint_dys_gene ) {
+				$module_str .=
+				    $dir_sample . "\t"
+				    . ( get_name( $gene, \@index_to_gene ) )
+				    . "\t";
+				$nb_mutated_with_explained_set++;
 
-						  #print "*******MUT EXP $gene ".(get_name($gene))."\n";
-								$mutated_gene_with_explained_set_frequency[$gene
-								]->{$dir_sample} = 1;
-								$flag_coint_dys_gene = 1;
-							}
+				#print "*******MUT EXP $gene ".(get_name($gene))."\n";
+				$mutated_gene_with_explained_set_frequency[$gene
+				    ]->{$dir_sample} = 1;
+				$flag_coint_dys_gene = 1;
+			    }
 
-							#the module
-							$module_str .=
-							  ( get_name( $eg, \@index_to_gene ) ) . "_"
-							  . $dys_status_corress[$dys_status] . ";";
+			    #the module
+			    $module_str .=
+				( get_name( $eg, \@index_to_gene ) ) . "_"
+				. $dys_status_corress[$dys_status] . ";";
 
 #print the pair mutated gene/dys gene
 #print $PAIR $dir_sample."\t".(get_name($gene, \@index_to_gene))."\t".(get_name($eg, \@index_to_gene))."_".$dys_status_corress[$dys_status]."\n";
 
-							if ( !exists $all_explained_gene_set{$eg} ) {
-								$nb_explained_gene++;
-								$all_explained_gene_set{$eg} = 1;
-							}
+			    if ( !exists $all_explained_gene_set{$eg} ) {
+				$nb_explained_gene++;
+				$all_explained_gene_set{$eg} = 1;
+			    }
 
-							#the gene is explain at least by gene
-							#Need to be changed by an array !!!!
-							$explained_gene_frequency[$eg]->[$dys_status]
-							  ->{$dir_sample} = $gene;
+			    #the gene is explain at least by gene
+			    #Need to be changed by an array !!!!
+			    $explained_gene_frequency[$eg]->[$dys_status]
+				->{$dir_sample} = $gene;
 
-							#to update the explained gene mutation impact
-							for ( my $k = 0 ; $k < 2 ; $k++ ) {
-								if ( $sample_gene_explained_mutation_impact[$eg]
-									->[$dys_status]->[$k] == 0 )
-								{
+			    #to update the explained gene mutation impact
+			    for ( my $k = 0 ; $k < 2 ; $k++ ) {
+				if ( $sample_gene_explained_mutation_impact[$eg]
+				     ->[$dys_status]->[$k] == 0 )
+				{
 
 #print STDERR $eg."\t".$dys_status."\t".$mut_impact->[$k]."\t".$sample_gene_explained_mutation_impact[$eg]->[$dys_status]->[$k]."\n";<STDIN>;
-								}
-								$sample_gene_explained_mutation_impact[$eg]
-								  ->[$dys_status]->[$k] += $mut_impact->[$k];
-								$sample_gene_explained_mutation_number[$eg]
-								  ->[$dys_status]->[$k]++;
-							}
-						}
-					}
 				}
+				$sample_gene_explained_mutation_impact[$eg]
+				    ->[$dys_status]->[$k] += $mut_impact->[$k];
+				$sample_gene_explained_mutation_number[$eg]
+				    ->[$dys_status]->[$k]++;
+			    }
 			}
-
-			#Output the sample module
-			print $MODULE $module_str . "\n" if ( $module_str ne "" );
-
+		    }
 		}
-		$samples_explained_gene_set{$dir_sample} = \%all_explained_gene_set;
+	    }
 
-		#To compute the avg of the mutation impact
-		for ( my $i = 0 ; $i < @index_to_gene ; $i++ ) {
-			for ( my $j = 0 ; $j < 2 ; $j++ ) {
-				for ( my $k = 0 ; $k < 2 ; $k++ ) {
+	    #Output the sample module
+	    print $MODULE $module_str . "\n" if ( $module_str ne "" );
+
+	}
+	$samples_explained_gene_set{$dir_sample} = \%all_explained_gene_set;
+
+	#To compute the avg of the mutation impact
+	for ( my $i = 0 ; $i < @index_to_gene ; $i++ ) {
+	    for ( my $j = 0 ; $j < 2 ; $j++ ) {
+		for ( my $k = 0 ; $k < 2 ; $k++ ) {
 
 #print STDERR "|".$explained_gene_mutatation_impact[$i]->[$i]."|\t|".$sample_gene_explained_mutation_impact[$eg]->[$i]."|\n";<STDIN>;
-					if ( $sample_gene_explained_mutation_impact[$i]->[$j]->[$k]
-						!= 0 )
-					{
+		    if ( $sample_gene_explained_mutation_impact[$i]->[$j]->[$k]
+			 != 0 )
+		    {
 
 #$explained_gene_mutatation_impact[$i]->[$j]->[$k] += $sample_gene_explained_mutation_impact[$i]->[$j]->[$k];
-						push(
-							@{
-								$explained_gene_mutatation_impact[$i]->[$j]
-								  ->[$k]
-							  },
-							(
-								$sample_gene_explained_mutation_impact[$i]->[$j]
-								  ->[$k] /
-								  $sample_gene_explained_mutation_number[$i]
-								  ->[$j]->[$k]
-							)
-						);
-					}
-				}
-			}
+			push(
+			    @{
+				$explained_gene_mutatation_impact[$i]->[$j]
+				    ->[$k]
+			    },
+			    (
+			     $sample_gene_explained_mutation_impact[$i]->[$j]
+			     ->[$k] /
+			     $sample_gene_explained_mutation_number[$i]
+			     ->[$j]->[$k]
+			    )
+			    );
+		    }
 		}
-
-		#Output the sample avg module statistics
-		print $OUT $dir_sample . "\t"
-		  . $nb_mutated_gene . "\t"
-		  . $nb_mutated_with_explained_set . "\t";
-
-		#
-		if ( $nb_mutated_gene != 0 ) {
-			print $OUT (
-				sprintf( "%.3f",
-					$nb_mutated_with_explained_set / $nb_mutated_gene )
-			) . "\t";
-		}
-		else {
-			print $OUT "-1" . "\t";
-		}
-
-		#
-		if ( $nb_mutated_with_explained_set != 0 ) {
-			print $OUT $nb_explained_gene . "\t"
-			  . (
-				sprintf( "%.3f",
-					$nb_explained_gene / $nb_mutated_with_explained_set )
-			  ) . "\n";
-		}
-		else {
-			print $OUT $nb_explained_gene . "\t" . "-1" . "\n";
-		}
-
-		#
-		last if ( $nb_sample == $nb_sample_to_test );
+	    }
 	}
+
+	#Output the sample avg module statistics
+	print $OUT $dir_sample . "\t"
+	    . $nb_mutated_gene . "\t"
+	    . $nb_mutated_with_explained_set . "\t";
+
+	#
+	if ( $nb_mutated_gene != 0 ) {
+	    print $OUT (
+		sprintf( "%.3f",
+			 $nb_mutated_with_explained_set / $nb_mutated_gene )
+		) . "\t";
+	}
+	else {
+	    print $OUT "-1" . "\t";
+	}
+
+	#
+	if ( $nb_mutated_with_explained_set != 0 ) {
+	    print $OUT $nb_explained_gene . "\t"
+		. (
+		sprintf( "%.3f",
+			 $nb_explained_gene / $nb_mutated_with_explained_set )
+		) . "\n";
+	}
+	else {
+	    print $OUT $nb_explained_gene . "\t" . "-1" . "\n";
+	}
+
+	#
+	last if ( $nb_sample == $nb_sample_to_test );
+    }
 }
 
 print $MODULE "LAST_SAMPLE\n";

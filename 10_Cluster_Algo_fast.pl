@@ -85,113 +85,108 @@ my $nb_sample_to_test = -10;
 my %BUG_not_present_in_network = ();
 
 foreach my $dir_sample (@the_DATA_DIR) {
-	$mutation_file_name      = "$data_dir/$dir_sample/Genelist_Status.txt";
-	$mutation_file_name_cell = "$data_dir/$dir_sample/Genelist_Status_cell.txt";
-	if ( -e $mutation_file_name || -e $mutation_file_name_cell ) {
-		if ( -e $mutation_file_name_cell ) {
-			$mutation_file_name = $mutation_file_name_cell;
-		}
-
-		@sample_gene_mutated_list = ();
-
-		#initilazed the mutational/expression gene status
-		%sample_gene_mutated = ();
-		my @sample_gene_dysregulated;
-
-		for ( my $i = 0 ; $i < @index_to_gene ; $i++ ) {
-			my @status_tab = ( 0, 0 );    #DOWN, UP
-			$sample_gene_dysregulated[$i] = \@status_tab;
-			$sample_gene_mutated_list[$i] = 0;
-		}
-		my %all_explained_gene_set = ();
-
-		$nb_sample++;
-		$nb_mutated_gene = 0;
-
-		open( FILE, "$mutation_file_name" );
-		print STDERR " *** read file $mutation_file_name\n";
-
-		#read the file to obtain the dysregulated and mutated genes
-		while (<FILE>) {
-			chop($_);
-			@line = split( /\t/, $_ );
-			my @parts     = split( /_/, $line[0] );
-			my $gene_name = $parts[0];
-			my $status    = $parts[1];
-			if ( exists $gene_to_index{$gene_name} )
-			{ #filter out all the gene_name that do not belong to the input network
-				my $gene_ID = get_ID( $gene_name, \%gene_to_index );
-
-				if ( $status eq "MUT" || $status eq "AMPL" || $status eq "DEL" )
-				{
-
-					$sample_gene_mutated{$gene_ID} = 1;
-					$sample_gene_mutated_list[$gene_ID] = 1;
-				}
-				else {
-					$fold_change = $line[1];
-					if ( ( $status eq "UP" || $status eq "DOWN" )
-						&& abs($fold_change) >= $fold_change_threshold )
-					{
-						$status_ID = 0;
-						$status_ID = 1 if ( $status eq "UP" );
-						$sample_gene_dysregulated[$gene_ID]->[$status_ID] =
-						  $fold_change;
-						$dysregulated_gene_frequency[$gene_ID]->[$status_ID]
-						  ->{$dir_sample} = $gene_name;
-
-#print STDERR "|".$_."|\t".$sample_gene_dysregulated[$gene_ID]->[$status_ID]."\t".$status_ID."\n";
-					}
-				}
-			}
-			else {
-				$BUG_not_present_in_network{$gene_name} = 1;
-			}
-		}
-		close(FILE);
-
-		if ( ( keys %sample_gene_mutated ) == 0 ) {
-			print STDERR "SAMPLE WITHOUT MUTATED GENES WEIRD !!!\n";
-			<STDIN>;
-		}
-
-		foreach my $gene ( keys %sample_gene_mutated ) {
-			$nb_mutated_gene++;
-
-	#print "****MUT TTT $gene ".(get_name($gene))."\n";
-	#print STDERR "- construct explainend gene set for ".(get_name($gene))."\n";
-			for ( $i = 0 ; $i < @index_to_gene ; $i++ ) { $explored[$i] = -1; }
-
-			#my @false = ();
-			$explained_gene_set =
-			  construct_explained_gene_set_dijkstra( $gene,
-				\@sample_gene_dysregulated, \@sample_gene_mutated_list,
-				\@explored, $depth_th, $hub_th );
-
-			if ( @{$explained_gene_set} > 1 ) {
-
-				#compute the frequency
-				foreach $eg ( @{$explained_gene_set} ) {
-					for ( my $dys_status = 0 ; $dys_status < 2 ; $dys_status++ )
-					{
-						if ( $sample_gene_dysregulated[$eg]->[$dys_status] )
-						{    #to remove the mutated genes and the jocker!
-
-							#the gene is explain at least by gene at that depth
-							foreach $depth (@length_th) {
-								if ( $explored[$eg] <= $depth ) {
-									$explained_gene_frequency_all_depth{$depth}
-									  ->[$eg]->[$dys_status]->{$dir_sample} =
-									  $gene;
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-		last if ( $nb_sample == $nb_sample_to_test );
+    $mutation_file_name      = "$data_dir/$dir_sample/Genelist_Status.txt";
+    if ( -e $mutation_file_name) {
+	@sample_gene_mutated_list = ();
+	
+	#initilazed the mutational/expression gene status
+	%sample_gene_mutated = ();
+	my @sample_gene_dysregulated;
+	
+	for ( my $i = 0 ; $i < @index_to_gene ; $i++ ) {
+	    my @status_tab = ( 0, 0 );    #DOWN, UP
+	    $sample_gene_dysregulated[$i] = \@status_tab;
+	    $sample_gene_mutated_list[$i] = 0;
 	}
+	my %all_explained_gene_set = ();
+	
+	$nb_sample++;
+	$nb_mutated_gene = 0;
+	
+	open( FILE, "$mutation_file_name" );
+	print STDERR " *** read file $mutation_file_name\n";
+	
+	#read the file to obtain the dysregulated and mutated genes
+	while (<FILE>) {
+	    chop($_);
+	    @line = split( /\t/, $_ );
+	    my @parts     = split( /_/, $line[0] );
+	    my $gene_name = $parts[0];
+	    my $status    = $parts[1];
+	    if ( exists $gene_to_index{$gene_name} )
+	    { #filter out all the gene_name that do not belong to the input network
+		my $gene_ID = get_ID( $gene_name, \%gene_to_index );
+		
+		if ( $status eq "MUT" || $status eq "AMPL" || $status eq "DEL" )
+		{
+		    
+		    $sample_gene_mutated{$gene_ID} = 1;
+		    $sample_gene_mutated_list[$gene_ID] = 1;
+		}
+		else {
+		    $fold_change = $line[1];
+		    if ( ( $status eq "UP" || $status eq "DOWN" )
+			 && abs($fold_change) >= $fold_change_threshold )
+		    {
+			$status_ID = 0;
+			$status_ID = 1 if ( $status eq "UP" );
+			$sample_gene_dysregulated[$gene_ID]->[$status_ID] =
+			    $fold_change;
+			$dysregulated_gene_frequency[$gene_ID]->[$status_ID]
+			    ->{$dir_sample} = $gene_name;
+			
+#print STDERR "|".$_."|\t".$sample_gene_dysregulated[$gene_ID]->[$status_ID]."\t".$status_ID."\n";
+		    }
+		}
+	    }
+	    else {
+		$BUG_not_present_in_network{$gene_name} = 1;
+	    }
+	}
+	close(FILE);
+	
+	if ( ( keys %sample_gene_mutated ) == 0 ) {
+	    print STDERR "SAMPLE WITHOUT MUTATED GENES WEIRD !!!\n";
+	    <STDIN>;
+	}
+	
+	foreach my $gene ( keys %sample_gene_mutated ) {
+	    $nb_mutated_gene++;
+	    
+	    #print "****MUT TTT $gene ".(get_name($gene))."\n";
+	    #print STDERR "- construct explainend gene set for ".(get_name($gene))."\n";
+	    for ( $i = 0 ; $i < @index_to_gene ; $i++ ) { $explored[$i] = -1; }
+	    
+	    #my @false = ();
+	    $explained_gene_set =
+		construct_explained_gene_set_dijkstra( $gene,
+						       \@sample_gene_dysregulated, \@sample_gene_mutated_list,
+						       \@explored, $depth_th, $hub_th );
+	    
+	    if ( @{$explained_gene_set} > 1 ) {
+		
+		#compute the frequency
+		foreach $eg ( @{$explained_gene_set} ) {
+		    for ( my $dys_status = 0 ; $dys_status < 2 ; $dys_status++ )
+		    {
+			if ( $sample_gene_dysregulated[$eg]->[$dys_status] )
+			{    #to remove the mutated genes and the jocker!
+			    
+			    #the gene is explain at least by gene at that depth
+			    foreach $depth (@length_th) {
+				if ( $explored[$eg] <= $depth ) {
+				    $explained_gene_frequency_all_depth{$depth}
+				    ->[$eg]->[$dys_status]->{$dir_sample} =
+					$gene;
+				}
+			    }
+			}
+		    }
+		}
+	    }
+	}
+	last if ( $nb_sample == $nb_sample_to_test );
+    }
 }
 
 $BUG_nb_not_present_in_network = ( keys %BUG_nb_not_present_in_network );

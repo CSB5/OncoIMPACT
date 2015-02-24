@@ -58,58 +58,53 @@ if ( $network_type eq "DRIVER_NET" ) {
 #Collect the fold change of each gene to compute the module impact
 %all_sample_gene_dysregulated = ();
 for ( my $i = $NB_PARAM_SCRIPT ; $i < @ARGV ; $i++ ) {
-	@tmp = split( /\,/, $ARGV[$i] );
-	$sample_data_dir = $tmp[0];
+    @tmp = split( /\,/, $ARGV[$i] );
+    $sample_data_dir = $tmp[0];
 
-	opendir( DIR, $sample_data_dir );
-	@the_DATA_DIR = readdir(DIR);
-	close(DIR);
-	foreach my $dir_sample (@the_DATA_DIR) {
-		$mutation_file_name =
-		  "$sample_data_dir/$dir_sample/Genelist_Status.txt";
-		$mutation_file_name_cell =
-		  "$sample_data_dir/$dir_sample/Genelist_Status_cell.txt";
+    opendir( DIR, $sample_data_dir );
+    @the_DATA_DIR = readdir(DIR);
+    close(DIR);
+    foreach my $dir_sample (@the_DATA_DIR) {
+	$mutation_file_name =
+	    "$sample_data_dir/$dir_sample/Genelist_Status.txt";
+	
+	#print STDERR " *** $mutation_file_name\n";
+	if ( -e $mutation_file_name){
 
-		#print STDERR " *** $mutation_file_name\n";
-		if ( -e $mutation_file_name || -e $mutation_file_name_cell ) {
-			if ( -e $mutation_file_name_cell ) {
-				$mutation_file_name = $mutation_file_name_cell;
-			}
+	    open( FILE, "$mutation_file_name" );
 
-			open( FILE, "$mutation_file_name" );
-
-			#read the file to obtain the dysregulated and mutated genes
-			my %sample_gene_dysregulated = ();
-			while (<FILE>) {
-				chop($_);
-				@line = split( /\t/, $_ );
-				my @parts = split( /_/, $line[0] );
-				my $gene_name = $parts[0];
-				if ( exists $gene_to_index{$gene_name} ) {
-					my $gene_ID = get_ID( $gene_name, \%gene_to_index );
-					my $status = $parts[1];
-					if ( ( $status eq "UP" || $status eq "DOWN" ) ) {
-						$fold_change = $line[1];
-						$sample_gene_dysregulated{$gene_ID} = abs($fold_change);
+	    #read the file to obtain the dysregulated and mutated genes
+	    my %sample_gene_dysregulated = ();
+	    while (<FILE>) {
+		chop($_);
+		@line = split( /\t/, $_ );
+		my @parts = split( /_/, $line[0] );
+		my $gene_name = $parts[0];
+		if ( exists $gene_to_index{$gene_name} ) {
+		    my $gene_ID = get_ID( $gene_name, \%gene_to_index );
+		    my $status = $parts[1];
+		    if ( ( $status eq "UP" || $status eq "DOWN" ) ) {
+			$fold_change = $line[1];
+			$sample_gene_dysregulated{$gene_ID} = abs($fold_change);
 
 #if($dir_sample eq "SNU119_OVARY" && $gene_ID == 3569){
 #print STDERR "|".$_."|\t".$gene_ID."\t".$status."\t".$fold_change."\n";#<STDIN>
 #print STDERR " *** *** WEIRD TEST ".($sample_gene_dysregulated{3569})."\n";
 #}
 
-					   #$sample_gene_dysregulated{$line[0]} = abs($fold_change);
-					   #$sample_gene_dysregulated{$line[0]} = abs($fold_change);
-					   #
-					}
-				}
-			}
-			close(FILE);
-			$all_sample_gene_dysregulated{$dir_sample} =
-			  \%sample_gene_dysregulated;
+			#$sample_gene_dysregulated{$line[0]} = abs($fold_change);
+			#$sample_gene_dysregulated{$line[0]} = abs($fold_change);
+			#
+		    }
+		}
+	    }
+	    close(FILE);
+	    $all_sample_gene_dysregulated{$dir_sample} =
+		\%sample_gene_dysregulated;
 
 #print STDERR " *** WEIRD TEST ".($all_sample_gene_dysregulated{"SNU119_OVARY"}->{3569})."\n";
-		}
 	}
+    }
 }
 
 my %alteration_freq;
