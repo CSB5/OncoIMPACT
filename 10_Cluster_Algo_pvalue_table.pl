@@ -9,7 +9,7 @@ my (
 	$nb_random_sample, $THE_GENE_ID,
 	$THE_GENE_STATUS,  $THE_GENE_FREQ_EXPLAINED,
 	$out_file_table,   $FAST_CALL_FLAG,
-	$script_dir
+	$script_dir, $seed
 ) = @ARGV;
 
 #$dir_TCGA_sample -> directory where the data are organize
@@ -19,6 +19,10 @@ my (
 #$hub_th -> No Gene that is connected to more that $hub_th other gene will be included.
 
 require "$script_dir/Construct_network.pl";
+
+if($seed != -1){
+    srand($seed);
+}
 
 $FLAG_PRINT_TABLE = 0;
 $FLAG_PRINT_TABLE = 1 if ( $FAST_CALL_FLAG == 0 );

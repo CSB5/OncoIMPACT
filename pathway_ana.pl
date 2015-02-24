@@ -1,8 +1,14 @@
 #!/usr/bin/perl
 use warnings;
 
-my ( $step, $data_dir, $fraction_real_sample_used_parameter_inferance,  $nb_thread, $network_type, $script_dir )
+my ( $step, $data_dir, $fraction_real_sample_used_parameter_inferance,  $nb_thread, $network_type, $script_dir, $test_case)
   = @ARGV;
+
+my $test_flag = 0;
+if(defined $test_case && $test_case eq "TEST"){
+    $test_flag = 1;
+}
+
 
 $MAX_FRAC_DISREGULATED_GENE   = 0.5;
 $MIN_MEDIAN_DISREGULATED_GENE = 300;
@@ -12,6 +18,13 @@ $MIN_MEDIAN_DISREGULATED_GENE = 300;
 
 $NB_SIMULATED_DATA_SET_PARAMETER = 100;
 $NB_SIMULATED_DATA_SET_PVALUE    = 500;
+$SEED = -1;
+
+if($test_flag){
+    $NB_SIMULATED_DATA_SET_PARAMETER = 2;
+    $NB_SIMULATED_DATA_SET_PVALUE    = 5;
+    $SEED = 1;
+}
 
 
 $main_result_dir = "$data_dir/../oncoIMPACT_analysis";
@@ -137,7 +150,7 @@ if ($RUN_TEST_PARAM) {
 	if ( !-d $test_param_dir ) {
 	    `mkdir $test_param_dir`;
 	    print STDERR "Parameter Estimation\n";
-	    $exe = "$sim_path $data_dir $network_type $fraction_real_sample_used_parameter_inferance $NB_SIMULATED_DATA_SET_PARAMETER MUT_UNFIXED $test_param_dir $script_dir 2> /dev/null";
+	    $exe = "$sim_path $data_dir $network_type $fraction_real_sample_used_parameter_inferance $NB_SIMULATED_DATA_SET_PARAMETER MUT_UNFIXED $test_param_dir $script_dir $SEED 2> /dev/null";
 	    run_exe($exe);
 	}
 	
@@ -208,7 +221,7 @@ if ($RUN_DYS_SIGNIFICANCE) {
 
 	#Compute the significance
 	$FAST_CALL_FLAG = 1;
-	$exe            = "$phenotype_pvalue_path $data_dir $main_result_dir $network_type $best_depth_value $best_hub_value $best_log2_fold_change 0.05 $NB_SIMULATED_DATA_SET_PVALUE $nb_thread $FAST_CALL_FLAG $script_dir 2> /dev/null";
+	$exe            = "$phenotype_pvalue_path $data_dir $main_result_dir $network_type $best_depth_value $best_hub_value $best_log2_fold_change 0.05 $NB_SIMULATED_DATA_SET_PVALUE $nb_thread $FAST_CALL_FLAG $script_dir $SEED 2> /dev/null";
 	run_exe($exe);
 }
 

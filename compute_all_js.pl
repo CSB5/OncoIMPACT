@@ -93,7 +93,7 @@ sub construct_distribution{
 	if(! -s $file){
 	    print STDERR " *** Aborting! the file $file is empty\n";
 	}
-	exit 2;
+	exit 2; 
     }
 }
 

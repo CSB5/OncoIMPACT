@@ -2,7 +2,7 @@
 use warnings;
 
 #If FAST_CALL_FLAG is true: the method stop if at least one random sample have a higher frequency than the real frequency: $THE_GENE_FREQ_EXPLAINED
-my ($sample_dir, $main_result_dir, $network_type, $depth_th, $hub_th, $log2_fold_change_threshold, $explained_freq_threshold, $nb_random_test, $nb_process, $FAST_CALL_FLAG, $script_dir) = @ARGV;
+my ($sample_dir, $main_result_dir, $network_type, $depth_th, $hub_th, $log2_fold_change_threshold, $explained_freq_threshold, $nb_random_test, $nb_process, $FAST_CALL_FLAG, $script_dir, $seed) = @ARGV;
 
 require "$script_dir/Construct_network.pl";
 
@@ -130,7 +130,7 @@ if($compute_pvalue){
 		else{
 		    #Run the construction of the table
 		    #$FAST_CALL_FLAG = 0;
-		    $exe = "$script_dir/10_Cluster_Algo_pvalue_table.pl $sample_dir $network_type $depth_th $hub_th 0 $log2_fold_change_threshold $nb_random_test $g $d $count_explained $out_file_table  $FAST_CALL_FLAG $script_dir 2> /dev/null > $pvalue_file";
+		    $exe = "$script_dir/10_Cluster_Algo_pvalue_table.pl $sample_dir $network_type $depth_th $hub_th 0 $log2_fold_change_threshold $nb_random_test $g $d $count_explained $out_file_table  $FAST_CALL_FLAG $script_dir $seed 2> /dev/null > $pvalue_file";
 		    print $OUT $exe."\n";
 		}
 	    }

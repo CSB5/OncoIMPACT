@@ -2,7 +2,7 @@
 use warnings;
 
 my ( $data_dir, $network_type, $fraction_real_sample_used, $nb_random_sample,
-	$flag_mutation_fixed, $out_dir, $script_dir )
+	$flag_mutation_fixed, $out_dir, $script_dir, $seed )
   = @ARGV;
 
 require "$script_dir/Construct_network.pl";
@@ -21,7 +21,9 @@ if ( $network_type eq "DRIVER_NET" ) {
 		\@connections, $script_dir );
 }
 
-srand(78);
+if($seed != -1){
+    srand($seed);
+}
 `rm -r $out_dir`;
 `mkdir $out_dir`;
 
