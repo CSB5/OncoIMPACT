@@ -190,11 +190,7 @@ foreach my $dir_sample (@the_DATA_DIR) {
 }
 
 $BUG_nb_not_present_in_network = ( keys %BUG_nb_not_present_in_network );
-print STDERR
-"********* $BUG_nb_not_present_in_network genes not taken into account as they do not belong to the network\n";
-print STDERR "\n";
-print STDERR `cat SAMPLE_stats.dat`;
-print STDERR "\n";
+
 
 #show the explained gene frequency
 #add the expression frequency and look at the spearman correlation !!!!

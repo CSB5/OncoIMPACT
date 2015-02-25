@@ -137,7 +137,8 @@ if($compute_pvalue){
 	close(OUT);
     }
     foreach $cmd_file(@all_cmds){
-	$cmd = "cat $cmd_file | xargs -I cmd -P $nb_process bash -c cmd > /dev/null \n";
+	#$cmd = "cat $cmd_file | xargs -I cmd -P $nb_process bash -c cmd > /dev/null \n";
+	$cmd = "cat $cmd_file | xargs -L 1 -P $nb_process perl &> /dev/null \n";
 	print STDERR $cmd;#<STDIN>;
 	print `$cmd`;
     }
