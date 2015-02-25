@@ -36,24 +36,22 @@ __Input file format__
 
 
 __Config file__
-You will need to create a config file for your specific project. The config file needs to contain the following parameters (you may refer to the sample config file provided with the scripts under <Scripts Directory/sampleConfig.cfg).
+You will need to create a config file for your specific project. The config file needs to contain the following parameters (you may refer to the sample config file provided with the scripts under <Scripts Directory/sampleConfig.cfg>).
 
--outDir=<Full path to destination folder. Two sub-folders will be created in this directory: INCOMPLETE_SAMPLES (for incomplete samples) and COMPLETE_SAMPLES (for complete samples)>	
+	-outDir: Full path to destination folder. Two sub-folders will be created in this directory: INCOMPLETE_SAMPLES (for incomplete samples) and COMPLETE_SAMPLES (for complete samples)
 
--scriptDir=<Full path to folder where oncoIMPACT is installed>
+    -scriptDir: Full path to folder where oncoIMPACT is installed
 
--numThreads=<Number of threads to use>
+    -numThreads: Number of threads to use
 
--cnv=<Full path to cnv data matrix>
+    -cnv: Full path to cnv data matrix
 
--exp=<Full path to expression data matrix>
+    -exp: Full path to expression data matrix
 
--snp=<Full path to snp data matrix>
-
-
+    -snp: Full path to snp data matrix
 
 When you are ready to run the oncoIMPACT pipeline, simply enter the following command
-	oncoIMPACT.pl <path to config file>
+oncoIMPACT.pl <path to config file> <fraction of samples used during parameters estimation>
 	
 
 
@@ -64,11 +62,30 @@ We have provided two sample datasets for to test the oncoIMPACT pipeline which y
 -Glioblastoma.tgz: Glioblastoma TCGA dataset
 -Ovarian.tgz: Ovarian cancer TCGA dataset
 
+To run OncoIMPACT on those dataset: oncoIMPACT.pl <path to config file> 0.2
+
+
+----------
+Change Log
+----------
+v0.9.2:
+- NEW: Option in configuration file to run oncoIMPACT in test mode which performs the simulation with fewer iterations and fixed seed. In this mode, oncoIMPACT will complete in less than 2 hours on a single thread.
+- NEW: Sanity checks to ensure validity of parameters provided by user
+- FIX: Improved disk space utilization
+- FIX: Improved compatibility with Mac OS.
+
+
+v0.9.1:
+- oncoIMPACT will now avoid reproducing the input files if COMPLETE_SAMPLES folder exists
+- fix for bugs introduced in last version
+
 
 
 ---------
 Licensing
 ---------
+The MIT License (MIT)
+Copyright (c) 2014 Genome Institute of Singapore
 
 
 
