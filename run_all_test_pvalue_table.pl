@@ -129,7 +129,7 @@ if($compute_pvalue){
 		else{
 		    #Run the construction of the table
 		    #$FAST_CALL_FLAG = 0;
-		    $exe = "$script_dir/10_Cluster_Algo_pvalue_table.pl $sample_dir $network_type $depth_th $hub_th 0 $log2_fold_change_threshold $nb_random_test $g $d $count_explained $out_file_table  $FAST_CALL_FLAG $script_dir $seed 2> /dev/null > $pvalue_file";
+		    $exe = "$script_dir/10_Cluster_Algo_pvalue_table.pl $sample_dir $network_type $depth_th $hub_th 0 $log2_fold_change_threshold $nb_random_test $g $d $count_explained $pvalue_file $out_file_table  $FAST_CALL_FLAG $script_dir $seed 2> /dev/null";
 		    print $OUT $exe."\n";
 		}
 	    }
