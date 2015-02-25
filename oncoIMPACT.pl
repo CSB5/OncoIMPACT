@@ -275,7 +275,7 @@ sub merge_and_clean {
 	close(DIR);
 
 	foreach my $dir (@samples) {
-		next if (substr($dir,0,1) eq ".");
+		next if (substr($dir,0,1) eq "." || $dir eq "INCOMPLETE_SAMPLES" || $dir eq "COMPLETE_SAMPLES");
 		$sample_dir = "$config{'outDir'}/$dir";
 		$cnv_file   = "$sample_dir/CNV_Data.txt";
 		$snv_file   = "$sample_dir/SNP_Data.txt";
