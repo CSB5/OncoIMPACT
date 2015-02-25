@@ -49,6 +49,8 @@ You will need to create a config file for your specific project. The config file
     -exp: Full path to expression data matrix
 
     -snp: Full path to snp data matrix
+    
+    -testMode: Boolean flag to toggle test mode (valid options: 0 / 1)
 
 When you are ready to run the oncoIMPACT pipeline, simply enter the following command
 oncoIMPACT.pl <path to config file> <fraction of samples used during parameters estimation>
@@ -69,7 +71,7 @@ To run OncoIMPACT on those dataset: oncoIMPACT.pl <path to config file> 0.2
 Change Log
 ----------
 v0.9.2:
-- NEW: Option in configuration file to run oncoIMPACT in test mode which performs the simulation with fewer iterations and fixed seed. In this mode, oncoIMPACT will complete in less than 2 hours on a single thread.
+- NEW: Option in configuration file to run oncoIMPACT in test mode which performs the simulation with fewer iterations and fixed seed. In this mode, oncoIMPACT should complete in less than 2 hours using a single thread.
 - NEW: Sanity checks to ensure validity of parameters provided by user
 - FIX: Improved disk space utilization
 - FIX: Improved compatibility with Mac OS.
