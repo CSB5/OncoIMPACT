@@ -14,20 +14,30 @@ $MIN_MEDIAN_DISREGULATED_GENE = 300;
 
 $NB_SIMULATED_DATA_SET_PARAMETER = 100;
 $NB_SIMULATED_DATA_SET_PVALUE    = 500;
+#
 $EXPLAINED_FREQ_THRESHOLD = 0.05;
+#
 $SEED = -1;
 
 #To be changed for RNA-SEQ data
-$min_log2_fold_change_threshold = 1;
-$max_log2_fold_change_threshold = 3;
+$MIN_LOG2_FOLD_CHANGE_THRESHOLD = 1;
+$MAX_LOG2_FOLD_CHANGE_THRESHOLD = 3;
 
+$MIN_HUB_THRESHOLD = 10;
+$MAX_HUB_THRESHOLD = 100;
 
 if(defined $test_case && $test_case eq "TEST"){
     $NB_SIMULATED_DATA_SET_PARAMETER = 2;
     $NB_SIMULATED_DATA_SET_PVALUE    = 5;
-    $EXPLAINED_FREQ_THRESHOLD = 0.4;
-    $min_log2_fold_change_threshold = 1.5;
-    $max_log2_fold_change_threshold = 2;
+    #
+    $EXPLAINED_FREQ_THRESHOLD = 0.6;
+    #
+    $MIN_LOG2_FOLD_CHANGE_THRESHOLD = 1.5;
+    $MAX_LOG2_FOLD_CHANGE_THRESHOLD = 2;
+    #
+    $MIN_HUB_THRESHOLD = 40;
+    $MAX_HUB_THRESHOLD = 50;
+    #
     $SEED = 1;
 }
 
@@ -116,15 +126,15 @@ if ($RUN_TEST_PARAM) {
 #
 #min should not have a sample median diff gene larger that 50% of the gene with an expression
 	for (
-		$i = $min_log2_fold_change_threshold ;
-		$i <= $max_log2_fold_change_threshold ;
+		$i = $MIN_LOG2_FOLD_CHANGE_THRESHOLD ;
+		$i <= $MAX_LOG2_FOLD_CHANGE_THRESHOLD ;
 		$i += 0.5
 	  )
 	{
 		if ( $median_sample_diff_gene{$i} / $NB_GENE_IN_NETWORK <
-			$MAX_FRAC_DISREGULATED_GENE )
+		     $MAX_FRAC_DISREGULATED_GENE )
 		{
-			$min_log2_fold_change_threshold = $i;
+		    $MIN_LOG2_FOLD_CHANGE_THRESHOLD = $i;
 			last;
 		}
 	}
@@ -132,20 +142,20 @@ if ($RUN_TEST_PARAM) {
 #max should not have a sample median diff gene smaller than 0.01 of the gene with an expression
 
 	for (
-		$i = $max_log2_fold_change_threshold ;
-		$i >= $min_log2_fold_change_threshold ;
+		$i = $MAX_LOG2_FOLD_CHANGE_THRESHOLD ;
+		$i >= $MIN_LOG2_FOLD_CHANGE_THRESHOLD ;
 		$i -= 0.5
 	  )
 	{
 		if ( $median_sample_diff_gene{$i} >= $MIN_MEDIAN_DISREGULATED_GENE ) {
-			$max_log2_fold_change_threshold = $i;
+			$MAX_LOG2_FOLD_CHANGE_THRESHOLD = $i;
 			last;
 		}
 	}
 
 	#for rna-seq data, need to changed
-	#$min_log2_fold_change_threshold = 1;
-	#$max_log2_fold_change_threshold = 1;
+	#$MIN_LOG2_FOLD_CHANGE_THRESHOLD = 1;
+	#$MAX_LOG2_FOLD_CHANGE_THRESHOLD = 1;
 
 	#1 run the simulation
 	#the simulation are perfomrmed only if the $test_param_dir is empty
@@ -159,14 +169,14 @@ if ($RUN_TEST_PARAM) {
 #2 Run the inference method with different parameters
 #this method do not re-run any the test of random/real sample that have been previously analysed (good in case of crash)
 	if ( !-e $js_file ) {
-	    $exe = "$test_param_path $test_param_dir $network_type $min_log2_fold_change_threshold $max_log2_fold_change_threshold $fraction_real_sample_used_parameter_inferance $NB_SIMULATED_DATA_SET_PARAMETER $nb_thread $script_dir $test_case";
+	    $exe = "$test_param_path $test_param_dir $network_type $MIN_LOG2_FOLD_CHANGE_THRESHOLD $MAX_LOG2_FOLD_CHANGE_THRESHOLD $MIN_HUB_THRESHOLD $MAX_HUB_THRESHOLD $fraction_real_sample_used_parameter_inferance $NB_SIMULATED_DATA_SET_PARAMETER $nb_thread $script_dir ";
 	    run_exe($exe);
 	    
 	    #exit;
 	    
 #3 compute the JS distance of the explnained frequency of the genes of random data with the real data
 
-	    $exe = "$compute_js_path $test_param_dir $NB_SIMULATED_DATA_SET_PARAMETER $min_log2_fold_change_threshold $max_log2_fold_change_threshold $script_dir > $js_file";
+	    $exe = "$compute_js_path $test_param_dir $NB_SIMULATED_DATA_SET_PARAMETER $MIN_LOG2_FOLD_CHANGE_THRESHOLD $MAX_LOG2_FOLD_CHANGE_THRESHOLD $MIN_HUB_THRESHOLD $MAX_HUB_THRESHOLD > $js_file";
 	    run_exe($exe);
 	    
 	    #compress the directory

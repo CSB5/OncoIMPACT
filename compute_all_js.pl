@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 use warnings;
 
-my ($test_param_dir, $nb_random_sample, $min_log2_fold_change_threshold, $max_log2_fold_change_threshold, $test_case) = @ARGV;
+my ($test_param_dir, $nb_random_sample, $min_log2_fold_change_threshold, $max_log2_fold_change_threshold, $min_hub_threshold, $max_hub_threshold) = @ARGV;
 
 my $OUT;
 my @nb_significant_true;
@@ -16,19 +16,12 @@ for(my $i = $min_log2_fold_change_threshold; $i <= $max_log2_fold_change_thresho
     push(@fold_change_th, $i);
 }
 
-#Hub threshold possible value
-my $min_hub = 10;
-my $max_hub = 100;
-if($test_case eq "TEST"){
-    $min_hub = 30;
-    $max_hub = 50;
-}
 
 my @hub_th;
-for(my $i = $min_hub; $i <= $max_hub; $i += 5){
+for(my $i = $min_hub_threshold; $i <= $max_hub_threshold; $i += 5){
     push(@hub_th, $i);
 }
-push(@hub_th, 1000000) if($test_case eq "TEST");;
+push(@hub_th, 1000000) if($max_hub_threshold >= 100);
 
 #path length possible value
 my @length_th = ();
