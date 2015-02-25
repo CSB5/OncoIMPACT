@@ -8,7 +8,7 @@ my (
 	$nb_joker,         $log2_fold_change_threshold,
 	$nb_random_sample, $THE_GENE_ID,
 	$THE_GENE_STATUS,  $THE_GENE_FREQ_EXPLAINED,
-	$out_file_table,   $FAST_CALL_FLAG,
+	$out_file, $out_file_table,   $FAST_CALL_FLAG,
 	$script_dir, $seed
 ) = @ARGV;
 
@@ -171,8 +171,8 @@ foreach my $dir_sample (@the_DATA_DIR) {
 	#########################################################################################
 
 	if ( ( keys %sample_gene_mutated ) == 0 ) {
-	    print STDERR "SAMPLE WITHOUT MUTATED GENES WEIRD !!!\n";
-	    <STDIN>;
+	    #print STDERR "SAMPLE WITHOUT MUTATED GENES WEIRD !!!\n";
+	    #<STDIN>;
 	}
 
     }
@@ -318,16 +318,16 @@ $pvalue = 0;
 for ( my $p = 0 ; $p < @all_random_freq ; $p++ ) {
 	$pvalue++ if ( $all_random_freq[$p] >= $THE_GENE_FREQ_EXPLAINED );
 }
-$pvalue =
-  $pvalue /
-  $nb_random_sample_tested
-  ; #should be equal to the number of random test in the case of a correct solution
-print ""
-  . ( get_name( $gene_ID, \@index_to_gene ) ) . "_"
-  . $dys_status_corress[$dys_status] . "\t"
-  . $THE_GENE_FREQ_EXPLAINED . "\t"
-  . $pvalue . "\t"
-  . ( $nb_random_sample - $nb_random_sample_tested ) . "\n";
+$pvalue =   $pvalue / $nb_random_sample_tested; #should be equal to the number of random test in the case of a correct solution
+
+open(OUT, ">$out_file");
+print OUT ""
+    . ( get_name( $gene_ID, \@index_to_gene ) ) . "_"
+    . $dys_status_corress[$dys_status] . "\t"
+    . $THE_GENE_FREQ_EXPLAINED . "\t"
+    . $pvalue . "\t"
+    . ( $nb_random_sample - $nb_random_sample_tested ) . "\n";
+close(OUT);
 
 sub compute_random_ID {
 	my ( $true_ID, $fixed_ID ) = @_;
