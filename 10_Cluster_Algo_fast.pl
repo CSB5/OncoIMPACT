@@ -199,6 +199,8 @@ print STDERR "\n";
 #show the explained gene frequency
 #add the expression frequency and look at the spearman correlation !!!!
 #Output the mutated gene set that explained each gene
+my $res_dys;
+my $res_exp;
 
 if ( !$flag_real ) {
     foreach $depth_th (@length_th) {
@@ -208,12 +210,12 @@ if ( !$flag_real ) {
 	#$OUT = $all_out{$depth_th};
 	for ( $i = 0 ; $i < @index_to_gene ; $i++ ) {
 	    for ( my $dys_status = 0 ; $dys_status < 2 ; $dys_status++ ) {
-		my $res_exp =
-		    keys %{ $explained_gene_frequency_all_depth{$depth_th}->[$i]
-				->[$dys_status] };
-		my $res_dys =
-		    keys %{ $dysregulated_gene_frequency[$i]->[$dys_status] };
+		
+		$res_dys = keys %{ $dysregulated_gene_frequency[$i]->[$dys_status] };
+		next if($res_dys == 0);
 
+		$res_exp = keys %{ $explained_gene_frequency_all_depth{$depth_th}->[$i]->[$dys_status] };
+		
 		#print STDERR "".(sprintf("%.3f",$res_dys/$nb_sample))."\n";<STDIN>;
 		$g = get_name( $i, \@index_to_gene );
 
@@ -260,8 +262,8 @@ else {
 		for ( $i = 0 ; $i < @index_to_gene ; $i++ ) {
 		    for ( my $dys_status = 0 ; $dys_status < 2 ; $dys_status++ )
 		    {
-			my $res_exp = 0;
-			my $res_dys = 0;
+			$res_exp = 0;
+			$res_dys = 0;
 			foreach my $s ( keys %the_real_sample_map ) {
 
 			    #print STDERR " *** sss $s\n";<STDIN>;
@@ -274,6 +276,8 @@ else {
 				    $dysregulated_gene_frequency[$i]->[$dys_status]
 				    ->{$s} );
 			}
+
+			next if($res_dys == 0);
 
 			#print STDERR "".(sprintf("%.3f",$res_dys/$nb_sample))."\n";<STDIN>;
 			$g = get_name( $i, \@index_to_gene );

@@ -1,13 +1,9 @@
 #!/usr/bin/perl
 use warnings;
 
-my ( $step, $data_dir, $fraction_real_sample_used_parameter_inferance,  $nb_thread, $network_type, $script_dir, $test_case)
-  = @ARGV;
+my ( $step, $data_dir, $fraction_real_sample_used_parameter_inferance,  $nb_thread, $network_type, $script_dir, $test_case) = @ARGV;
 
-my $test_flag = 0;
-if(defined $test_case && $test_case eq "TEST"){
-    $test_flag = 1;
-}
+print STDERR " **** pathway_ana step:$step data_dir:$data_dir fraction_real_sample_used_parameter_inferance:$fraction_real_sample_used_parameter_inferance  nb_thread:$nb_thread network_type:$network_type script_dir:$script_dir test_case:$test_case\n";
 
 
 $MAX_FRAC_DISREGULATED_GENE   = 0.5;
@@ -18,11 +14,30 @@ $MIN_MEDIAN_DISREGULATED_GENE = 300;
 
 $NB_SIMULATED_DATA_SET_PARAMETER = 100;
 $NB_SIMULATED_DATA_SET_PVALUE    = 500;
+#
+$EXPLAINED_FREQ_THRESHOLD = 0.05;
+#
 $SEED = -1;
 
-if($test_flag){
+#To be changed for RNA-SEQ data
+$MIN_LOG2_FOLD_CHANGE_THRESHOLD = 1;
+$MAX_LOG2_FOLD_CHANGE_THRESHOLD = 3;
+
+$MIN_HUB_THRESHOLD = 10;
+$MAX_HUB_THRESHOLD = 100;
+
+if(defined $test_case && $test_case eq "TEST"){
     $NB_SIMULATED_DATA_SET_PARAMETER = 2;
     $NB_SIMULATED_DATA_SET_PVALUE    = 5;
+    #
+    $EXPLAINED_FREQ_THRESHOLD = 0.6;
+    #
+    $MIN_LOG2_FOLD_CHANGE_THRESHOLD = 1.5;
+    $MAX_LOG2_FOLD_CHANGE_THRESHOLD = 2;
+    #
+    $MIN_HUB_THRESHOLD = 40;
+    $MAX_HUB_THRESHOLD = 50;
+    #
     $SEED = 1;
 }
 
@@ -106,23 +121,20 @@ if ($RUN_TEST_PARAM) {
 #to compute the min and max log fold change that will be in the interval [1 - 3] with op of 0.5
 	my %median_sample_diff_gene = ();
 	compute_median_sample_diff( $sample_stats_file, \%median_sample_diff_gene );
-	$min_log2_fold_change_threshold = 1;
+		
 
-	#To be changed for array data
-	$max_log2_fold_change_threshold = 3;
-	
 #
 #min should not have a sample median diff gene larger that 50% of the gene with an expression
 	for (
-		$i = $min_log2_fold_change_threshold ;
-		$i <= $max_log2_fold_change_threshold ;
+		$i = $MIN_LOG2_FOLD_CHANGE_THRESHOLD ;
+		$i <= $MAX_LOG2_FOLD_CHANGE_THRESHOLD ;
 		$i += 0.5
 	  )
 	{
 		if ( $median_sample_diff_gene{$i} / $NB_GENE_IN_NETWORK <
-			$MAX_FRAC_DISREGULATED_GENE )
+		     $MAX_FRAC_DISREGULATED_GENE )
 		{
-			$min_log2_fold_change_threshold = $i;
+		    $MIN_LOG2_FOLD_CHANGE_THRESHOLD = $i;
 			last;
 		}
 	}
@@ -130,20 +142,20 @@ if ($RUN_TEST_PARAM) {
 #max should not have a sample median diff gene smaller than 0.01 of the gene with an expression
 
 	for (
-		$i = $max_log2_fold_change_threshold ;
-		$i >= $min_log2_fold_change_threshold ;
+		$i = $MAX_LOG2_FOLD_CHANGE_THRESHOLD ;
+		$i >= $MIN_LOG2_FOLD_CHANGE_THRESHOLD ;
 		$i -= 0.5
 	  )
 	{
 		if ( $median_sample_diff_gene{$i} >= $MIN_MEDIAN_DISREGULATED_GENE ) {
-			$max_log2_fold_change_threshold = $i;
+			$MAX_LOG2_FOLD_CHANGE_THRESHOLD = $i;
 			last;
 		}
 	}
 
 	#for rna-seq data, need to changed
-	#$min_log2_fold_change_threshold = 1;
-	#$max_log2_fold_change_threshold = 1;
+	#$MIN_LOG2_FOLD_CHANGE_THRESHOLD = 1;
+	#$MAX_LOG2_FOLD_CHANGE_THRESHOLD = 1;
 
 	#1 run the simulation
 	#the simulation are perfomrmed only if the $test_param_dir is empty
@@ -157,14 +169,14 @@ if ($RUN_TEST_PARAM) {
 #2 Run the inference method with different parameters
 #this method do not re-run any the test of random/real sample that have been previously analysed (good in case of crash)
 	if ( !-e $js_file ) {
-	    $exe = "$test_param_path $test_param_dir $network_type $min_log2_fold_change_threshold $max_log2_fold_change_threshold $fraction_real_sample_used_parameter_inferance $NB_SIMULATED_DATA_SET_PARAMETER $nb_thread $script_dir";
+	    $exe = "$test_param_path $test_param_dir $network_type $MIN_LOG2_FOLD_CHANGE_THRESHOLD $MAX_LOG2_FOLD_CHANGE_THRESHOLD $MIN_HUB_THRESHOLD $MAX_HUB_THRESHOLD $fraction_real_sample_used_parameter_inferance $NB_SIMULATED_DATA_SET_PARAMETER $nb_thread $script_dir ";
 	    run_exe($exe);
 	    
 	    #exit;
 	    
 #3 compute the JS distance of the explnained frequency of the genes of random data with the real data
 
-	    $exe = "$compute_js_path $test_param_dir $NB_SIMULATED_DATA_SET_PARAMETER $min_log2_fold_change_threshold $max_log2_fold_change_threshold $script_dir > $js_file";
+	    $exe = "$compute_js_path $test_param_dir $NB_SIMULATED_DATA_SET_PARAMETER $MIN_LOG2_FOLD_CHANGE_THRESHOLD $MAX_LOG2_FOLD_CHANGE_THRESHOLD $MIN_HUB_THRESHOLD $MAX_HUB_THRESHOLD > $js_file";
 	    run_exe($exe);
 	    
 	    #compress the directory
@@ -194,7 +206,7 @@ while (<FILE>) {
 
 #Check validity of parameter values
 if($best_log2_fold_change == 0 || $best_hub_value == 0 || $best_depth_value == 0){
-    print STDERR " *** Aborting! The paramater values are not correctly setted best_log2_fold_change:$best_log2_fold_change best_hub_value:$best_hub_value best_depth_value:$best_depth_value\n";
+    print STDERR " *** Aborting! The paramater values are not correctly initialized best_log2_fold_change:$best_log2_fold_change best_hub_value:$best_hub_value best_depth_value:$best_depth_value\n";
     exit 2;
 }
 
@@ -221,7 +233,7 @@ if ($RUN_DYS_SIGNIFICANCE) {
 
 	#Compute the significance
 	$FAST_CALL_FLAG = 1;
-	$exe            = "$phenotype_pvalue_path $data_dir $main_result_dir $network_type $best_depth_value $best_hub_value $best_log2_fold_change 0.05 $NB_SIMULATED_DATA_SET_PVALUE $nb_thread $FAST_CALL_FLAG $script_dir $SEED 2> /dev/null";
+	$exe            = "$phenotype_pvalue_path $data_dir $main_result_dir $network_type $best_depth_value $best_hub_value $best_log2_fold_change $EXPLAINED_FREQ_THRESHOLD $NB_SIMULATED_DATA_SET_PVALUE $nb_thread $FAST_CALL_FLAG $script_dir $SEED";
 	run_exe($exe);
 }
 

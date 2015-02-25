@@ -4,18 +4,18 @@ use warnings;
 #use strict;
 
 my (
-	$test_param_dir,                 $network_type,
-	$min_log2_fold_change_threshold, $max_log2_fold_change_threshold,
-	$flag_all_sample_use,            $nb_random_sample,
-	$nb_process,                     $script_dir
+    $test_param_dir,                 $network_type,
+    $min_log2_fold_change_threshold, $max_log2_fold_change_threshold,
+    $min_hub_threshold, $max_hub_threshold,
+    $flag_all_sample_use,            $nb_random_sample,
+    $nb_process,                     $script_dir, $test_case
 ) = @ARGV;
 
-#avg connexion 14
 my @hub_th;
-for ( my $i = 10 ; $i <= 100 ; $i += 5 ) {
+for ( my $i = $min_hub_threshold ; $i <= $max_hub_threshold ; $i += 5 ) {
 	push( @hub_th, $i );
 }
-push( @hub_th, 1000000 );
+push( @hub_th, 1000000 ) if($max_hub_threshold >= 100);;
 
 my @fold_change_th = ();
 for (
