@@ -19,6 +19,7 @@ Installation
 ------------
 Download and uncompress the latest version
 	tar -zxvf oncoIMPACT.tgz
+	chmod +x oncoIMPACT_v0.9.2/*.pl
 
 
 
