@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 use warnings;
 
-my ( $step, $data_dir, $fraction_real_sample_used_parameter_inferance,  $nb_thread, $network_type, $script_dir, $test_case) = @ARGV;
+my ( $step, $data_dir, $data_type, $nb_thread, $network_type, $script_dir, $test_case) = @ARGV;
 
-print STDERR " **** pathway_ana step:$step data_dir:$data_dir fraction_real_sample_used_parameter_inferance:$fraction_real_sample_used_parameter_inferance  nb_thread:$nb_thread network_type:$network_type script_dir:$script_dir test_case:$test_case\n";
+print STDERR " **** pathway_ana step:$step data_dir:$data_dir nb_thread:$nb_thread network_type:$network_type script_dir:$script_dir test_case:$test_case\n";
 
 
 $MAX_FRAC_DISREGULATED_GENE   = 0.5;
@@ -20,8 +20,13 @@ $EXPLAINED_FREQ_THRESHOLD = 0.05;
 $SEED = -1;
 
 #To be changed for RNA-SEQ data
-$MIN_LOG2_FOLD_CHANGE_THRESHOLD = 1;
-$MAX_LOG2_FOLD_CHANGE_THRESHOLD = 3;
+my $MIN_LOG2_FOLD_CHANGE_THRESHOLD = 1;
+my $MAX_LOG2_FOLD_CHANGE_THRESHOLD = 3;
+
+if($data_type eq "RNA_SEQ"){
+    $MIN_LOG2_FOLD_CHANGE_THRESHOLD = 1;
+    $MAX_LOG2_FOLD_CHANGE_THRESHOLD = 1;
+}
 
 $MIN_HUB_THRESHOLD = 10;
 $MAX_HUB_THRESHOLD = 100;
@@ -42,7 +47,7 @@ if(defined $test_case && $test_case eq "TEST"){
 }
 
 
-$main_result_dir = "$data_dir/../oncoIMPACT_analysis";
+$main_result_dir = "$data_dir/../ANALYSIS";
 run_exe("mkdir $main_result_dir") unless ( -d $main_result_dir );
 my $RUN_STATS            = 1;
 my $RUN_TEST_PARAM       = 1;
@@ -90,10 +95,10 @@ my $result_path           = "$script_dir/export_gene_list.pl";
 $sample_stats_dir  = "$main_result_dir/SAMPLE_STATS";
 $sample_stats_file = "$sample_stats_dir/basic_stats.dat";
 if ($RUN_STATS) {
-	run_exe("mkdir $sample_stats_dir") unless ( -d $sample_stats_dir );
-	$exe =
-"$basic_stats_path $data_dir $network_type $script_dir >  $sample_stats_file 2> /dev/null";
-	run_exe($exe);
+    
+    run_exe("mkdir $sample_stats_dir") unless ( -d $sample_stats_dir );
+    $exe = "$basic_stats_path $data_dir $network_type $script_dir >  $sample_stats_file 2> /dev/null";
+    run_exe($exe);
 }
 
 #die
@@ -105,7 +110,7 @@ if ($RUN_STATS) {
 #########################
 # I PARAMETER INFERANCE #
 #########################
-$test_param_dir = "$main_result_dir/TEST_PARAM_$fraction_real_sample_used_parameter_inferance";
+$test_param_dir = "$main_result_dir/TEST_PARAM";
 $js_file = "$test_param_dir\_js.dat";
 
 if ($RUN_TEST_PARAM) {
@@ -114,62 +119,72 @@ if ($RUN_TEST_PARAM) {
 	$NB_GENE_IN_NETWORK = 9448 if ( $network_type eq "DRIVER_NET" );
 	$NB_GENE_IN_NETWORK = 9261 if ( $network_type eq "NETBOX" );
 
-	$nb_sample = `wc -l $sample_stats_file | cut -d " " -f 1`;
-	chop $nb_sample;
-	$nb_sample--;
-
+	
 #to compute the min and max log fold change that will be in the interval [1 - 3] with op of 0.5
 	my %median_sample_diff_gene = ();
 	compute_median_sample_diff( $sample_stats_file, \%median_sample_diff_gene );
 		
 
-#
-#min should not have a sample median diff gene larger that 50% of the gene with an expression
-	for (
+	#Some check for array data to avaoid getting too much dysregulated genes. 
+	#Need to update for RNA_SEQ data based on normalized read depth
+	if($data_type eq "ARRAY"){
+	    #min should not have a sample median diff gene larger that 50% of the gene with an expression
+	    for (
 		$i = $MIN_LOG2_FOLD_CHANGE_THRESHOLD ;
 		$i <= $MAX_LOG2_FOLD_CHANGE_THRESHOLD ;
 		$i += 0.5
-	  )
-	{
+		)
+	    {
 		if ( $median_sample_diff_gene{$i} / $NB_GENE_IN_NETWORK <
 		     $MAX_FRAC_DISREGULATED_GENE )
 		{
 		    $MIN_LOG2_FOLD_CHANGE_THRESHOLD = $i;
-			last;
+		    last;
 		}
-	}
-
-#max should not have a sample median diff gene smaller than 0.01 of the gene with an expression
-
-	for (
+	    }
+	    
+	    #max should not have a sample median diff gene smaller than 0.01 of the gene with an expression
+	    
+	    for (
 		$i = $MAX_LOG2_FOLD_CHANGE_THRESHOLD ;
 		$i >= $MIN_LOG2_FOLD_CHANGE_THRESHOLD ;
 		$i -= 0.5
-	  )
-	{
+		)
+	    {
 		if ( $median_sample_diff_gene{$i} >= $MIN_MEDIAN_DISREGULATED_GENE ) {
-			$MAX_LOG2_FOLD_CHANGE_THRESHOLD = $i;
-			last;
+		    $MAX_LOG2_FOLD_CHANGE_THRESHOLD = $i;
+		    last;
 		}
+	    }
+	}
+	
+	$nb_sample = `wc -l $sample_stats_file | cut -d " " -f 1`;
+	chop $nb_sample;
+	$nb_sample--;
+
+	#Number of sample during the parameter estimation stage
+	#In case of large sample size 50 samples will be sub-sample from the whole data set
+	$nb_sample_used = 50;
+	$flag_all_sample_used = "FRACTION";
+	if($nb_sample < $nb_sample_used){
+	    $nb_sample_used = $nb_sample;
+	    $flag_all_sample_used = "ALL";
 	}
 
-	#for rna-seq data, need to changed
-	#$MIN_LOG2_FOLD_CHANGE_THRESHOLD = 1;
-	#$MAX_LOG2_FOLD_CHANGE_THRESHOLD = 1;
 
 	#1 run the simulation
 	#the simulation are perfomrmed only if the $test_param_dir is empty
 	if ( !-d $test_param_dir ) {
 	    `mkdir $test_param_dir`;
 	    print STDERR "Parameter Estimation\n";
-	    $exe = "$sim_path $data_dir $network_type $fraction_real_sample_used_parameter_inferance $NB_SIMULATED_DATA_SET_PARAMETER MUT_UNFIXED $test_param_dir $script_dir $SEED 2> /dev/null";
+	    $exe = "$sim_path $data_dir $network_type $nb_sample_used $NB_SIMULATED_DATA_SET_PARAMETER MUT_UNFIXED $test_param_dir $script_dir $SEED 2> /dev/null";
 	    run_exe($exe);
 	}
 	
 #2 Run the inference method with different parameters
 #this method do not re-run any the test of random/real sample that have been previously analysed (good in case of crash)
 	if ( !-e $js_file ) {
-	    $exe = "$test_param_path $test_param_dir $network_type $MIN_LOG2_FOLD_CHANGE_THRESHOLD $MAX_LOG2_FOLD_CHANGE_THRESHOLD $MIN_HUB_THRESHOLD $MAX_HUB_THRESHOLD $fraction_real_sample_used_parameter_inferance $NB_SIMULATED_DATA_SET_PARAMETER $nb_thread $script_dir ";
+	    $exe = "$test_param_path $test_param_dir $network_type $MIN_LOG2_FOLD_CHANGE_THRESHOLD $MAX_LOG2_FOLD_CHANGE_THRESHOLD $MIN_HUB_THRESHOLD $MAX_HUB_THRESHOLD $flag_all_sample_used $NB_SIMULATED_DATA_SET_PARAMETER $nb_thread $script_dir ";
 	    run_exe($exe);
 	    
 	    #exit;
@@ -285,21 +300,6 @@ if ($RUN_DRIVER_INFEREANCE) {
     $exe = "$result_path $data_dir $gene_list_dir/FINAL_MODULE.dat $network_type $best_log2_fold_change $gene_list_dir $script_dir 2> /dev/null";
     run_exe($exe);
     
-	#########################
-	# IV OUTPUT THE RESULTS #
-	#########################
-
-	##
-	##
-
-	#####
-	#####
-# $gene_list_dir = "$main_result_dir/GENE_LIST_IMPACT";
-#run_exe("mkdir $gene_list_dir") unless(-d $gene_list_dir);
-#run_exe("cp $res_dir/FINAL_MODULE_IMPACT.dat $gene_list_dir/FINAL_MODULE.dat");
-# $exe = "$result_path $reference_annotation_file $data_dir $gene_list_dir/FINAL_MODULE.dat $network_type $best_log2_fold_change $gene_list_dir";
-#run_exe($exe);
-
 }
 
 sub compute_median_sample_diff {

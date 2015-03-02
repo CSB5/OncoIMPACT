@@ -68,7 +68,7 @@ sub construct_network_pair{
 	}
 	#print STDERR " *** $index1 $index2\t".@{$connections->[$index1]}."\t".@{$connections->[$index2]}."\n";<STDIN>;
     }
-    print STDERR " *** end construction\n";
+    #print STDERR " *** end construction\n";
 }
 
 

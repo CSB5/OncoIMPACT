@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 use warnings;
 
-my ( $data_dir, $network_type, $fraction_real_sample_used, $nb_random_sample,
+my ( $data_dir, $network_type, $nb_real_sample_used, $nb_random_sample,
 	$flag_mutation_fixed, $out_dir, $script_dir, $seed )
   = @ARGV;
 
@@ -85,11 +85,11 @@ foreach my $dir_s (@the_DATA_DIR) {
 }
 
 #Compute the number of sample used
-$nb_real_sample_used = @all_real_dir;
-if ( $fraction_real_sample_used ne "ALL" ) {
-    $nb_real_sample_used =
-	sprintf( "%.0f", $nb_real_sample_used * $fraction_real_sample_used );
-}
+#$nb_real_sample_used = @all_real_dir;
+#if ( $nb_real_sample_usedfraction_real_sample_used ne "ALL" ) {
+#    $nb_real_sample_used =
+#	sprintf( "%.0f", $nb_real_sample_used * $fraction_real_sample_used );
+#}
 
 my @sample_mutated_gene_name = ();
 my @sample_dys_gene_name     = ();

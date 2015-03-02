@@ -7,7 +7,7 @@ my (
     $test_param_dir,                 $network_type,
     $min_log2_fold_change_threshold, $max_log2_fold_change_threshold,
     $min_hub_threshold, $max_hub_threshold,
-    $flag_all_sample_use,            $nb_random_sample,
+    $flag_all_sample_used,            $nb_random_sample,
     $nb_process,                     $script_dir, $test_case
 ) = @ARGV;
 
@@ -34,7 +34,7 @@ my @all_cmds    = ();
 
 $cmd_file_prefix = "param_cmd";
 for ( $i = 0 ; $i < $nb_random_sample ; $i++ ) {
-    if ( $flag_all_sample_use eq "ALL" ) {
+    if ( $flag_all_sample_used eq "ALL" ) {
 	my $real_dir = "$test_param_dir/REAL_$i";
 	if ( !-d $real_dir ) {
 	    $exe = "ln -s REAL_ALL/ $test_param_dir/REAL_$i";
@@ -74,7 +74,7 @@ sub push_call {
 	$flag_real = 0;
 	$dir_res   = "$data_dir/EXPLAINED_FREQ_DIFF_$log2_fold_change_threshold";
 
-	if ( index( $data_dir, "REAL" ) != -1 && $flag_all_sample_use ne "ALL" ) {
+	if ( index( $data_dir, "REAL" ) != -1 && $flag_all_sample_used ne "ALL" ) {
 		$flag_real = 1;
 		$dir_res   = "$data_dir/..";
 	}
