@@ -10,7 +10,7 @@ Usage:
 	oncoIMPACT.pl <config file> <optional: 1 to enable debug mode>
 
 Version:
-	0.9.2
+	1.0.0
 
 Author:
 	Burton Chia - chiakhb\@gis.a-star.edu.sg
@@ -133,7 +133,7 @@ if(exists $config{'dataBase'}){
 else{
     print "\nRunning oncoIMPACT. Please wait...";
     run_oncoIMPACT();
-    export_data_base() if(exists $config{'database_export'});
+    export_data_base() if(exists $config{'databaseExport'});
 }
 
 system("rm -r $config{'outDir'}/COMPLETE_SAMPLES $config{'outDir'}/INCOMPLETE_SAMPLES");
@@ -166,7 +166,7 @@ sub import_data_base{
 }
 
 sub export_data_base{
-    $data_base_export_dir = $config{'database_export'};
+    $data_base_export_dir = $config{'databaseExport'};
     $analysis_dir = "$config{'outDir'}/ANALYSIS";
     system("mkdir $data_base_export_dir");
     #Copy the oncoIMPACT prediction
