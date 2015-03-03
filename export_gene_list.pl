@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 use warnings;
 
-my ($data_dir, $module_file, $network_type, $fold_change_threshold, $out_dir, $script_dir) = @ARGV;
+my ($data_dir, $module_file, $network_type, $fold_change_threshold, $large_data_set_driver_stats_file, $out_dir, $script_dir) = @ARGV;
 
 require "$script_dir/Construct_network.pl";
 
@@ -27,6 +27,20 @@ while(<FILE>){
     $pan_cancer{$line[0]} = 1 if($line[7] eq "High_Confidence_Driver");
 }
 close(FILE);
+
+#Read the large data set info in case of the use of a data base
+my %large_data_set_driver_stats = ();
+if($large_data_set_driver_stats_file ne "NONE"){
+    open(FILE, $large_data_set_driver_stats_file);
+    while(<FILE>){
+	chop $_;
+	@line = split(/\t/, $_);
+	my @stats = ($line[14], $line[6], $line[1]);#IMPACT DRIVER_FREQUENCY  MUTATION_FREQUENCY
+	$large_data_set_driver_stats{$line[0]} = \@stats;
+    }
+    close(FILE);
+}
+
 
 
 my %gene_to_index;
@@ -392,97 +406,73 @@ my $sample_out_dir = "$out_dir/SAMPLE_SPECIFIC_DATA";
 `rm -r $sample_out_dir`;
 `mkdir $sample_out_dir`;
 
-my $SAMPLE_DATA_HEADER = "#GENE\tCOORD\tTYPE\tDRIVER\tRAW\tCS";
+#my $SAMPLE_DATA_HEADER = "#GENE\tTYPE\tSAMPLE_IMPACT\tDATA_SET_IMPACT\tDRIVER_FREQUENCY\tMUTATION_FREQUENCY\tCANCER_CENSUS\tPAN_CANCER";
+my $SAMPLE_DATA_HEADER = "#GENE\tTYPE\tSAMPLE_IMPACT\tDATA_SET_IMPACT\tDRIVER_FREQUENCY\tMUTATION_FREQUENCY\tCANCER_CENSUS\tPAN_CANCER";
+if($large_data_set_driver_stats_file ne "NONE"){
+    $SAMPLE_DATA_HEADER = "#GENE\tTYPE\tSAMPLE_IMPACT\tDATA_BASE_IMPACT\tDATA_BASE_DRIVER_FREQUENCY\tDATA_BASE_MUTATION_FREQUENCY\tCANCER_CENSUS\tPAN_CANCER";
+}
+
 
 #read the annotation file
 my %all_annotation = ();
 #read_annotation_file();
 
 foreach $s (keys %sample_driver){
-
-    #for mutation
-    open(OUT, ">$sample_out_dir/temp.dat");
-    foreach $g (keys %{$sample_gene_mutated{$s}}){
-	$g_name = get_name($g, \@index_to_gene);
-	$type = "";
-	foreach $t (keys %{$sample_gene_mutated{$s}->{$g}}){
-	    $type .= $t."_" if($t ne "BOTH" && $sample_gene_mutated{$s}->{$g}->{$t} != 0);
-	}
-	chop $type;
-	print OUT $g_name."\t".
-	    #(write_coord($g_name))."\t".
-	    $type."\t".(sprintf("%.3f", $infer_mut_list{$g}->{"ALL"}/$nb_samples))."\t".(sprintf("%.3f", $naive_mut_list{$g}->{"ALL"}/$nb_samples))."\t".(get_gene_annotation_status($g_name))."\n";		
-	
-    }
-    close(OUT);
-    $file = "$sample_out_dir/mut_$s.dat";
-    `echo -e \"$SAMPLE_DATA_HEADER\" > $file`;
-    `sort -k5,5 -nr $sample_out_dir/temp.dat >> $file`;
+    
 
     #for driver
     open(OUT, ">$sample_out_dir/temp.dat");
     foreach $g (keys %{$sample_driver{$s}}){
 	$g_name = get_name($g, \@index_to_gene);
-	print OUT 
-	    $g_name."\t".
+	$str = $g_name."\t".
 	    #(write_coord($g_name))."\t".
-	    $sample_driver{$s}->{$g}."\t".(sprintf("%.3f", $infer_mut_list{$g}->{"ALL"}/$nb_samples))."\t".(sprintf("%.3f", $naive_mut_list{$g}->{"ALL"}/$nb_samples)).
-	    "\t".(get_gene_annotation_status($g_name)).
-	    "\t".$sample_gene_impact{$s}->{$g}->{"MUT"}."\t".$sample_gene_impact_filtered{$s}->{$g}->{"MUT"}.
-	    "\t".$gene_impact{$g}->{"MUT"}."\t".$gene_impact_filtered{$g}->{"MUT"}.
-	    "\n";
-    }
-    close(OUT);
-    
-    #sorting based on unfiltered impact
-    #in case of same value (possible if in same module) order according to average gene impact in the whole samples
-    $file = "$sample_out_dir/impact_driver_$s.dat";
-    `echo -e \"$SAMPLE_DATA_HEADER\" > $file`;
-    `sort -k8,8 -nr -k10,10 -nr $sample_out_dir/temp.dat >> $file`;
-    
-    $file = "$sample_out_dir/impact_filtered_driver_$s.dat";
-    `echo -e \"$SAMPLE_DATA_HEADER\" > $file`;
-    `sort -k9,9 -nr -k11,11 -nr $sample_out_dir/temp.dat >> $file`;
-    
-    $file = "$sample_out_dir/driver_$s.dat";
-    `echo -e \"$SAMPLE_DATA_HEADER\" > $file`;
-    `sort -k4,4 -nr $sample_out_dir/temp.dat >> $file`;
-    
-    
-    #for dysregulated genes
-    open(OUT, ">$sample_out_dir/temp.dat");
-    foreach $g (keys %{$sample_gene_dysregulated{$s}}){
-	$g_name = get_name($g, \@index_to_gene);
-	$type = "";
-	foreach $t (keys %{$sample_gene_dysregulated{$s}->{$g}}){
-	    if($sample_gene_dysregulated{$s}->{$g}->{$t} != 0){
-		$type = $t;
-		last;
+	    $sample_driver{$s}->{$g}."\t".
+	    $sample_gene_impact_filtered{$s}->{$g}->{"MUT"}."\t";
+	
+	if($large_data_set_driver_stats_file eq "NONE"){
+	    $str .= $gene_impact_filtered{$g}->{"MUT"}."\t".(sprintf("%.3f", $infer_mut_list{$g}->{"ALL"}/$nb_samples))."\t".(sprintf("%.3f", $naive_mut_list{$g}->{"ALL"}/$nb_samples))."\t";
+	}
+	else{
+	    if(exists $large_data_set_driver_stats{$g_name}){
+		$str .= join("\t", @{$large_data_set_driver_stats{$g_name}})."\t";
+	    }
+	    else{
+		$str .= "0\t0\t0\t";
 	    }
 	}
-	print OUT $g_name."\t".
-	    #(write_coord($g_name))."\t".
-	    $type."\t".(sprintf("%.3f", $infer_dys_list{$g}->{$type}/$nb_samples))."\t".(sprintf("%.3f", $naive_dys_list{$g}->{$type}/$nb_samples))."\t".(get_gene_annotation_status($g_name))."\n";	
+	
+	$str .= (get_gene_annotation_status($g_name))."\n";
+	
+	print OUT $str;
+	
     }
     close(OUT);
-    $file = "$sample_out_dir/dys_$s.dat";
+    
+    #sorting based on impact
+    #in case of same value (possible if in same module) order according to average gene impact in the whole samples
+    
+    $file = "$sample_out_dir/$s.txt";
     `echo -e \"$SAMPLE_DATA_HEADER\" > $file`;
-    `sort -k5,5 -nr $sample_out_dir/temp.dat >> $file`;
-
+    `sort -k3,3 -nr -k4,4 -nr $sample_out_dir/temp.dat >> $file`;
+    
+    #$file = "$sample_out_dir/driver_$s.dat";
+    #`echo -e \"$SAMPLE_DATA_HEADER\" > $file`;
+    #`sort -k4,4 -nr $sample_out_dir/temp.dat >> $file`;
+    
 
     #for phenotype
-    open(OUT, ">$sample_out_dir/temp.dat");
-    foreach $g (keys %{$sample_pheno{$s}}){
-	$g_name = get_name($g, \@index_to_gene);
-	$type =  $sample_pheno{$s}->{$g};
-	print OUT $g_name."\t".
+    #open(OUT, ">$sample_out_dir/temp.dat");
+    #foreach $g (keys %{$sample_pheno{$s}}){
+	#$g_name = get_name($g, \@index_to_gene);
+	#$type =  $sample_pheno{$s}->{$g};
+	#print OUT $g_name."\t".
 	    #(write_coord($g_name))."\t".
-	    $type."\t".(sprintf("%.3f", $infer_dys_list{$g}->{$type}/$nb_samples))."\t".(sprintf("%.3f", $naive_dys_list{$g}->{$type}/$nb_samples))."\t".(get_gene_annotation_status($g_name))."\n";	
-    }
-    close(OUT);
-    $file = "$sample_out_dir/phenotype_$s.dat";
-    `echo -e \"$SAMPLE_DATA_HEADER\" > $file`;
-    `sort -k4,4 -nr $sample_out_dir/temp.dat >> $file`;
+	#$type."\t".(sprintf("%.3f", $infer_dys_list{$g}->{$type}/$nb_samples))."\t".(sprintf("%.3f", $naive_dys_list{$g}->{$type}/$nb_samples))."\t".(get_gene_annotation_status($g_name))."\n";	
+    #}
+    #close(OUT);
+    #$file = "$sample_out_dir/phenotype_$s.dat";
+    #`echo -e \"$SAMPLE_DATA_HEADER\" > $file`;
+    #`sort -k4,4 -nr $sample_out_dir/temp.dat >> $file`;
 }
 `rm $sample_out_dir/temp.dat`;
 
@@ -552,59 +542,6 @@ for($i = 0; $i < 4; $i++){
     close(OUT);
 }
 
-#File with header [yes I have to deal with header with the other file]
-
-
-#Gene list for DAVID
-for($i = 0; $i < 2; $i++){
-    if($i == 0){
-	$naive_data = \%naive_mut_list;
-	$infer_data = \%infer_mut_list;
-	$type_order = \@mut_type_order;
-	$out_file_name = "GENE_LIST_ALTERATION";
-    }
-    else{
-	$naive_data = \%naive_dys_list;
-	$infer_data = \%infer_dys_list;
-	$type_order = \@dys_type_order;
-	$out_file_name = "GENE_LIST_DYSREGULATION";
-    }
-    
-    open(OUT_N, ">$out_dir/NAIVE_$out_file_name.dat");
-    open(OUT_I, ">$out_dir/$out_file_name.dat");
-    
-    open(OUT_N_2, ">$out_dir/NAIVE_$out_file_name\_2.dat");
-    open(OUT_I_2, ">$out_dir/$out_file_name\_2.dat");
-
-    open(OUT_N_5, ">$out_dir/NAIVE_$out_file_name\_5.dat");
-
-    foreach $g (keys %{$naive_data}){
-	
-	if($naive_data->{$g}->{"ALL"} != 0){
-	    print OUT_N "".get_name($g, \@index_to_gene)."\n";
-	}
-	#At least in 1 sample
-	if($naive_data->{$g}->{"ALL"} > 1){
-	    print OUT_N_2 "".get_name($g, \@index_to_gene)."\n";
-	}
-	#In at least 5% of the samples
-	if(($naive_data->{$g}->{"ALL"}/$nb_samples) >= 0.05){
-	    print OUT_N_5 "".get_name($g, \@index_to_gene)."\n";
-	}
-	
-	if($infer_data->{$g}->{"ALL"} != 0){
-	    print OUT_I "".get_name($g, \@index_to_gene)."\n";
-	}
-	#At least in 1 sample
-	if($infer_data->{$g}->{"ALL"} > 1){
-	    print OUT_I_2 "".get_name($g, \@index_to_gene)."\n";
-	}
-    }
-    close(OUT_N);close(OUT_N_2);
-    close(OUT_I);close(OUT_I_2);
-    
-}
-#remove the infer gene from the naive gene list
 
 
 open(OUT_ALL_EXPR, ">$out_dir/ALL_EXPR_MATRIX");
@@ -768,6 +705,9 @@ foreach $gene (keys %all_gene_in_module){
 }
 close(OUT_SAMPLE_MODULE);
 close(OUT_MODULE);
+
+run_exe("$out_dir/MATRIX_DIR");
+run_exe("mv $out_dir/*MATRIX $out_dir/MATRIX_DIR");
 
 
 sub get_gene_annotation_status{

@@ -12,7 +12,10 @@ $MIN_MEDIAN_DISREGULATED_GENE = 300;
 #$NB_SIMULATED_DATA_SET_PARAMETER = 100;
 #$NB_SIMULATED_DATA_SET_PVALUE    = 500;
 
+#
+$SAMPLE_USED_DURING_PARAM_EXTIMATION = 50;
 $NB_SIMULATED_DATA_SET_PARAMETER = 100;
+#
 $NB_SIMULATED_DATA_SET_PVALUE    = 500;
 #
 $EXPLAINED_FREQ_THRESHOLD = 0.05;
@@ -32,7 +35,9 @@ $MIN_HUB_THRESHOLD = 10;
 $MAX_HUB_THRESHOLD = 100;
 
 if(defined $test_case && $test_case eq "TEST"){
+    $SAMPLE_USED_DURING_PARAM_EXTIMATION = 10;
     $NB_SIMULATED_DATA_SET_PARAMETER = 2;
+    #
     $NB_SIMULATED_DATA_SET_PVALUE    = 5;
     #
     $EXPLAINED_FREQ_THRESHOLD = 0.6;
@@ -164,7 +169,7 @@ if ($RUN_TEST_PARAM) {
 
 	#Number of sample during the parameter estimation stage
 	#In case of large sample size 50 samples will be sub-sample from the whole data set
-	$nb_sample_used = 50;
+	$nb_sample_used = $SAMPLE_USED_DURING_PARAM_EXTIMATION;
 	$flag_all_sample_used = "FRACTION";
 	if($nb_sample < $nb_sample_used){
 	    $nb_sample_used = $nb_sample;
@@ -286,7 +291,7 @@ if ($RUN_DRIVER_INFEREANCE) {
     $gene_list_dir = "$main_result_dir/GENE_LIST_SAMPLE";
     run_exe("mkdir $gene_list_dir") unless ( -d $gene_list_dir );
     run_exe("cp $res_dir/FINAL_MODULE_SAMPLE.dat $gene_list_dir/FINAL_MODULE.dat");
-    $exe = "$result_path $data_dir $gene_list_dir/FINAL_MODULE.dat $network_type $best_log2_fold_change $gene_list_dir $script_dir 2> /dev/null";
+    $exe = "$result_path $data_dir $gene_list_dir/FINAL_MODULE.dat $network_type $best_log2_fold_change NONE $gene_list_dir $script_dir 2> /dev/null";
     run_exe($exe);
     
     print STDERR "Construct Module [ Relaxed Mode ]\n";
@@ -297,7 +302,7 @@ if ($RUN_DRIVER_INFEREANCE) {
     $gene_list_dir = "$main_result_dir/GENE_LIST";
     run_exe("mkdir $gene_list_dir") unless ( -d $gene_list_dir );
     run_exe("cp $res_dir/FINAL_MODULE.dat $gene_list_dir/FINAL_MODULE.dat");
-    $exe = "$result_path $data_dir $gene_list_dir/FINAL_MODULE.dat $network_type $best_log2_fold_change $gene_list_dir $script_dir 2> /dev/null";
+    $exe = "$result_path $data_dir $gene_list_dir/FINAL_MODULE.dat $network_type $best_log2_fold_change NONE $gene_list_dir $script_dir 2> /dev/null";
     run_exe($exe);
     
 }

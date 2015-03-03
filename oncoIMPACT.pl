@@ -132,7 +132,7 @@ if(exists $config{'dataBase'}){
 }
 else{
     print "\nRunning oncoIMPACT. Please wait...";
-    #run_oncoIMPACT();
+    run_oncoIMPACT();
     export_data_base() if(exists $config{'database_export'});
 }
 
@@ -146,22 +146,23 @@ output_final_result();
 ### Sub-routines ###
 sub import_data_base{
     my $data_base_dir = "$config{'outDir'}/TMP_DATABASE";
-    #Uncompress the data
-    system("mkdir $data_base_dir");
-    system("tar -C $data_base_dir -zxvf  $config{'dataBase'} &> /dev/null");
-    #print STDERR " *** Decompression done\n";<STDIN>;
-    #
-    $config{'dataBaseDir'}=$data_base_dir;
-    #
-    #Construct the directory structure for the data set
-    prep_cnv("$data_base_dir/CNV.dat", $data_base_dir);
-    #print STDERR " *** CNV Done\n";<STDIN>;
-    prep_snp("$data_base_dir/SNP.dat", $data_base_dir);
-    prep_exp("$data_base_dir/EXPR.dat", $data_base_dir);
-    merge_and_clean("$data_base_dir/", "SAMPLE_INFO", "INCOMPLETE_SAMPLES");
-    #
-    system("rm -r $data_base_dir/INCOMPLETE_SAMPLES")
-    
+    if(! -d $data_base_dir){
+	#Uncompress the data
+	system("mkdir $data_base_dir");
+	system("tar -C $data_base_dir -zxvf  $config{'dataBase'} &> /dev/null");
+	#print STDERR " *** Decompression done\n";<STDIN>;
+	#
+	$config{'dataBaseDir'}=$data_base_dir;
+	#
+	#Construct the directory structure for the data set
+	prep_cnv("$data_base_dir/CNV.dat", $data_base_dir);
+	#print STDERR " *** CNV Done\n";<STDIN>;
+	prep_snp("$data_base_dir/SNP.dat", $data_base_dir);
+	prep_exp("$data_base_dir/EXPR.dat", $data_base_dir);
+	merge_and_clean("$data_base_dir/", "SAMPLE_INFO", "INCOMPLETE_SAMPLES");
+	#
+	system("rm -r $data_base_dir/INCOMPLETE_SAMPLES")
+    }
 }
 
 sub export_data_base{
@@ -172,6 +173,12 @@ sub export_data_base{
     system("cp $analysis_dir/TEST_PARAM_js.dat $data_base_export_dir/JS.dat");
     system("cp $analysis_dir/RES_*/MODULE.dat $data_base_export_dir/MODULE.dat");
     system("cp $analysis_dir/RES_*/exp_gene_freq_pvalue.dat $data_base_export_dir/PHENO.dat");
+
+    #Get the gene frequencies 
+    $result_dir = "GENE_LIST";
+    $result_dir = "GENE_LIST_SAMPLE" if($config{'dataType'} eq "RNA_SEQ");
+    system("cp $analysis_dir/$result_dir/ALTERATION.dat $data_base_export_dir/");
+
     #Copy the data set
     system("cp $config{'cnv'} $data_base_export_dir/CNV.dat");
     system("cp $config{'snp'} $data_base_export_dir/SNP.dat");
@@ -387,32 +394,39 @@ sub run_oncoIMPACT {
 sub run_oncoIMPACT_discovery {
 	my ($sysCall, @temp);
 	my $data_base_dir =  $config{'dataBaseDir'};
-	$sysCall = "$config{'scriptDir'}/pathway_ana_uniq_sample.pl $config{'outDir'}/COMPLETE_SAMPLES  $data_base_dir/SAMPLE_INFO $data_base_dir/JS.dat $data_base_dir/PHENO.dat $data_base_dir/MODULE.dat DRIVER_NET $config{'scriptDir'} &> $config{'outDir'}/run.log";
+	$sysCall = "$config{'scriptDir'}/pathway_ana_uniq_sample.pl $config{'outDir'}/COMPLETE_SAMPLES  $data_base_dir/SAMPLE_INFO $data_base_dir/JS.dat $data_base_dir/PHENO.dat $data_base_dir/MODULE.dat $data_base_dir/ALTERATION.dat DRIVER_NET $config{'scriptDir'} &> $config{'outDir'}/run.log";
 	print STDERR "$sysCall\n";
 	system($sysCall);
 }
 
 sub output_final_result{
-	$final_res_file = "$config{'outDir'}/driver_list.txt";
-	
-	print STDERR "Output final driver list in $final_res_file\n\n";
+    
+    $result_dir = "GENE_LIST";
+    $result_dir = "GENE_LIST_SAMPLE" if($config{'dataType'} eq "RNA_SEQ");
+    
+    #The data set driver gene prediction file
+    $final_res_file = "$config{'outDir'}/driver_list.txt";
+    print STDERR "Output final driver list in $final_res_file\n\n";
+    open(OUT, "> $final_res_file");
+    print OUT "GENE\tDRIVER_FREQUENCY\tDRIVER_SNV_FREQUENCY\tDRIVER_DELTION_FREQUENCY\tDRIVER_AMPLIFICATION_FREQUENCY\tCANCER_CENSUS\tPAN_CANCER\tIMPACT\tMUTATION_FREQUENCY\tSNV_FREQUENCY\tDELTION_FREQUENCY\tAMPLIFICATION_FREQUENCY\n";
+    
+    open(IN, "sort -k15,15 -nr $config{'outDir'}/ANALYSIS/$result_dir/ALTERATION.dat |");
+    
+    while(<IN>){
+	chomp(@temp = split(/\t/, $_));
+	print OUT "$temp[0]\t$temp[6]\t$temp[7]\t$temp[8]\t$temp[9]\t$temp[11]\t$temp[12]\t$temp[14]\t$temp[1]\t$temp[2]\t$temp[3]\t$temp[4]\n" if($temp[14] != 0);
+    }
+    
+    close(OUT);
+    close(IN);
 
-	open(OUT, "> $final_res_file");
-	print OUT "GENE\tDRIVER_FREQUENCY\tDRIVER_SNV_FREQUENCY\tDRIVER_DELTION_FREQUENCY\tDRIVER_AMPLIFICATION_FREQUENCY\tCANCER_CENSUS\tPAN_CANCER\tIMPACT\tMUTATION_FREQUENCY\tSNV_FREQUENCY\tDELTION_FREQUENCY\tAMPLIFICATION_FREQUENCY\n";
-
-	$result_dir = "GENE_LIST";
-	$result_dir = "GENE_LIST_SAMPLE" if($config{'dataType'} eq "RNA_SEQ");
-
-	open(IN, "sort -k15,15 -nr $config{'outDir'}/ANALYSIS/$result_dir/ALTERATION.dat |");
-	
-	while(<IN>){
-		chomp(@temp = split(/\t/, $_));
-		print OUT "$temp[0]\t$temp[6]\t$temp[7]\t$temp[8]\t$temp[9]\t$temp[11]\t$temp[12]\t$temp[14]\t$temp[1]\t$temp[2]\t$temp[3]\t$temp[4]\n" if($temp[14] != 0);
-	}
-	
-	close(OUT);
-	close(IN);
-	
+    #The sample specific driver gene prediction file
+    $final_dir = "$config{'outDir'}/sample_driver_list";
+    $intermidate_dir = "$config{'outDir'}/ANALYSIS/$result_dir/SAMPLE_SPECIFIC_DATA";
+    #system("mkdir $final_dir");
+    print STDERR "Output final sample specific driver lists in $final_dir\n\n";
+    system("mv $intermidate_dir $final_dir");
+    
 }    # end run_oncoIMPACT
 
 
@@ -432,3 +446,4 @@ sub read_config {
 	}
 	close(FILE);
 }    # end read_config
+
