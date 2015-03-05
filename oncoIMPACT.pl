@@ -10,7 +10,7 @@ Usage:
 	oncoIMPACT.pl <config file> <optional: 1 to enable debug mode>
 
 Version:
-	1.0.0
+	0.9.3
 
 Author:
 	Burton Chia - chiakhb\@gis.a-star.edu.sg
