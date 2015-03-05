@@ -372,7 +372,10 @@ sub merge_and_clean {
 	    print STDERR " **** [System]$sysCall\n" if $flag_debug;
 	    system($sysCall);
 	}
-	else {
+	elsif(-s $cnv_file
+	       || -s $snv_file
+	       || -s $expr_file )
+	{
 	    $sysCall = "mv $sample_dir $out_dir/$incomplete_sample_dir/";
 	    print STDERR " **** [System]$sysCall\n" if $flag_debug;
 	    system($sysCall);
