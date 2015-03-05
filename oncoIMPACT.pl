@@ -359,9 +359,9 @@ sub merge_and_clean {
 	$cnv_file   = "$sample_dir/CNV_Data.txt";
 	$snv_file   = "$sample_dir/SNP_Data.txt";
 	$expr_file  = "$sample_dir/EXPR_Data.txt";
-	if (   -s $cnv_file
-	       && -s $snv_file
-	       && -s $expr_file )
+	if (   -e $cnv_file
+	       && -e $snv_file
+	       && -e $expr_file )
 	{
 
 	    $out_file_name = "$sample_dir/Genelist_Status.txt";
@@ -372,9 +372,9 @@ sub merge_and_clean {
 	    print STDERR " **** [System]$sysCall\n" if $flag_debug;
 	    system($sysCall);
 	}
-	elsif(-s $cnv_file
-	       || -s $snv_file
-	       || -s $expr_file )
+	elsif( -e $cnv_file
+	       || -e $snv_file
+	       || -e $expr_file )
 	{
 	    $sysCall = "mv $sample_dir $out_dir/$incomplete_sample_dir/";
 	    print STDERR " **** [System]$sysCall\n" if $flag_debug;
