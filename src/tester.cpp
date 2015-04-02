@@ -50,10 +50,6 @@ int main() {
 	readNetwork(filename.c_str(), &network, &geneIdToSymbol, &geneSymbolToId,
 			'\t');
 	int totalGenes = network.size();
-	//printAdjacencyList(&network);
-	//int toSearch = geneSymbolToId.find("EGFR")->second;
-	//BFS(&network, toSearch);
-	//DFS(&network, toSearch);
 
 	/*
 	 * Read gene expression matrix from file
@@ -112,7 +108,7 @@ int main() {
 	double minFoldChange = 2;
 	deGenes = countDifferentiallyExpressedGeneForSampleId(
 			&originalGeneExpressionMatrix, sId, minFoldChange);
-	cout << "Sample #0 has " << deGenes << " differentially expressed genes" << endl;
+	//cout << "Sample #0 has " << deGenes << " differentially expressed genes" << endl;
 
 	/*
 	 * Randomly choose sub-sample for tuning parameters
@@ -120,7 +116,8 @@ int main() {
 
 	//Note gene expression and mutation have the same set of samples
 	int numSamples = 50;
-	cout << "randomly choosing " << numSamples << " samples..." << endl;
+	cout << "tuning parameters by using " << numSamples << " samples ..."
+			<< endl;
 
 	//list of samples id to be chose
 	vector<int> rrank(totalSamples);
@@ -156,13 +153,7 @@ int main() {
 	permuteGeneLabels(&genesMut, &permutedGeneLabelsMut);
 
 	/*
-	 * Find explained genes
-	 */
-
-	cout << "finding explained genes..." << endl;
-
-	/*
-	 * Find explained genes: set parameters
+	 * Find explained genes: parameters setting
 	 */
 
 	int minL = 2; // to be used
@@ -171,7 +162,13 @@ int main() {
 	int D = 150;
 	double F = 2;
 
-	cout << "\tcurrent parameters (L, D, F) is " << L << ", " << D << ", " << F << endl;
+	/*
+	 * Find explained genes
+	 */
+
+	cout << "\current parameters (L, D, F) is " << L << ", " << D << ", " << F
+			<< endl;
+	//cout << "finding explained genes ..." << endl;
 
 	/*
 	 * find explained genes for real sub-sample (without gene label permutation)
@@ -181,7 +178,7 @@ int main() {
 	int sampleId = 0; //the first sample
 	for (; sampleId < numSamples; sampleId++) {
 		//cout << "Sample #" << sampleId << endl;
-		vector<double> sampleGeneExpression(totalGenes);	//expression of all genes in the network
+		vector<double> sampleGeneExpression(totalGenes);//expression of all genes in the network
 		getGeneExpressionFromSampleId(subGeneExpression.matrix, &genesEx,
 				&sampleGeneExpression, sampleId, &geneIdToSymbol);
 
@@ -192,7 +189,7 @@ int main() {
 		//get all the explained genes for all mutations in the current sample
 		vector<ExplainedGene> explainedGenes(totalGenes);
 		getExplainedGenes(&explainedGenes, &network, &sampleGeneExpression,
-				&mutatedGeneIds, 4, D, F);
+				&mutatedGeneIds, L, D, F);
 		explainedGenesListReal.push_back(explainedGenes);
 	}
 
@@ -217,7 +214,7 @@ int main() {
 
 		vector<ExplainedGene> explainedGenes(totalGenes);
 		getExplainedGenes(&explainedGenes, &network, &sampleGeneExpression,
-				&mutatedGeneIds, 4, D, F);
+				&mutatedGeneIds, L, D, F);
 		explainedGenesListRandom.push_back(explainedGenes);
 	}
 
@@ -225,69 +222,71 @@ int main() {
 	 * Find phenotype genes
 	 */
 
-	cout << "finding phenotype genes..." << endl;
-
+	cout << "finding phenotype genes ..." << endl;
 
 	// for collecting mutated genes and the corresponding explained genes for all samples
 	// sample, mutated genes, explained genes
-	vector< vector<MutatedAndExplianedGenes> > mutatedAndExplainedGenesListReal;
+	vector<vector<MutatedAndExplianedGenes> > mutatedAndExplainedGenesListReal;
+	vector<vector<int> > mutatedGeneIdsListReal;
+	vector<bool> isExplainedGenes(totalGenes);
+
+	cout << "\tgetting explained genes frequency of the real samples ...\n";
 
 	for (int i = 0; i < totalSamples; ++i) {
-//		cout << "\tSample #" << i << endl;
 
 		//get gene expression of a current sample
 		vector<double> sampleGeneExpression(totalGenes);// to save expression of of all genes in the network
-		getGeneExpressionFromSampleId(&originalGeneExpressionMatrix,
-				&genesEx, &sampleGeneExpression, i, &geneIdToSymbol);
-//		cout << "\tget gene expression" << endl;
+		getGeneExpressionFromSampleId(&originalGeneExpressionMatrix, &genesEx,
+				&sampleGeneExpression, i, &geneIdToSymbol);
 
 		//find mutated genes of a current sample
 		vector<int> mutatedGeneIds; // to store gene id of mutated genes
 		getMutatedGeneIdsFromSampleId(&mutations, &mutatedGeneIds, i,
 				&genesMut);
-//		cout << "\tget mutated genes" << endl;
 
 		//find explained genes of a current sample
-		vector<MutatedAndExplianedGenes> mutatedAndExplainedGenes;
-		getMutatedAndExplainedGenes(&mutatedAndExplainedGenes, &network, &sampleGeneExpression,
-				&mutatedGeneIds, 4, D, F);
-//		cout << "\tget mutated genes and their corresponding explained genes" << endl;
+		vector<MutatedAndExplianedGenes> mutatedAndExplainedGenes(totalGenes);
+		getMutatedAndExplainedGenes(&mutatedAndExplainedGenes, &network,
+				&sampleGeneExpression, &mutatedGeneIds, 4, D, F);
 
 		//add explained genes to the list of all samples
 		mutatedAndExplainedGenesListReal.push_back(mutatedAndExplainedGenes);
-	}
+		mutatedGeneIdsListReal.push_back(mutatedGeneIds);
 
-	//cout << "Finished explained genes for = " << mutatedAndExplainedGenesListReal.size() << endl;
+	}
 
 	// get the frequency of genes in the real dataset
 	vector<int> genesFrequencyReal(totalGenes);
-	addFrequncyForRealDataset(&genesFrequencyReal, &mutatedAndExplainedGenesListReal);
-
+	addFrequncyForRealDataset(&genesFrequencyReal,
+			&mutatedAndExplainedGenesListReal, &mutatedGeneIdsListReal,
+			&isExplainedGenes);
 
 	// the following have to be done 500 times to generate the null distribution
 	vector<vector<int> > nullDistribution(totalGenes);
 	int round = 100;
 
-	cout << "creating null distribution for each gene...";
+	cout << "\tcreating null distribution (using " << round
+			<< " permutations) ... ";
+
 	int progress = 1;
 	int interval = round / 100;
 
 	for (int r = 0; r < round; ++r) {
 		// a list for explained genes of each sample
-		vector< vector< int > > explainedGenesListForPhenotypeGenes;
+		vector<vector<int> > explainedGenesListForPhenotypeGenes;
 
 		//print progression
-		if (r % interval == 0) {
-			const string progStatus = intToStr(progress) + "%";
-			cout << progStatus << flush;
-			progress++;
-			cout << string(progStatus.length(), '\b');
-		}
+//		if (r % interval == 0) {
+//			const string progStatus = intToStr(progress) + "%";
+//			cout << progStatus << flush;
+//			progress++;
+//			cout << string(progStatus.length(), '\b');
+//		}
 
 		// permute the gene labels of each sample independently
 		for (int i = 0; i < totalSamples; ++i) {
 
-//			cout << "For round " << r << " sample #" << i << endl;
+			//cout << "For round " << r << " sample #" << i << endl;
 
 			//permute labels
 			vector<int> permutedGeneLabelsMut;
@@ -295,7 +294,7 @@ int main() {
 			//cout << "\tpermuted gene label" << endl;
 
 			//get gene expression of a current sample
-			vector<double> sampleGeneExpression(totalGenes);// to save expression of of all genes in the network
+			vector<double> sampleGeneExpression(totalGenes); // to save expression of of all genes in the network
 			getGeneExpressionFromSampleId(&originalGeneExpressionMatrix,
 					&genesEx, &sampleGeneExpression, i, &geneIdToSymbol);
 			//cout << "\tcopied gene expression value" << endl;
@@ -308,8 +307,8 @@ int main() {
 
 			//find explained genes of a current sample
 			vector<int> explainedGeneIds(totalGenes);
-			getExplainedGenesOnlyId(&explainedGeneIds, &network, &sampleGeneExpression,
-					&mutatedGeneIds, 4, D, F);
+			getExplainedGenesOnlyId(&explainedGeneIds, &network,
+					&sampleGeneExpression, &mutatedGeneIds, 4, D, F);
 			//cout << "\tfound " << explainedGenes.size() << " explained genes" << endl;
 
 			//add explained genes to the list of all samples
@@ -324,92 +323,116 @@ int main() {
 
 	cout << endl;
 
-	// collect phenotype genes
-	//consider only genes available in the gene expression matrix
-	vector<bool>* isInGeneExpressionMatrix = new vector<bool>(totalGenes);
-	int numGeneEx = genesEx.size();
-	for (int i = 0; i < numGeneEx; ++i) {
-		isInGeneExpressionMatrix->at(genesEx[i]) = true;
-	}
+	//collect phenotype genes
+	//consider only explained genes
+
 	vector<bool> isPhenotypeGenes(totalGenes);	// 1 for yes 0 for no
-	findPhenotypeGenes(&isPhenotypeGenes, &genesFrequencyReal, &nullDistribution, isInGeneExpressionMatrix);
-	delete isInGeneExpressionMatrix;
-	vector<int> pg;
+	findPhenotypeGenes(&isPhenotypeGenes, &genesFrequencyReal,
+			&nullDistribution, &isExplainedGenes);
+
+	vector<int> phenotypeGeneIds;
 	for (int i = 0; i < totalGenes; ++i) {
-		if(isPhenotypeGenes[i] == 1){
-			pg.push_back(i);
+		if (isPhenotypeGenes[i] == 1) {
+			phenotypeGeneIds.push_back(i);
 		}
 	}
-	cout << "There are " << pg.size() << " phenotype genes" << endl;
-//	printGeneSymbols(&pg, &geneIdToSymbol);
-
+	string phenotypeGeneFileName = "phenotype_genes.txt";
+	cout << "\twriting " << phenotypeGeneIds.size() << " phenotype genes to "
+			<< phenotypeGeneFileName << " ..." << endl;
+	saveGeneSymbols(phenotypeGeneFileName.c_str(), &phenotypeGeneIds,
+			&geneIdToSymbol);
 
 	/*
 	 * Find driver genes
 	 */
+
+	cout << "finding driver genes ...\n";
 
 	// map phenotype genes to sample level
 	// just use isPhenotypeGenes to check
 
 	// collect all mutated genes in all samples
 	// just use mutatedAndExplainedGenesListReal (samples, mutated genes, explained genes)
-	vector<bool>* isAMutatedGenesInSamples = new vector<bool>(totalGenes);
+	vector<bool> isMutatedGenes(totalGenes);
 	//for each sample i
 	for (int i = 0; i < totalSamples; ++i) {
+
 		//get all mutated genes and their corresponding explained genes
-		vector<MutatedAndExplianedGenes> mutatedAndExplainedGenes = mutatedAndExplainedGenesListReal[i];
-		int numMutatedGenes = mutatedAndExplainedGenes.size();
+		vector<int> mutatedGeneIds = mutatedGeneIdsListReal[i];
+		int numMutatedGenes = mutatedGeneIds.size();
 
 		//for each mutated gene j
 		for (int j = 0; j < numMutatedGenes; ++j) {
-			isAMutatedGenesInSamples->at(mutatedAndExplainedGenes[j].mutatedGeneId) = true;
+			isMutatedGenes[mutatedGeneIds[j]] = true;
 		}
 	}
 
-
+	cout << "\tcreating bipartite graph ...\n";
 	//create bipartite graph ( mutated gene --- phenotype gene ). This is done on sample level, so have to remember sample id.
 
-	vector<BipartiteEdge>* bipartiteEdges = new vector<BipartiteEdge>[totalGenes];
+	vector<BipartiteEdge>* bipartiteEdges = new vector<BipartiteEdge>(totalGenes);
 
 	//for each sample i
 	for (int i = 0; i < totalSamples; ++i) {
+		cout << "sample #" << i << endl;
+
 		//get all mutated genes and their corresponding explained genes
-		vector<MutatedAndExplianedGenes> mutatedAndExplainedGenes = mutatedAndExplainedGenesListReal[i];
-		int numMutatedGenes = mutatedAndExplainedGenes.size();
+		vector<MutatedAndExplianedGenes> mutatedAndExplainedGenes =
+				mutatedAndExplainedGenesListReal[i];
+		vector<int> mutatedGeneIds = mutatedGeneIdsListReal[i];
+		int numMutatedGenes = mutatedGeneIds.size();
+
+		cout << "# mutated genes = " << numMutatedGenes << endl;
 
 		//for each mutated gene j
 		for (int j = 0; j < numMutatedGenes; ++j) {
-			vector<int> explainedGeneIds = mutatedAndExplainedGenes[j].explainedGeneIds;
-			int mutatedGeneId = mutatedAndExplainedGenes[j].mutatedGeneId;
-			int numExplainedGenes = explainedGeneIds.size();
+			vector<int> explainedGenesFrequency =
+					mutatedAndExplainedGenes[mutatedGeneIds[j]].explainedGenesFreqency;
 
-			//for each explained gene k
-			for (int k = 0; k < numExplainedGenes; ++k) {
-				//if the explained gene k is a phenotype gene, then add to the bipartite graph
-				if(isPhenotypeGenes[explainedGeneIds[k]]){
-					BipartitePhenotypeNode node;
-					node.phenotypeGeneId = explainedGeneIds[k];
-					node.sampleId = i;
-					bipartiteEdges->at(mutatedGeneId).phenotypeGeneIdsAndSampleIds.push_back(node);
+			for (int k = 0; k < totalGenes; ++k) {
+				if(explainedGenesFrequency[k] > 0){
+					cout << k;
+					if(isPhenotypeGenes[k]){
+						cout << " is phenotype gene\n";
+						BipartitePhenotypeNode node;
+						node.phenotypeGeneId = k;
+						node.sampleId = i;
+						bipartiteEdges->at(k).phenotypeGeneIdsAndSampleIds.push_back(node);
+					}else{
+						cout << " is not phenotype gene\n";
+					}
 				}
 			}
 		}
+
+		if(i == 4)
+			break;
 	}
 
 	//greedy minimum set covering
+	cout << "\tperforming greedy minimum set cover algorithm ...\n";
 
+	int numPhenotypeGenes = 0;
+	for (int i = 0; i < totalGenes; ++i) {
+		if(isMutatedGenes[i]){
+			numPhenotypeGenes += bipartiteEdges->at(i).phenotypeGeneIdsAndSampleIds.size();
+		}
+	}
 
+	cout << "\t\ttotal number of edges is " << numPhenotypeGenes << endl;
+	//until all the phenotype genes are covered
+//	while(){
+//
+//	}
 
-	delete isAMutatedGenesInSamples;
-	delete bipartiteEdges;
-
-
+//	delete bipartiteEdges;
 
 	/*
 	 * Stop timer
 	 */
 
-	cout << (float(clock() - begin_time) / CLOCKS_PER_SEC) << " sec\n";
+	cout << "DONE (" << (float(clock() - begin_time) / CLOCKS_PER_SEC)
+			<< " sec)\n";
 
 	return 0;
 }

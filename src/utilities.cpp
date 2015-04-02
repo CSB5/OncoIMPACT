@@ -269,6 +269,13 @@ void printGeneSymbols(vector<int>* geneIds, vector<string>* geneIdToSymbol) {
 	}
 }
 
+void saveGeneSymbols(const char* filename, vector<int>* geneIds, vector<string>* geneIdToSymbol) {
+	vector<string> geneSymbols;
+	mapGeneIdToSymbol(geneIds, &geneSymbols, geneIdToSymbol);
+
+	writeStrVector(filename, &geneSymbols);
+}
+
 /*
  * For permutation
  */

@@ -86,15 +86,20 @@ void getMutatedAndExplainedGenes(vector<MutatedAndExplianedGenes>* mutatedAndExp
 	int totalGenes = network->size();
 	for (int i = 0; i < numMutatedGenes; ++i) {	// for each mutated genes
 		int mutatedGeneId = mutatedGeneIds->at(i);
-		MutatedAndExplianedGenes meg;
-		meg.mutatedGeneId = mutatedGeneId;
-		meg.explainedGeneIds = vector<int>(totalGenes);
+		MutatedAndExplianedGenes* meg = &mutatedAndExplainedGenes->at(mutatedGeneId);
+		meg->explainedGenesFreqency = vector<int>(totalGenes);
 		//BFS for explained genes of the current mutated gene
 		BFSforExplainedGenesIdOnly(network, mutatedGeneId, L, D, F,
-				&meg.explainedGeneIds, sampleGeneExpression);
-		//cout << "\t# explained genes = " << explainGeneIds.size() << endl;
-		mutatedAndExplainedGenes->push_back(meg);
+				&(meg->explainedGenesFreqency), sampleGeneExpression);
 	}
+
+//	cout << "in getMutatedAndExplainedGenes\n";
+//	for (int i = 0; i < numMutatedGenes; ++i) {
+//		for (int j = 0; j < totalGenes; ++j) {
+//			if(mutatedAndExplainedGenes->at(mutatedGeneIds->at(i)).explainedGenesFreqency[j] > 0)
+//				cout << mutatedAndExplainedGenes->at(mutatedGeneIds->at(i)).explainedGenesFreqency[j] << endl;
+//		}
+//	}
 }
 
 
@@ -164,7 +169,7 @@ void BFSforExplainedGenes(TIntAdjList* network, int geneId, int L, int D,
 }
 
 void BFSforExplainedGenesIdOnly(TIntAdjList* network, int geneId, int L, int D,
-		double F, vector<int>* explainedGeneIds, vector<double>* sampleGeneExpression) {
+		double F, vector<int>* explainedGenesFrequency, vector<double>* sampleGeneExpression) {
 	// Mark all the vertices as not visited
 	int numNode = network->size();
 	bool *visited = new bool[numNode];
@@ -207,7 +212,8 @@ void BFSforExplainedGenesIdOnly(TIntAdjList* network, int geneId, int L, int D,
 				int geneId = (*network)[currentGene][j];
 				if (fabs(sampleGeneExpression->at(geneId)) > F) {
 					// is explained gene
-					explainedGeneIds->at(geneId)++;
+					explainedGenesFrequency->at(geneId) += 1;
+//					cout << "gene " << geneId << " is explained" << endl;
 					int degree = getNodeDegree(network, geneId);
 					// check the degree
 					if (degree <= D) {
@@ -222,6 +228,7 @@ void BFSforExplainedGenesIdOnly(TIntAdjList* network, int geneId, int L, int D,
 			}
 		}
 	}
+
 
 	delete[] visited;
 }

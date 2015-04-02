@@ -13,18 +13,20 @@
 
 //input: explainedGenesListForPhenotype = a list of explained genes of all samples
 //output: nullDistribution = a list contain the frequency of each round (of 500 round)
-void addFrequencyForNullDistribution(vector< vector<int> >* nullDistribution, vector< vector<int> >* explainedGenesListForPhenotypeGenes){
-	int totalGenes = nullDistribution->size();	// number of genes in the network
+void addFrequencyForNullDistribution(vector<vector<int> >* nullDistribution,
+		vector<vector<int> >* explainedGenesListForPhenotypeGenes) {
+	int totalGenes = nullDistribution->size(); // number of genes in the network
 	int numSamples = explainedGenesListForPhenotypeGenes->size();
 	vector<int> frequency(totalGenes);
 
 	//for each sample i in a current round
 	for (int i = 0; i < numSamples; ++i) {
-		vector<int> explainedGeneIds = explainedGenesListForPhenotypeGenes->at(i);
+		vector<int> explainedGeneIds = explainedGenesListForPhenotypeGenes->at(
+				i);
 
 		//for each gene in sample i
 		for (int j = 0; j < totalGenes; ++j) {
-			if(explainedGeneIds[j] > 0){
+			if (explainedGeneIds[j] > 0) {
 				frequency[j]++;	//count the number of samples
 			}
 		}
@@ -36,10 +38,9 @@ void addFrequencyForNullDistribution(vector< vector<int> >* nullDistribution, ve
 	}
 }
 
-void addFrequncyForRealDataset(vector<int>* genesFrequency,
-		vector<vector<MutatedAndExplianedGenes> >* mutatedAndExplainedGenesListReal) {
+void addFrequncyForRealDataset(vector<int>* genesFrequency,	vector< vector<MutatedAndExplianedGenes> >* mutatedAndExplainedGenesListReal,
+		vector< vector<int> >* mutatedGeneIdsListReal, vector<bool>* isExplainedGenes) {
 	int totalGenes = genesFrequency->size();
-
 	int numSamples = mutatedAndExplainedGenesListReal->size();
 
 	//for each sample i in a current round
@@ -48,35 +49,46 @@ void addFrequncyForRealDataset(vector<int>* genesFrequency,
 		// mutated gene and its corresponding genes for each sample
 		vector<MutatedAndExplianedGenes> mutatedAndExplainedGenes =
 				mutatedAndExplainedGenesListReal->at(i);
+		vector<int> mutatedGeneIds = mutatedGeneIdsListReal->at(i);
 
 		// combine list of explained genes
-		vector<int> explainedGeneIdsAll(totalGenes); //for all mutated genes of this sample
-		combineListOfExplainedGenes(&mutatedAndExplainedGenes,
+		vector<bool> explainedGeneIdsAll(totalGenes); //for all mutated genes of this sample
+		combineListOfExplainedGenes(&mutatedAndExplainedGenes, &mutatedGeneIds,
 				&explainedGeneIdsAll, totalGenes);
 
 		//copy the value to genesFrequency (# samples in which each gene is explained)
 		//for each unique explained gene in sample i
 		for (int j = 0; j < totalGenes; ++j) {
-			if (explainedGeneIdsAll[j] > 0) {
-				genesFrequency->at(j)++;}
+			if (explainedGeneIdsAll[j]) {
+				genesFrequency->at(j)++;
+				isExplainedGenes->at(j) = true;
 			}
 		}
 	}
 
-void combineListOfExplainedGenes(
-		vector<MutatedAndExplianedGenes>* mutatedAndExplainedGenes,
-		vector<int>* explainedGenesAll, int totalGenes) {
+	vector<MutatedAndExplianedGenes> mutatedAndExplainedGenes =
+					mutatedAndExplainedGenesListReal->at(0);
+	int numMut = mutatedAndExplainedGenes.size();
+	for (int l = 0; l < numMut; ++l) {
+		vector<int> explainedGenesFreqency = mutatedAndExplainedGenes[l].explainedGenesFreqency;
+	}
 
-	int numGenesMut = mutatedAndExplainedGenes->size();
+}
+
+void combineListOfExplainedGenes(
+		vector<MutatedAndExplianedGenes>* mutatedAndExplainedGenes, vector<int>* mutatedGeneIds,
+		vector<bool>* explainedGenesAll, int totalGenes) {
+
+	int numGenesMut = mutatedGeneIds->size();
 
 	//for each mutated gene
 	for (int i = 0; i < numGenesMut; ++i) {
-		vector<int> explainedGeneIds =
-				mutatedAndExplainedGenes->at(i).explainedGeneIds;
+		vector<int> explainedGenesFreqency =
+				mutatedAndExplainedGenes->at(mutatedGeneIds->at(i)).explainedGenesFreqency;
 		//for each corresponding gene
 		for (int j = 0; j < totalGenes; ++j) {
-			if (explainedGeneIds[j] > 0) {
-				explainedGenesAll->at(j) = 1;
+			if (explainedGenesFreqency[j] > 0) {
+				explainedGenesAll->at(j) = true;
 			}
 		}
 	}
@@ -84,7 +96,8 @@ void combineListOfExplainedGenes(
 }
 
 void findPhenotypeGenes(vector<bool>* isPhenotypeGenes,
-		vector<int>* genesFrequency, vector<vector<int> >* nullDistribution, vector<bool>* isInGeneExpressionMatrix) {
+		vector<int>* genesFrequency, vector<vector<int> >* nullDistribution,
+		vector<bool>* isExplainedGenes) {
 	int totalGenes = genesFrequency->size();
 	int round = nullDistribution->at(0).size();
 
@@ -96,12 +109,13 @@ void findPhenotypeGenes(vector<bool>* isPhenotypeGenes,
 		vector<int> distribution = nullDistribution->at(i);
 		sort(distribution.begin(), distribution.end());
 		int cutoff = distribution[p95];
-		if(isInGeneExpressionMatrix->at(i))
+		if (isExplainedGenes->at(i))
 //			cout << "cutoff for gene " << i << " is " << cutoff << endl;
-		if (isInGeneExpressionMatrix->at(i) and genesFrequency->at(i) > cutoff) {
-			isPhenotypeGenes->at(i) = true; // mark that this gene is a phenotype genes
-			//cout << i << endl;
-		}
+			if (isExplainedGenes->at(i)
+					and genesFrequency->at(i) > cutoff) {
+				isPhenotypeGenes->at(i) = true; // mark that this gene is a phenotype genes
+				//cout << i << endl;
+			}
 	}
 }
 

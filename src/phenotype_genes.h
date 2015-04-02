@@ -13,12 +13,14 @@
 
 void addFrequencyForNullDistribution(vector< vector<int> >* nullDistribution, vector< vector<int> >* explainedGenesListForPhenotype);
 
-void addFrequncyForRealDataset(vector<int>* genesFrequency,
-		vector<vector<MutatedAndExplianedGenes> >* mutatedAndExplainedGenesListReal);
+void addFrequncyForRealDataset(vector<int>* genesFrequency,	vector< vector<MutatedAndExplianedGenes> >* mutatedAndExplainedGenesListReal,
+		vector< vector<int> >* mutatedGeneIdsListReal, vector<bool>* isExplainedGenes);
 
-void combineListOfExplainedGenes(vector<MutatedAndExplianedGenes>* mutatedAndExplainedGenes, vector<int>* explainedGenesAll, int totalGenes);
+void combineListOfExplainedGenes(
+		vector<MutatedAndExplianedGenes>* mutatedAndExplainedGenes, vector<int>* mutatedGeneIds,
+		vector<bool>* explainedGenesAll, int totalGenes);
 
 void findPhenotypeGenes(vector<bool>* phenotypeGeneIds, vector<int>* genesFrequency,
-		vector< vector<int> >* nullDistribution, vector<bool>* isInGeneExpressionMatrix);
+		vector< vector<int> >* nullDistribution, vector<bool>* isExplainedGenes);
 
 #endif /* PHENOTYPE_GENES_H_ */

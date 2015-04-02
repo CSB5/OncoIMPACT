@@ -23,8 +23,8 @@ struct ExplainedGene{
 };
 
 struct MutatedAndExplianedGenes{
-	int mutatedGeneId;
-	vector<int> explainedGeneIds;
+	//int mutatedGeneId; this is equal to the index of the vector
+	vector<int> explainedGenesFreqency;
 };
 
 /*

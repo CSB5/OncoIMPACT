@@ -48,6 +48,7 @@ int getNodeDegree(TIntAdjList* network, int nodeId);
  */
 void writeStrVector(const char* filename, vector<string>* output);
 void printGeneSymbols(vector<int>* geneIds, vector<string>* geneIdToSymbol);
+void saveGeneSymbols(const char* filename, vector<int>* geneIds, vector<string>* geneIdToSymbol);
 
 /*
  * Permutation
