@@ -10,12 +10,15 @@
 #include <ctime>
 #include <algorithm>
 #include <sstream>
+#include <set>
 #include "utilities.h"
 #include "input.h"
 #include "sampling.h"
 #include "explained_genes.h"
 #include "phenotype_genes.h"
 #include "driver_genes.h"
+#include "merge_and_trim.h"
+#include "results.h"
 
 #include <windows.h>
 #include <stdio.h>
@@ -119,11 +122,19 @@ int main() {
 	cout << "tuning parameters by using " << numSamples << " samples ..."
 			<< endl;
 
+	//Create gene label permutation for both gene expression and mutation matrix
+	//1. gene expression
+	vector<int> permutedGeneLabelsEx;
+	permuteGeneLabels(&genesEx, &permutedGeneLabelsEx);
+	//2. mutation
+	vector<int> permutedGeneLabelsMut;
+	permuteGeneLabels(&genesMut, &permutedGeneLabelsMut);
+
 	//list of samples id to be chose
 	vector<int> rrank(totalSamples);
 	createPermutation(&rrank);
 
-	//gene expression matrix
+	//gene expression submatrix
 	TDoubleMatrix subGeneExpressionMatrix;
 	GeneExpression subGeneExpression;
 	subGeneExpression.genes = &genesEx;
@@ -131,7 +142,7 @@ int main() {
 	randomlyChooseSamplesDouble(&originalGeneExpressionMatrix,
 			&subGeneExpressionMatrix, &rrank, numSamples);
 
-	//mutation matrix
+	//mutation submatrix
 	TIntegerMatrix subMutationMatrix;
 	Mutations subMutations;
 	subMutations.genes = &genesMut;
@@ -139,40 +150,21 @@ int main() {
 	randomlyChooseSamplesInteger(&originalMutationMatrix, &subMutationMatrix,
 			&rrank, numSamples);
 
-	/*
-	 * Create gene label permutation for both gene expression and mutation matrix
-	 * Output: permutedGeneLabelsEx and permutedGeneLabelsMut
-	 */
-
-	//1. gene expression
-	vector<int> permutedGeneLabelsEx;
-	permuteGeneLabels(&genesEx, &permutedGeneLabelsEx);
-
-	//2. mutation
-	vector<int> permutedGeneLabelsMut;
-	permuteGeneLabels(&genesMut, &permutedGeneLabelsMut);
-
-	/*
-	 * Find explained genes: parameters setting
-	 */
+	//parameters setting
+	//TODO create loop to test all combinations of parameters
 
 	int minL = 2; // to be used
 	int maxL = 5; // to be used
-	int L = 4;
-	int D = 150;
-	double F = 2;
-
-	/*
-	 * Find explained genes
-	 */
+	int L = 16;
+	int D = 65;
+	double F = 2.5;
 
 	cout << "\current parameters (L, D, F) is " << L << ", " << D << ", " << F
 			<< endl;
-	//cout << "finding explained genes ..." << endl;
 
-	/*
-	 * find explained genes for real sub-sample (without gene label permutation)
-	 */
+	//TODO 100 iterations to compute JS divergence
+
+	//find explained genes for real sub-sample (without gene label permutation)
 
 	vector<vector<ExplainedGene> > explainedGenesListReal;
 	int sampleId = 0; //the first sample
@@ -193,9 +185,7 @@ int main() {
 		explainedGenesListReal.push_back(explainedGenes);
 	}
 
-	/*
-	 * find explained genes for random sub-sample (with gene label permutation)
-	 */
+	//find explained genes for random sub-sample (with gene label permutation)
 
 	vector<vector<ExplainedGene> > explainedGenesListRandom;
 	sampleId = 0; //the first sample
@@ -217,6 +207,8 @@ int main() {
 				&mutatedGeneIds, L, D, F);
 		explainedGenesListRandom.push_back(explainedGenes);
 	}
+
+	//TODO choose the best parameters
 
 	/*
 	 * Find phenotype genes
@@ -262,11 +254,10 @@ int main() {
 			&isExplainedGenes);
 
 	// the following have to be done 500 times to generate the null distribution
-	vector<vector<int> > nullDistribution(totalGenes);
-	int round = 100;
+	vector< vector<int> > nullDistribution(totalGenes);
+	int round = 500;
 
-	cout << "\tcreating null distribution (using " << round
-			<< " permutations) ... ";
+	cout << "\tcreating null distribution (using " << round << " permutations) ... ";
 
 	int progress = 1;
 	int interval = round / 100;
@@ -276,12 +267,12 @@ int main() {
 		vector<vector<int> > explainedGenesListForPhenotypeGenes;
 
 		//print progression
-//		if (r % interval == 0) {
-//			const string progStatus = intToStr(progress) + "%";
-//			cout << progStatus << flush;
-//			progress++;
-//			cout << string(progStatus.length(), '\b');
-//		}
+		if (r % interval == 0) {
+			const string progStatus = intToStr(progress) + "%";
+			cout << progStatus << flush;
+			progress++;
+			cout << string(progStatus.length(), '\b');
+		}
 
 		// permute the gene labels of each sample independently
 		for (int i = 0; i < totalSamples; ++i) {
@@ -327,20 +318,11 @@ int main() {
 	//consider only explained genes
 
 	vector<bool> isPhenotypeGenes(totalGenes);	// 1 for yes 0 for no
-	findPhenotypeGenes(&isPhenotypeGenes, &genesFrequencyReal,
-			&nullDistribution, &isExplainedGenes);
-
 	vector<int> phenotypeGeneIds;
-	for (int i = 0; i < totalGenes; ++i) {
-		if (isPhenotypeGenes[i] == 1) {
-			phenotypeGeneIds.push_back(i);
-		}
-	}
+	findPhenotypeGenes(&isPhenotypeGenes, &phenotypeGeneIds, &genesFrequencyReal,
+			&nullDistribution, &isExplainedGenes);
 	string phenotypeGeneFileName = "phenotype_genes.txt";
-	cout << "\twriting " << phenotypeGeneIds.size() << " phenotype genes to "
-			<< phenotypeGeneFileName << " ..." << endl;
-	saveGeneSymbols(phenotypeGeneFileName.c_str(), &phenotypeGeneIds,
-			&geneIdToSymbol);
+	saveGeneSymbols(phenotypeGeneFileName.c_str(), &phenotypeGeneIds, &geneIdToSymbol);
 
 	/*
 	 * Find driver genes
@@ -348,69 +330,20 @@ int main() {
 
 	cout << "finding driver genes ...\n";
 
-	// map phenotype genes to sample level
-	// just use isPhenotypeGenes to check
+	// map phenotype genes to sample level (use isPhenotypeGenes to check)
 
 	// collect all mutated genes in all samples
-	// just use mutatedAndExplainedGenesListReal (samples, mutated genes, explained genes)
+	// (use mutatedGeneIdsListReal (samples, mutated genes, explained genes)
+	list<int> mutatedGeneIdsList;
 	vector<bool> isMutatedGenes(totalGenes);
-	//for each sample i
-	for (int i = 0; i < totalSamples; ++i) {
-
-		//get all mutated genes and their corresponding explained genes
-		vector<int> mutatedGeneIds = mutatedGeneIdsListReal[i];
-		int numMutatedGenes = mutatedGeneIds.size();
-
-		//for each mutated gene j
-		for (int j = 0; j < numMutatedGenes; ++j) {
-			isMutatedGenes[mutatedGeneIds[j]] = true;
-		}
-	}
+	getAllMutatedGenes(&mutatedGeneIdsListReal, &isMutatedGenes, &mutatedGeneIdsList);
+	cout << "\ttotal number of mutated genes is " << mutatedGeneIdsList.size() << endl;
 
 	cout << "\tcreating bipartite graph ...\n";
 	//create bipartite graph ( mutated gene --- phenotype gene ). This is done on sample level, so have to remember sample id.
-
+	//Edge: each mutated gene contains (phenotype gene id, sample id)
 	vector<BipartiteEdge>* bipartiteEdges = new vector<BipartiteEdge>(totalGenes);
-
-	//for each sample i
-	for (int i = 0; i < totalSamples; ++i) {
-		cout << "sample #" << i << endl;
-
-		//get all mutated genes and their corresponding explained genes
-		vector<MutatedAndExplianedGenes> mutatedAndExplainedGenes =
-				mutatedAndExplainedGenesListReal[i];
-		vector<int> mutatedGeneIds = mutatedGeneIdsListReal[i];
-		int numMutatedGenes = mutatedGeneIds.size();
-
-		cout << "# mutated genes = " << numMutatedGenes << endl;
-
-		//for each mutated gene j
-		for (int j = 0; j < numMutatedGenes; ++j) {
-			vector<int> explainedGenesFrequency =
-					mutatedAndExplainedGenes[mutatedGeneIds[j]].explainedGenesFreqency;
-
-			for (int k = 0; k < totalGenes; ++k) {
-				if(explainedGenesFrequency[k] > 0){
-					cout << k;
-					if(isPhenotypeGenes[k]){
-						cout << " is phenotype gene\n";
-						BipartitePhenotypeNode node;
-						node.phenotypeGeneId = k;
-						node.sampleId = i;
-						bipartiteEdges->at(k).phenotypeGeneIdsAndSampleIds.push_back(node);
-					}else{
-						cout << " is not phenotype gene\n";
-					}
-				}
-			}
-		}
-
-		if(i == 4)
-			break;
-	}
-
-	//greedy minimum set covering
-	cout << "\tperforming greedy minimum set cover algorithm ...\n";
+	createBipartiteGraph(&mutatedAndExplainedGenesListReal, &mutatedGeneIdsListReal, &isPhenotypeGenes, bipartiteEdges);
 
 	int numPhenotypeGenes = 0;
 	for (int i = 0; i < totalGenes; ++i) {
@@ -419,13 +352,39 @@ int main() {
 		}
 	}
 
-	cout << "\t\ttotal number of edges is " << numPhenotypeGenes << endl;
-	//until all the phenotype genes are covered
-//	while(){
-//
-//	}
+	//cout << "\t\ttotal number of edges is " << numPhenotypeGenes << endl;
 
-//	delete bipartiteEdges;
+	//greedy minimum set covering
+	cout << "\tperforming greedy minimum set cover algorithm ...\n";
+	vector<int> driverGeneIds;
+	findDriverGenes(bipartiteEdges, &mutatedGeneIdsList, &driverGeneIds);
+
+	int numDriverGenes = driverGeneIds.size();
+	cout << "\ttotal number of driver genes = " << numDriverGenes << endl;
+	filename = "driver_genes.txt";
+	saveGeneSymbols(filename.c_str(), &driverGeneIds, &geneIdToSymbol);
+
+	delete bipartiteEdges;
+
+	cout << "merging modules for all samples ...\n";
+
+	//merge modules and trim explained genes for each sample
+	vector<bool> isDriverGenes(totalGenes);
+	for (int i = 0; i < numDriverGenes; ++i) {
+		isDriverGenes[driverGeneIds[i]] = true;
+	}
+
+	vector< list<Module> > modulesListOfAllSamples(totalSamples);
+	findModulesInAllSamples(&mutatedAndExplainedGenesListReal, &modulesListOfAllSamples,
+			&mutatedGeneIdsListReal, &isPhenotypeGenes, &isDriverGenes, &phenotypeGeneIds);
+
+	cout << "trimming explained genes for all samples ...\n";
+
+	trimSomeExplainedGenes(&modulesListOfAllSamples, &network, L, D);
+
+	filename = "modules.txt";
+	saveModules(&modulesListOfAllSamples, filename, &geneIdToSymbol);
+
 
 	/*
 	 * Stop timer

@@ -10,6 +10,7 @@
 #include <set>
 #include <algorithm>
 #include "phenotype_genes.h"
+#include "utilities.h"
 
 //input: explainedGenesListForPhenotype = a list of explained genes of all samples
 //output: nullDistribution = a list contain the frequency of each round (of 500 round)
@@ -95,7 +96,7 @@ void combineListOfExplainedGenes(
 
 }
 
-void findPhenotypeGenes(vector<bool>* isPhenotypeGenes,
+void findPhenotypeGenes(vector<bool>* isPhenotypeGenes, vector<int>* phenotypeGeneIds,
 		vector<int>* genesFrequency, vector<vector<int> >* nullDistribution,
 		vector<bool>* isExplainedGenes) {
 	int totalGenes = genesFrequency->size();
@@ -114,8 +115,24 @@ void findPhenotypeGenes(vector<bool>* isPhenotypeGenes,
 			if (isExplainedGenes->at(i)
 					and genesFrequency->at(i) > cutoff) {
 				isPhenotypeGenes->at(i) = true; // mark that this gene is a phenotype genes
+				phenotypeGeneIds->push_back(i);
 				//cout << i << endl;
 			}
 	}
+}
+
+void printPhenotypeGenes(vector<bool>* isPhenotypeGenes, string phenotypeGeneFileName, vector<string>* geneIdToSymbol){
+	int totalGenes = isPhenotypeGenes->size();
+	vector<int> phenotypeGeneIds;
+	for (int i = 0; i < totalGenes; ++i) {
+		if (isPhenotypeGenes->at(i) == 1) {
+			phenotypeGeneIds.push_back(i);
+		}
+	}
+
+	cout << "\twriting " << phenotypeGeneIds.size() << " phenotype genes to "
+			<< phenotypeGeneFileName << " ..." << endl;
+	saveGeneSymbols(phenotypeGeneFileName.c_str(), &phenotypeGeneIds,
+			geneIdToSymbol);
 }
 

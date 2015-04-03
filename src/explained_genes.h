@@ -41,10 +41,10 @@ void getMutatedGeneIdsFromSampleId(Mutations* mutations,
 
 // return explainedGenes
 void getExplainedGenes(vector<ExplainedGene>* explainedGenes, TIntAdjList* network, vector<double>* sampleGeneExpression,
-		vector<int>* mutatedGeneIds, int L, int D, int F);
+		vector<int>* mutatedGeneIds, int L, int D, double F);
 
 void getExplainedGenesOnlyId(vector<int>* explainedGeneIds, TIntAdjList* network, vector<double>* sampleGeneExpression,
-		vector<int>* mutatedGeneIds, int L, int D, int F);
+		vector<int>* mutatedGeneIds, int L, int D, double F);
 
 void getMutatedAndExplainedGenes(vector<MutatedAndExplianedGenes>* mutatedAndExplainedGenes, TIntAdjList* network,
 		vector<double>* sampleGeneExpression, vector<int>* mutatedGeneIds, int L, int D, double F);

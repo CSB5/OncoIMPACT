@@ -20,7 +20,10 @@ void combineListOfExplainedGenes(
 		vector<MutatedAndExplianedGenes>* mutatedAndExplainedGenes, vector<int>* mutatedGeneIds,
 		vector<bool>* explainedGenesAll, int totalGenes);
 
-void findPhenotypeGenes(vector<bool>* phenotypeGeneIds, vector<int>* genesFrequency,
-		vector< vector<int> >* nullDistribution, vector<bool>* isExplainedGenes);
+void findPhenotypeGenes(vector<bool>* isPhenotypeGenes, vector<int>* phenotypeGeneIds,
+		vector<int>* genesFrequency, vector<vector<int> >* nullDistribution,
+		vector<bool>* isExplainedGenes);
+
+void printPhenotypeGenes(vector<bool>* isPhenotypeGenes, string phenotypeGeneFileName, vector<string>* geneIdToSymbol);
 
 #endif /* PHENOTYPE_GENES_H_ */

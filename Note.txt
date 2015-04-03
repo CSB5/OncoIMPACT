@@ -1,0 +1,16 @@
+https://github.com/g-truc/glm/issues/300
+
+If compiling with option -O3 or -O2, I get this error :
+
+c:\mingw\include\math.h: In function 'float hypotf(float, float)':
+c:\mingw\include\math.h:635:30: error: '_hypot' was not declared in this scope
+{ return (float)(_hypot (x, y)); }
+
+A workaround mentioned there is to use -D__NO_INLINE__ to the compiler options.
+
+
+Right-click on the the project and select "Properties"
+Navigate to C/C++ Build -> Settings
+Select the Tool Settings tab.
+Navigate to GCC C++ Compiler -> Miscellaneous
+In the option setting labeled Other Flags add -std=c++11

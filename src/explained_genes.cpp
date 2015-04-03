@@ -34,7 +34,7 @@ void getMutatedGeneIdsFromSampleId(Mutations* mutations,
 
 void getExplainedGenes(vector<ExplainedGene>* explainedGenes,
 		TIntAdjList* network, vector<double>* sampleGeneExpression,
-		vector<int>* mutatedGeneIds, int L, int D, int F) {
+		vector<int>* mutatedGeneIds, int L, int D, double F) {
 
 	int numMutatedGenes = mutatedGeneIds->size();
 	for (int i = 0; i < numMutatedGenes; ++i) {	// for each mutated genes
@@ -70,7 +70,7 @@ void getExplainedGenes(vector<ExplainedGene>* explainedGenes,
 }
 
 void getExplainedGenesOnlyId(vector<int>* explainedGeneIds, TIntAdjList* network, vector<double>* sampleGeneExpression,
-		vector<int>* mutatedGeneIds, int L, int D, int F){
+		vector<int>* mutatedGeneIds, int L, int D, double F){
 	int numMutatedGenes = mutatedGeneIds->size();
 	for (int i = 0; i < numMutatedGenes; ++i) {	// for each mutated genes
 		//BFS
