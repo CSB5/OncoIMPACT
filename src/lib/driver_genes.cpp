@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <set>
 #include <iostream>
-#include "driver_genes.h"
+#include "../header/driver_genes.h"
 
 void getAllMutatedGenes(vector< vector<int> >* mutatedGeneIdsListReal, vector<bool>* isMutatedGenes, list<int>* mutatedGeneIdsList){
 	int totalSamples = mutatedGeneIdsListReal->size();

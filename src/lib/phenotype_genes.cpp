@@ -9,8 +9,8 @@
 #include <cmath>
 #include <set>
 #include <algorithm>
-#include "phenotype_genes.h"
-#include "utilities.h"
+#include "../header/phenotype_genes.h"
+#include "../header/utilities.h"
 
 //input: explainedGenesListForPhenotype = a list of explained genes of all samples
 //output: nullDistribution = a list contain the frequency of each round (of 500 round)

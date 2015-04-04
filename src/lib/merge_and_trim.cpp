@@ -7,7 +7,7 @@
 
 #include <iostream>
 #include <algorithm>
-#include "merge_and_trim.h"
+#include "../header/merge_and_trim.h"
 
 //merge module moduleId into the currentModuleId and deleted moduleId
 void mergeModules(int currentModuleId, int moduleId, list<Module>* modulesList){

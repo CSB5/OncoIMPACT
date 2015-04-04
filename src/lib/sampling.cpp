@@ -5,7 +5,7 @@
  *      Author: Nok
  */
 
-#include "sampling.h"
+#include "../header/sampling.h"
 
 void randomlyChooseSamplesDouble(TDoubleMatrix* original, TDoubleMatrix* subSamples, vector<int>* rrank, int numSamples){
 	int totalGenes = original->size();

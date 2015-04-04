@@ -14,7 +14,7 @@
 #include <cmath>
 #include <map>
 #include <cstdlib>
-#include "input.h"
+#include "../header/input.h"
 
 void readGeneExpression(const char* filename, GeneExpression* geneExpression,
 		char delim, map<string, int>* geneSymbolToId){

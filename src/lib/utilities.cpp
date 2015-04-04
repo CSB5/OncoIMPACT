@@ -14,7 +14,7 @@
 #include <queue>
 #include <algorithm>
 #include <cstdlib>
-#include "utilities.h"
+#include "../header/utilities.h"
 
 /*
  * For matrix

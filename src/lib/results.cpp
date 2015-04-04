@@ -7,8 +7,8 @@
 
 #include <iostream>
 #include <string>
-#include "results.h"
-#include "utilities.h"
+#include "../header/results.h"
+#include "../header/utilities.h"
 
 void saveModules(vector< list<Module> > * modulesListOfAllSamples, string filename, vector<string>* geneIdToSymbol){
 	int totalSamples = modulesListOfAllSamples->size();

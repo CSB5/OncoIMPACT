@@ -9,7 +9,7 @@
 #include <iostream>
 #include <queue>
 #include <set>
-#include "explained_genes.h"
+#include "../header/explained_genes.h"
 
 void getGeneExpressionFromSampleId(TDoubleMatrix* geneExpressionMatrix,
 		vector<int>* genesEx, vector<double>* sampleExpression, int sampleId, vector<string>* geneIdToSymbol) {
@@ -69,14 +69,14 @@ void getExplainedGenes(vector<ExplainedGene>* explainedGenes,
 //	}
 }
 
-void getExplainedGenesOnlyId(vector<int>* explainedGeneIds, TIntAdjList* network, vector<double>* sampleGeneExpression,
+void getExplainedGenesOnlyId(vector<int>* explainedGenesFrequency, TIntAdjList* network, vector<double>* sampleGeneExpression,
 		vector<int>* mutatedGeneIds, int L, int D, double F){
 	int numMutatedGenes = mutatedGeneIds->size();
 	for (int i = 0; i < numMutatedGenes; ++i) {	// for each mutated genes
 		//BFS
 		//cout << "For mutated gene: " << mutatedGeneIds->at(i) << endl;
 		BFSforExplainedGenesIdOnly(network, mutatedGeneIds->at(i), L, D, F,
-				explainedGeneIds, sampleGeneExpression);
+				explainedGenesFrequency, sampleGeneExpression);
 	}
 }
 
@@ -233,36 +233,4 @@ void BFSforExplainedGenesIdOnly(TIntAdjList* network, int geneId, int L, int D,
 	delete[] visited;
 }
 
-//TO BE DELETED
-//void getGeneFrequencyOfSamples(vector<int>* genesCount, int totalGenes,
-//		vector<vector<ExplainedGene> >* explainedGenesList) {
-//	int numSamples = explainedGenesList->size();
-//
-//	//consider up and down separately
-//	vector<int> up(totalGenes);
-//	vector<int> down(totalGenes);
-//
-//	for (int i = 0; i < numSamples; ++i) {
-//		vector<ExplainedGene> explainedGenes = explainedGenesList->at(i);
-//		int numGens = explainedGenes.size();
-//		for (int j = 0; j < numGens; ++j) {
-//			//consider up and down separately
-//			ExplainedGene eg = explainedGenes[j];
-//			if (eg.expression < 0) {
-//				down[eg.id]++;
-//			} else {
-//				up[eg.id]++;
-//			}
-//		}
-//	}
-//
-//	//get final frequency discarding gene id
-//	for (int i = 0; i < totalGenes; ++i) {
-//		if (up[i] > 0) {
-//			genesCount->push_back(up[i]);
-//		}
-//		if (down[i] > 0) {
-//			genesCount->push_back(down[i]);
-//		}
-//	}
-//}
+//TODO use only one BFS for all L's values
