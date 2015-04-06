@@ -23,7 +23,8 @@ typedef vector< vector<double> > TDoubleMatrix;
 typedef vector< vector<int> > TIntegerMatrix;
 typedef vector< vector<bool> > TBooleanMatrix;
 // methods for matrix
-void traceMatrix(TDoubleMatrix* matrix);
+void traceMatrixDouble(TDoubleMatrix* matrix);
+void traceMatrixInt(TIntegerMatrix* matrix);
 void readDoubleMatrix(TDoubleMatrix* matrix, const char* filename, char delim);
 void readIntegerMatrix(TIntegerMatrix* matrix, const char* filename, char delim);
 

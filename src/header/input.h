@@ -21,7 +21,7 @@ struct GeneExpression{
 };
 
 struct Mutations{
-	TIntegerMatrix* matrix;
+	TIntegerMatrix* matrix; //0 if no mutation 1 if there are point mutations or CNVs
 	vector<int>* genes;
 	vector<int>* sample; //optional for saving sample id
 };
@@ -51,10 +51,11 @@ void readPointMutations(const char* filename, PointMutations* pointMutations,
 void readCopyNumberVariation(const char* filename, CopyNumberVariation* copyNumberVariation,
 		char delim, map<string, int>* geneSymbolToId);
 
+int findIndex(vector<int>* geneIds, int currentGeneId);
+
 /*
  * Functions for calculate data statistics
  */
 
-int countDifferentiallyExpressedGeneForSampleId(TDoubleMatrix* originalGeneExpressionMatrix, int sampleId, double minFoldChange);
 
 #endif /* INPUT_H_ */

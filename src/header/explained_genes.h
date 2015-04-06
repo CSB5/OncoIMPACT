@@ -33,7 +33,7 @@ struct MutatedAndExplianedGenes{
 
 // return sampleExpression
 void getGeneExpressionFromSampleId(TDoubleMatrix* geneExpressionMatrix, vector<int>* genesEx,
-		vector<double>* sampleExpression, int sampleId, vector<string>* geneIdToSymbol);
+		vector<double>* sampleExpression, int sampleId);
 
 // return mutatedGeneIds
 void getMutatedGeneIdsFromSampleId(Mutations* mutations,
@@ -43,7 +43,10 @@ void getMutatedGeneIdsFromSampleId(Mutations* mutations,
 void getExplainedGenes(vector<ExplainedGene>* explainedGenes, TIntAdjList* network, vector<double>* sampleGeneExpression,
 		vector<int>* mutatedGeneIds, int L, int D, double F);
 
-void getExplainedGenesOnlyId(vector<int>* explainedGeneIds, TIntAdjList* network, vector<double>* sampleGeneExpression,
+void getExplainedGenesIdOnly(vector<int>* explainedGeneIds, TIntAdjList* network, vector<double>* sampleGeneExpression,
+		vector<int>* mutatedGeneIds, int L, int D, double F);
+
+void getExplainedGenesIdOnlyUpDown(vector<int>* explainedGenesFrequency, TIntAdjList* network, vector<double>* sampleGeneExpression,
 		vector<int>* mutatedGeneIds, int L, int D, double F);
 
 void getMutatedAndExplainedGenes(vector<MutatedAndExplianedGenes>* mutatedAndExplainedGenes, TIntAdjList* network,
@@ -55,6 +58,9 @@ void BFSforExplainedGenes(TIntAdjList* network, int geneId, int L, int D,
 
 void BFSforExplainedGenesIdOnly(TIntAdjList* network, int geneId, int L, int D,
 		double F, vector<int>* explainedGenes, vector<double>* sampleGeneExpression);
+
+void BFSforExplainedGenesIdOnlyUpDown(TIntAdjList* network, int geneId, int L, int D,
+		double F, vector<int>* explainedGenesFrequency, vector<double>* sampleGeneExpression);
 
 // return genesCount: # samples containing explained genes
 void getGeneFrequencyOfSamples(vector<int>* genesCount, int totalGenes,

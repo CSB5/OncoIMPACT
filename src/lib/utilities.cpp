@@ -19,9 +19,23 @@
 /*
  * For matrix
  */
-void traceMatrix(TDoubleMatrix* matrix) {
+void traceMatrixDouble(TDoubleMatrix* matrix) {
 	int rowNum = matrix->size();
 	int colNum = matrix->at(0).size();
+
+	for (int i = 0; i < rowNum; i++) {
+		for (int j = 0; j < colNum; j++) {
+			cout << matrix->at(i)[j] << " ";
+		}
+		cout << endl;
+	}
+}
+
+void traceMatrixInt(TIntegerMatrix* matrix) {
+	int rowNum = matrix->size();
+	int colNum = matrix->at(0).size();
+
+	cout << rowNum << "\t" << colNum;
 
 	for (int i = 0; i < rowNum; i++) {
 		for (int j = 0; j < colNum; j++) {
@@ -293,7 +307,6 @@ void permuteGeneLabels(vector<int>* originalGeneLabels,
 	int numGenes = originalGeneLabels->size();
 	//put all genes into a new vector
 	for (int i = 0; i < numGenes; ++i) {
-		//cout << genesEx[i] << " ";
 		permutedGeneLabels->push_back(originalGeneLabels->at(i));
 	}
 	//permute the labels

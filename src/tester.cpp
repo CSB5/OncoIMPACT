@@ -21,7 +21,7 @@
 #include "header/results.h"
 #include "header/parameters.h"
 
-#include <windows.h>
+//#include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -71,8 +71,6 @@ int main() {
 	readGeneExpression(filename.c_str(), &geneExpression, '\t',
 			&geneSymbolToId);
 
-	//traceMatrix(&originalGeneExpressionMatrix);
-
 	int totalSamples = originalGeneExpressionMatrix[0].size(); // = originalMutationMatrix.size()
 	int numGenesEx = originalGeneExpressionMatrix.size();
 
@@ -81,40 +79,106 @@ int main() {
 			<< endl;
 
 	/*
-	 * Read mutation matrix from file
+	 * Read point mutation matrix from file
 	 * (row = gene, col = samples)
 	 * Note: the set of sample is the same as in gene expression matrix (including order)
 	 */
 
-	cout << "reading mutation matrix..." << endl;
+	cout << "reading point mutation matrix..." << endl;
 	filename = "GBM/SNP.txt";
+	vector<int> genesPointMut;
+	TIntegerMatrix originalPointMutationsMatrix;
+	PointMutations pointMutations;
+	pointMutations.genes = &genesPointMut;
+	pointMutations.matrix = &originalPointMutationsMatrix;
+	readPointMutations(filename.c_str(), &pointMutations, '\t', &geneSymbolToId);
+
+	totalSamples = originalPointMutationsMatrix[0].size(); // = originalMutationMatrix.size()
+	int numGenesPointMut = originalPointMutationsMatrix.size();
+
+	cout << "\ttotal genes in point mutation matrix is " << numGenesPointMut << endl;
+	cout << "\ttotal samples in point mutation matrix is " << totalSamples
+			<< endl;
+
+	/*
+	 * Read CNV matrix from file
+	 * (row = gene, col = samples)
+	 * Note: the set of sample is the same as in gene expression matrix (including order)
+	 */
+
+	cout << "reading CNV matrix..." << endl;
+	filename = "GBM/CNV.txt";
+	vector<int> genesCNV;
+	TIntegerMatrix originalCNVsMatrix;
+	CopyNumberVariation CNVs;
+	CNVs.genes = &genesCNV;
+	CNVs.matrix = &originalCNVsMatrix;
+	readCopyNumberVariation(filename.c_str(), &CNVs, '\t', &geneSymbolToId);
+
+	totalSamples = originalCNVsMatrix[0].size(); // = originalMutationMatrix.size()
+	int numGenesCNV = originalCNVsMatrix.size();
+
+	cout << "\ttotal genes in CNV matrix is " << numGenesCNV << endl;
+	cout << "\ttotal samples in CNV matrix is " << totalSamples
+			<< endl;
+
+
+	//combine lists of point mutaton and CNV genes
 	vector<int> genesMut;
+	vector<bool>* isMutated = new vector<bool>(totalGenes);
+	//1. check point mutation
+	for (int i = 0; i < numGenesPointMut; ++i) {
+		isMutated->at(genesPointMut[i]) = true;
+	}
+	//2. check CNV
+	for (int i = 0; i < numGenesCNV; ++i) {
+		isMutated->at(genesCNV[i]) = true;
+	}
+	//create a list of all mutated genes
+	for (int i = 0; i < totalGenes; ++i) {
+		if(isMutated->at(i)){
+			genesMut.push_back(i);
+		}
+	}
+	delete isMutated;
+
+	//combine point mutation matrix and CNV matrix (row = gene, column = sample)
+	cout << "combining point mutation matrix and CNV matrix ..." << endl;
+
+	int numGenesMut = genesMut.size();
 	TIntegerMatrix originalMutationMatrix;
+	//for each mutated gene i
+	for (int i = 0; i < numGenesMut; ++i) {
+		int currentGeneId = genesMut[i];
+
+		//find a current gene in point mutation matrix
+		int pmRowIndex = findIndex(&genesPointMut, currentGeneId);
+
+		//find a current gene in CNV matrix
+		int cnvRowIndex = findIndex(&genesCNV, currentGeneId);
+
+		vector<int> hasAMutatedGene(totalSamples);
+		//for each sample j
+		for (int j = 0; j < totalSamples; ++j) {
+			if(pmRowIndex >= 0 and originalPointMutationsMatrix[pmRowIndex][j] != 0){
+				hasAMutatedGene[j] = 1;
+			}
+			if(cnvRowIndex >= 0 and originalCNVsMatrix[cnvRowIndex][j] != 0){
+				hasAMutatedGene[j] = 1;
+			}
+		}
+		originalMutationMatrix.push_back(hasAMutatedGene);
+	}
+
 	Mutations mutations;
 	mutations.genes = &genesMut;
 	mutations.matrix = &originalMutationMatrix;
-	readMutations(filename.c_str(), &mutations, '\t', &geneSymbolToId);
 
 	totalSamples = originalMutationMatrix[0].size(); // = originalMutationMatrix.size()
-	int numGenesMut = originalMutationMatrix.size();
 
-	cout << "\ttotal genes in gene mutation matrix is " << numGenesMut << endl;
-	cout << "\ttotal samples in gene mutation matrix is " << totalSamples
+	cout << "\ttotal genes in mutatation matrix is " << numGenesMut << endl;
+	cout << "\ttotal samples in mutatation matrix is " << totalSamples
 			<< endl;
-
-	//TODO read CNV matrix and combine with point mutation matrix
-
-	/*
-	 * Sample statistics
-	 */
-
-	// TEST count differentially expressed genes on each sample
-//	int deGenes;
-//	int sId = 0;
-//	double minFoldChange = 2;
-//	deGenes = countDifferentiallyExpressedGeneForSampleId(
-//			&originalGeneExpressionMatrix, sId, minFoldChange);
-	//cout << "Sample #0 has " << deGenes << " differentially expressed genes" << endl;
 
 	/*
 	 * Randomly choose sub-sample for tuning parameters
@@ -129,17 +193,8 @@ int main() {
 	cout << "tuning parameters by using " << numSamples << " samples ..."
 			<< endl;
 
-	//TODO check if repermutation and resampling are need
-
-	//Create gene label permutation for both gene expression and mutation matrix
-	//1. gene expression
-	vector<int> permutedGeneLabelsEx;
-	permuteGeneLabels(&genesEx, &permutedGeneLabelsEx);
-	//2. mutation
-	vector<int> permutedGeneLabelsMut;
-	permuteGeneLabels(&genesMut, &permutedGeneLabelsMut);
-
-	//list of samples id to be chose
+	//TODO do we need to resampling the samples for every round?
+	//list of samples id to be used for tuning the parameters
 	vector<int> rrank(totalSamples);
 	createPermutation(&rrank);
 
@@ -161,130 +216,41 @@ int main() {
 
 	//parameters setting
 
-	cout << "computing JS divergence for all parameters (L,D,F) ... ";
+	cout << "computing JS divergence for all parameters (L,D,F) ... " << endl;
 
 //	int minL = 2; // to be used
 //	int maxL = 5; // to be used
 
 //	int Ls[] = {2, 4, 6, 8, 10, 12, 14, 16, 18, 20};
-	int Ls[] = {14, 16, 18, 20};
-	int numLs = sizeof(Ls)/sizeof(*Ls);
+	int LsVal[] = {14, 16, 18, 20};
+	vector<int> Ls(LsVal, LsVal + sizeof LsVal / sizeof LsVal[0]);
+	int numLs = Ls.size();
 //	int Ds[] = {10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100};
-	int Ds[] = {55, 60, 65, 70};
-	int numDs = sizeof(Ds)/sizeof(*Ds);
+	int DsVal[] = {55, 60, 65, 70};
+	vector<int> Ds(DsVal, DsVal + sizeof DsVal / sizeof DsVal[0]);
+	int numDs = Ds.size();
 //	double Fs[] = {1, 1.5, 2, 2.5, 3};
-	double Fs[] = {2, 2.5};
-	int numFs = sizeof(Fs)/sizeof(*Fs);
+	double FsVal[] = {2, 2.5};
+	vector<double> Fs(FsVal, FsVal + sizeof FsVal / sizeof FsVal[0]);
+	int numFs = Fs.size();
 
-	//TODO separate the following loop to parameters.cpp
 
 	int numCombinations = numLs * numDs * numFs;
 	vector<JSDivergence>* jsDivergences = new vector<JSDivergence>(numCombinations);
 
-	int count = 0;	//count number of combinations
-	for (int li = 0; li < numLs; ++li) {
-		for (int di = 0; di < numDs; ++di) {
-			for (int fi = 0; fi < numFs; ++fi) {
-
-				int L = Ls[li];
-				int D = Ds[di];
-				double F = Fs[fi];
-
-				cout << "\tcurrent parameters (L, D, F) is " << L << ", " << D << ", " << F << endl;
-				//save values
-				jsDivergences->at(count).L = L;
-				jsDivergences->at(count).D = D;
-				jsDivergences->at(count).F = F;
-
-				//calculated JS divergence
-
-				//TODO 100 iterations to compute JS divergence
-				vector<int> realDistributionAll;
-				vector<int> randomDistributionAll;
-
-				int round = 100;
-				for (int i = 0; i < round; ++i) {
-
-					//find explained genes for real sub-sample (without gene label permutation)
-
-					vector<int> realDistribution(totalGenes);
-					int sampleId = 0; //the first sample
-					for (; sampleId < numSamples; sampleId++) {
-						//cout << "Sample #" << sampleId << endl;
-						vector<double> sampleGeneExpression(totalGenes); //expression of all genes in the network
-						getGeneExpressionFromSampleId(subGeneExpression.matrix,
-								&genesEx, &sampleGeneExpression, sampleId,
-								&geneIdToSymbol);
-
-						vector<int> mutatedGeneIds; // to store gene id of mutated genes
-						getMutatedGeneIdsFromSampleId(&subMutations,
-								&mutatedGeneIds, sampleId, &genesMut);
-
-						vector<int> explainedGenesFrequency(totalGenes);
-						getExplainedGenesOnlyId(&explainedGenesFrequency,
-								&network, &sampleGeneExpression,
-								&mutatedGeneIds, L, D, F);
-
-						//update real distribution
-						for (int j = 0; j < totalGenes; ++j) {
-							if (explainedGenesFrequency[j] > 0) {
-								realDistribution[j]++;
-							}
-						}
-
-					}
-					realDistributionAll.insert(realDistributionAll.end(),
-							realDistribution.begin(), realDistribution.end());
-
-					//find explained genes for random sub-sample (with gene label permutation)
-
-					vector<int> randomDistribution(totalGenes);
-					sampleId = 0; //the first sample
-					for (; sampleId < numSamples; sampleId++) {
-						//cout << "Sample #" << sampleId << endl;
-						vector<double> sampleGeneExpression(totalGenes);// of all genes
-						getGeneExpressionFromSampleId(subGeneExpression.matrix,
-								&permutedGeneLabelsEx, &sampleGeneExpression,
-								sampleId, &geneIdToSymbol);
-
-						vector<int> mutatedGeneIds; // to store gene id of mutated genes
-						getMutatedGeneIdsFromSampleId(&subMutations,
-								&mutatedGeneIds, sampleId,
-								&permutedGeneLabelsMut);
-
-						vector<int> explainedGenesFrequency(totalGenes);
-						getExplainedGenesOnlyId(&explainedGenesFrequency,
-								&network, &sampleGeneExpression,
-								&mutatedGeneIds, L, D, F);
-
-						//update random distribution
-						for (int j = 0; j < totalGenes; ++j) {
-							if (explainedGenesFrequency[j] > 0) {
-								randomDistribution[j]++;
-							}
-						}
-
-					}
-					randomDistributionAll.insert(randomDistributionAll.end(),
-							randomDistribution.begin(),
-							randomDistribution.end());
-
-				}
-
-				jsDivergences->at(count).divergence = 0;
-				count++;
-
-			}
-		}
-	}
+	//findParameters(jsDivergences, &Ls, &Ds, &Fs, totalGenes, &subGeneExpression, &subMutations, &network);
 
 	cout << "DONE tunning parameters (" << (float(clock() - begin_time) / CLOCKS_PER_SEC)
 			<< " sec)\n";
 
-//	jsDivergences* maxJs = new JSDivergence;
-//	findMaximumJsDivergence(jsDivergences, maxJs);
 
-	//TODO choose the best parameters
+	//choose the best parameters
+	//JSDivergence maxJs;
+	//findMaximumJsDivergence(jsDivergences, &maxJs);
+
+	//cout << "the maximum divergence is " << maxJs.divergence << " when L, D, F = " << maxJs.L << ", " << maxJs.D << ", " << maxJs.F << endl;
+
+	//TODO set the L D F to maxJs
 	int L = 16;
 	int D = 65;
 	double F = 2.5;
@@ -310,7 +276,7 @@ int main() {
 		//get gene expression of a current sample
 		vector<double> sampleGeneExpression(totalGenes);// to save expression of of all genes in the network
 		getGeneExpressionFromSampleId(&originalGeneExpressionMatrix, &genesEx,
-				&sampleGeneExpression, i, &geneIdToSymbol);
+				&sampleGeneExpression, i);
 
 		//find mutated genes of a current sample
 		vector<int> mutatedGeneIds; // to store gene id of mutated genes
@@ -368,7 +334,7 @@ int main() {
 			//get gene expression of a current sample
 			vector<double> sampleGeneExpression(totalGenes); // to save expression of of all genes in the network
 			getGeneExpressionFromSampleId(&originalGeneExpressionMatrix,
-					&genesEx, &sampleGeneExpression, i, &geneIdToSymbol);
+					&genesEx, &sampleGeneExpression, i);
 			//cout << "\tcopied gene expression value" << endl;
 
 			//find mutated genes of a current sample
@@ -379,7 +345,7 @@ int main() {
 
 			//find explained genes of a current sample
 			vector<int> explainedGeneIds(totalGenes);
-			getExplainedGenesOnlyId(&explainedGeneIds, &network,
+			getExplainedGenesIdOnly(&explainedGeneIds, &network,
 					&sampleGeneExpression, &mutatedGeneIds, L, D, F);
 			//cout << "\tfound " << explainedGenes.size() << " explained genes" << endl;
 

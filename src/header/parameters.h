@@ -8,6 +8,10 @@
 #ifndef PARAMETERS_H_
 #define PARAMETERS_H_
 
+#include "utilities.h"
+#include "../header/input.h"
+#include "../header/utilities.h"
+#include "../header/explained_genes.h"
 
 struct JSDivergence{
 	int L;
@@ -16,5 +20,11 @@ struct JSDivergence{
 	double divergence;
 };
 
+void findParameters(vector<JSDivergence>* jsDivergences, vector<int>* Ls, vector<int>* Ds, vector<double>* Fs, int totalGenes,
+		GeneExpression* subGeneExpression, Mutations* subGeneMutation, TIntAdjList* network);
+
+double calculateJSDivergence(vector< vector<int> >* realDistributionAll, vector< vector<int> >* randomDistributionAll, int numSamples);
+double getMedianNumberOfDeregulatedGenes(TDoubleMatrix* geneExpressionMatrix, double F);
+void findMaximumJsDivergence(vector<JSDivergence>* jsDivergences, JSDivergence* maxJs);
 
 #endif /* PARAMETERS_H_ */

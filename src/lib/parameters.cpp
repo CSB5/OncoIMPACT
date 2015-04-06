@@ -6,7 +6,235 @@
  */
 
 #include "../header/parameters.h"
+#include <cmath>
+#include <algorithm>
+#include <iostream>
 
+void findParameters(vector<JSDivergence>* jsDivergences, vector<int>* Ls, vector<int>* Ds, vector<double>* Fs, int totalGenes,
+		GeneExpression* subGeneExpression, Mutations* subGeneMutation, TIntAdjList* network){
 
+	TDoubleMatrix* subGeneExpressionMatrix = subGeneExpression->matrix;
+	vector<int>* genesEx = subGeneExpression->genes;
+//	TIntegerMatrix* subMutationMatrix = subGeneMutation->matrix;
+	vector<int>* genesMut = subGeneMutation->genes;
 
+	int numSamples = subGeneExpressionMatrix->at(0).size();
+
+	int numLs = Ls->size();
+	int numDs = Ds->size();
+	int numFs = Fs->size();
+
+	cout << "#L D F " << numLs << " " << numDs << " " << numFs << endl;
+
+	int count = 0;	//count number of combinations
+	for (int li = 0; li < numLs; ++li) {
+		for (int di = 0; di < numDs; ++di) {
+			for (int fi = 0; fi < numFs; ++fi) {
+
+				int L = Ls->at(li);
+				int D = Ds->at(di);
+				double F = Fs->at(fi);
+
+				cout << "\tcurrent parameters (L, D, F) is " << L << ", " << D << ", " << F << endl;
+
+				//TODO ignore the choice (of F) in which the median number of deregulated genes is more than half of the gene in the network or <300
+				double halfNumberOfGenesInNetwork = totalGenes/2;
+				double medianNumberOfDeregulatedGenes = getMedianNumberOfDeregulatedGenes(subGeneExpressionMatrix, F);
+//				cout << "\twhen F = " << F << " the median number of deregulated genes is " << medianNumberOfDeregulatedGenes << endl;
+
+				if(medianNumberOfDeregulatedGenes > halfNumberOfGenesInNetwork or medianNumberOfDeregulatedGenes < 300){
+					break;
+				}
+
+				//save values
+				jsDivergences->at(count).L = L;
+				jsDivergences->at(count).D = D;
+				jsDivergences->at(count).F = F;
+
+				/*
+				 * calculated JS divergence
+				 */
+
+				//100 iterations to generate the frequency distribution and compute JS divergence
+				vector< vector<int> > realDistributionAll;
+				vector< vector<int> > randomDistributionAll;
+
+				//TODO why we have to do 100 round of gene label permutation? => to get the null distribution
+				int round = 100;
+				for (int i = 0; i < round; ++i) {
+
+					/*
+					 * find explained genes for real samples
+					 */
+
+					//find explained genes for real sub-sample (without gene label permutation)
+					//TODO are the results the same for all 100 round? (I think yes, so improve this)
+					vector<int> realDistribution(totalGenes * 2);	//differentiate the up and down regulated genes
+					int sampleId = 0; //the first sample
+					for (; sampleId < numSamples; sampleId++) {
+						//cout << "Sample #" << sampleId << endl;
+						vector<double> sampleGeneExpression(totalGenes); //expression of all genes in the network
+						getGeneExpressionFromSampleId(subGeneExpressionMatrix,
+								genesEx, &sampleGeneExpression, sampleId);
+
+						vector<int> mutatedGeneIds; // to store gene id of mutated genes
+						getMutatedGeneIdsFromSampleId(subGeneMutation,
+								&mutatedGeneIds, sampleId, genesMut);
+
+						vector<int> explainedGenesFrequency(totalGenes * 2);	//differentiate the up and down regulated genes
+						getExplainedGenesIdOnlyUpDown(&explainedGenesFrequency,
+								network, &sampleGeneExpression,
+								&mutatedGeneIds, L, D, F);
+
+						//update real distribution
+						for (int j = 0; j < totalGenes * 2; ++j) {		//differentiate the up and down regulated genes
+							if (explainedGenesFrequency[j] > 0) {
+								realDistribution[j]++;
+							}
+						}
+					}
+					realDistributionAll.push_back(realDistribution);
+
+					/*
+					 * find explained genes for random sub-sample (with gene label permutation)
+					 */
+
+					//repermutate the gene label of random a dataset
+					//Create gene label permutation for both gene expression and mutation matrix
+					//1. gene expression
+					vector<int> permutedGeneLabelsEx;
+					permuteGeneLabels(genesEx, &permutedGeneLabelsEx);
+					//2. mutation
+					vector<int> permutedGeneLabelsMut;
+					permuteGeneLabels(genesMut, &permutedGeneLabelsMut);
+
+					vector<int> randomDistribution(totalGenes * 2); //differentiate the up and down regulated genes
+					sampleId = 0; //the first sample
+					for (; sampleId < numSamples; sampleId++) {
+						//cout << "Sample #" << sampleId << endl;
+						vector<double> sampleGeneExpression(totalGenes);// of all genes
+						getGeneExpressionFromSampleId(subGeneExpressionMatrix,
+								&permutedGeneLabelsEx, &sampleGeneExpression,
+								sampleId);
+
+						vector<int> mutatedGeneIds; // to store gene id of mutated genes
+						getMutatedGeneIdsFromSampleId(subGeneMutation,
+								&mutatedGeneIds, sampleId,
+								&permutedGeneLabelsMut);
+
+						vector<int> explainedGenesFrequency(totalGenes * 2);	//differentiate the up and down regulated genes
+						getExplainedGenesIdOnlyUpDown(&explainedGenesFrequency,
+								network, &sampleGeneExpression,
+								&mutatedGeneIds, L, D, F);
+
+						//update random distribution
+						for (int j = 0; j < totalGenes * 2; ++j) {		//differentiate the up and down regulated genes
+							if (explainedGenesFrequency[j] > 0) {
+								randomDistribution[j]++;
+							}
+						}
+
+					}
+					randomDistributionAll.push_back(randomDistribution);
+
+				}
+
+				//calculate JS divergence
+
+				double divergence = calculateJSDivergence(&realDistributionAll, &randomDistributionAll, numSamples);
+				jsDivergences->at(count).divergence = divergence;
+				cout << "\t\tJS divergence = " << divergence << endl;
+				count++;
+
+			}
+		}
+	}
+}
+
+double calculateJSDivergence(vector<vector<int> >* realDistributionAll,
+		vector<vector<int> >* randomDistributionAll, int numSamples) {
+	int round = randomDistributionAll->size();
+	int totalGenes = randomDistributionAll->at(0).size();
+
+	//1. create frequency distribution (x: #number of samples y: frequency) for both real and random samples
+	vector<int> randomFrequencyDistribution(numSamples);
+	vector<int> realFrequencyDistribution(numSamples);
+	// for each round
+	for (int i = 0; i < round; ++i) {
+		//for each genes, get the frequency
+		for (int j = 0; j < totalGenes; ++j) {
+			int frequencyOfAGeneRandom = randomDistributionAll->at(i)[j];
+			int frequencyOfAGeneReal = realDistributionAll->at(i)[j];
+			//add the frequency to distribution
+			randomFrequencyDistribution[frequencyOfAGeneRandom]++;
+			realFrequencyDistribution[frequencyOfAGeneReal]++;
+		}
+	}
+
+	//2. compute divergence
+	//from perl code
+	//$js += $P_v * log( 2 * $P_v / ( $P_v + $Q_v ) ) / $log_2 if($P_v != 0);   # P Log ( P /(P+Q)/2 )
+	//$js += $Q_v * log( 2 * $Q_v / ( $P_v + $Q_v ) ) / $log_2 if($Q_v != 0);   # Q Log ( Q /(P+Q)/2 )
+
+	double jsDivergence = 0;
+	for (int i = 0; i < numSamples; ++i) {
+		double pi = realFrequencyDistribution[i];
+		double qi = randomFrequencyDistribution[i];
+		if (qi > 0 or pi > 0) {
+			if (pi != 0) {	//real frequency is zero
+				jsDivergence += pi * log(pi / ((pi + qi) / 2));
+			}
+			if (qi != 0) {	//random frequency is zero
+				jsDivergence += qi * log(qi / ((pi + qi) / 2));
+			}
+		}
+	}
+
+	return jsDivergence / 2;
+}
+
+double getMedianNumberOfDeregulatedGenes(TDoubleMatrix* geneExpressionMatrix, double F) {
+	int numSamples = geneExpressionMatrix->at(0).size();
+	int numGenes = geneExpressionMatrix->size();
+
+	//for each sample i
+	vector<int> counts;
+	for (int i = 0; i < numSamples; ++i) {
+		//count deregulated genes
+		int count = 0;
+		//for each gene j
+		for (int j = 0; j < numGenes; ++j) {
+			if (fabs(geneExpressionMatrix->at(j)[i]) > F) {
+				count++;
+			}
+		}
+		counts.push_back(count);
+	}
+
+	//find the median number of deregulated genes across samples
+	sort(counts.begin(), counts.end());
+	double median;
+	if (counts.size() % 2 == 0) {
+		median = (counts[counts.size() / 2 - 1] + counts[counts.size() / 2])
+				/ 2.0;
+	} else {
+		median = counts[counts.size() / 2];
+	}
+
+	return median;
+}
+
+void findMaximumJsDivergence(vector<JSDivergence>* jsDivergences, JSDivergence* maxJs){
+	int total = jsDivergences->size();
+	double max = 0;
+	for (int i = 0; i < total; ++i) {
+		if(jsDivergences->at(i).divergence > max){
+			maxJs->D = jsDivergences->at(i).D;
+			maxJs->L = jsDivergences->at(i).L;
+			maxJs->F = jsDivergences->at(i).F;
+			maxJs->divergence = jsDivergences->at(i).divergence;
+			max = maxJs->divergence;
+		}
+	}
+}
 

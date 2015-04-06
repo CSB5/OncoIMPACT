@@ -102,6 +102,7 @@ void findPhenotypeGenes(vector<bool>* isPhenotypeGenes, vector<int>* phenotypeGe
 	int totalGenes = genesFrequency->size();
 	int round = nullDistribution->at(0).size();
 
+	//TODO use statistical test to find the phenotype genes
 	//TEST simple use percentile
 	int p95 = ceil(round / 100 * 95);
 

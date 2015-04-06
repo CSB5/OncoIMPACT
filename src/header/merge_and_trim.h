@@ -9,6 +9,7 @@
 #define MERGE_AND_TRIM_H_
 
 #include <list>
+#include <algorithm>
 #include "utilities.h"
 #include "explained_genes.h"
 
@@ -27,5 +28,10 @@ void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedA
 		vector<vector<int> >* mutatedGeneIdsListReal, vector<bool>* isPhenotypeGenes, vector<bool>* isDriverGenes, vector<int>* phenotypeGeneIds);
 
 void trimSomeExplainedGenes(vector< list<Module> >* modulesListOfAllSamples, TIntAdjList* network, int L, int D);
+
+void trimModule(Module* module, TIntAdjList* network, int L, int D);
+void findShortestPath(int geneId, vector<int>* shortestPathToDeiverGenes, vector<int>* shortestPathToPhenotypeGenes,
+		vector<bool>* isDriverGeneInThisModule, vector<bool>* isPhenotypeGeneInThisModule, TIntAdjList* network,
+		int D, vector<bool>* isGeneInThisModule);
 
 #endif /* MERGE_AND_TRIM_H_ */

@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <algorithm>
+#include <queue>
 #include "../header/merge_and_trim.h"
 
 //merge module moduleId into the currentModuleId and deleted moduleId
@@ -58,10 +59,6 @@ void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedA
 	int totalGenes = isPhenotypeGenes->size();
 
 	for (int i = 0; i < totalSamples; ++i) {
-		//use vector<vector<MutatedAndExplianedGenes> > mutatedAndExplainedGenesListReal
-		//use vector<vector<int> > mutatedGeneIdsListReal
-		//use vector<bool> isPhenotypeGenes and isDriverGenes
-		//use vector<int> phenotypeGeneIds
 
 		//get a list of modules of sample i
 		vector<MutatedAndExplianedGenes> mutatedAndExplainedGenes = mutatedAndExplainedGenesListReal->at(i);
@@ -110,38 +107,38 @@ void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedA
 		copy(modules.begin(), modules.end(), std::back_inserter(*modulesList));
 
 
-		//merge modules that share phenotype genes
+		//TODO merge modules that share phenotype genes
 
 		//for each phenotype gene, find which modules contain it
-		int numPhenotypeGenes = phenotypeGeneIds->size();
-		for (int j = 0; j < numPhenotypeGenes; ++j) {
-
-			int currentPhenotypeGeneId = phenotypeGeneIds->at(j);
-			vector<int> moduleIdsToMerge;
-			bool isPhenotypeGeneInThisSample = false;
-
-			//for each module, find if it contains phenotype gene currentPhenotypeGeneId
-			for(list<Module>::iterator it = modulesList->begin(); it != modulesList->end(); it++){
-				list<int> phenotypeGeneIdsOfAModule = it->phenotypeGeneIds;
-				bool found = (find(phenotypeGeneIdsOfAModule.begin(), phenotypeGeneIdsOfAModule.end(), currentPhenotypeGeneId) != phenotypeGeneIdsOfAModule.end());
-				if(found){ // phenotypeGeneIds is a phenotype genes in this module of sample i
-					moduleIdsToMerge.push_back(it->moduleId);
-					isPhenotypeGeneInThisSample = true;
-				}
-			}
-
-			if (isPhenotypeGeneInThisSample) {	//then merge modules
-				int numModulesToMerge = moduleIdsToMerge.size();
-				if (numModulesToMerge > 1) {
-					int currentModuleId = moduleIdsToMerge[0];
-					for (int k = 1; k < numModulesToMerge; ++k) {
-						int moduleId = moduleIdsToMerge[k];
-						//merge module moduleId into the currentModuleId and deleted moduleId
-						mergeModules(currentModuleId, moduleId, modulesList);
-					}
-				}	//else do not need to merge
-			}
-		}
+//		int numPhenotypeGenes = phenotypeGeneIds->size();
+//		for (int j = 0; j < numPhenotypeGenes; ++j) {
+//
+//			int currentPhenotypeGeneId = phenotypeGeneIds->at(j);
+//			vector<int> moduleIdsToMerge;
+//			bool isPhenotypeGeneInThisSample = false;
+//
+//			//for each module, find if it contains phenotype gene currentPhenotypeGeneId
+//			for(list<Module>::iterator it = modulesList->begin(); it != modulesList->end(); it++){
+//				list<int> phenotypeGeneIdsOfAModule = it->phenotypeGeneIds;
+//				bool found = (find(phenotypeGeneIdsOfAModule.begin(), phenotypeGeneIdsOfAModule.end(), currentPhenotypeGeneId) != phenotypeGeneIdsOfAModule.end());
+//				if(found){ // phenotypeGeneIds is a phenotype genes in this module of sample i
+//					moduleIdsToMerge.push_back(it->moduleId);
+//					isPhenotypeGeneInThisSample = true;
+//				}
+//			}
+//
+//			if (isPhenotypeGeneInThisSample) {	//then merge modules
+//				int numModulesToMerge = moduleIdsToMerge.size();
+//				if (numModulesToMerge > 1) {
+//					int currentModuleId = moduleIdsToMerge[0];
+//					for (int k = 1; k < numModulesToMerge; ++k) {
+//						int moduleId = moduleIdsToMerge[k];
+//						//merge module moduleId into the currentModuleId and deleted moduleId
+//						mergeModules(currentModuleId, moduleId, modulesList);
+//					}
+//				}	//else do not need to merge
+//			}
+//		}
 
 		//cout << "sample #" << i << " has " << modulesListOfAllSamples->at(i).size() << " modules after merging\n";
 
@@ -149,6 +146,158 @@ void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedA
 }
 
 void trimSomeExplainedGenes(vector< list<Module> >* modulesListOfAllSamples, TIntAdjList* network, int L, int D){
+	int numSamples = modulesListOfAllSamples->size();
+	//for each sample i
+	for (int i = 0; i < numSamples; ++i) {
+		list<Module>* modulesList = &modulesListOfAllSamples->at(i);
+		//for each module
+		for(list<Module>::iterator it = modulesList->begin(); it != modulesList->end(); it++){
+			Module* currentModule = &(*it);
+				trimModule(currentModule, network, L, D);
+		}
+
+		if(i == 1)
+			break; //TEST for fist two samples
+	}
+
+
+}
+
+void trimModule(Module* module, TIntAdjList* network, int L, int D){
+	int totalGenes = network->size();
+
+	//find degree of all explained genes
+	list<int>* explainedGeneIdsList = &module->explainedGeneIds;
+	vector<int> explainedGensIds;
+	copy( explainedGeneIdsList->begin(), explainedGeneIdsList->end(), explainedGensIds.begin() );
+	int numExplainedGenes = explainedGensIds.size();
+	vector<bool> isExplainedGeneInThisModule(totalGenes);
+	for (int i = 0; i < numExplainedGenes; ++i) {
+		isExplainedGeneInThisModule[explainedGensIds[i]] = true;
+	}
+
+	vector<bool> isPhenotypeGeneInThisModule(totalGenes);
+	list<int>* phenotypeGeneIds = &module->phenotypeGeneIds;
+	for(list<int>::iterator it = phenotypeGeneIds->begin(); it != phenotypeGeneIds->end(); it++){
+		isPhenotypeGeneInThisModule[*it] = true;
+	}
+
+	vector<bool> isDriverGeneInThisModule(totalGenes);
+	list<int>* driverGeneIds = &module->driverGeneIds;
+	for(list<int>::iterator it = driverGeneIds->begin(); it != driverGeneIds->end(); it++){
+		isDriverGeneInThisModule[*it] = true;
+	}
+
+	vector<bool> isGeneInThisModule(totalGenes);
+	for (int i = 0; i < totalGenes; ++i) {
+		if(isExplainedGeneInThisModule[i] or
+				isPhenotypeGeneInThisModule[i] or
+				isDriverGeneInThisModule[i])
+			isGeneInThisModule[i] = true;
+	}
+
+	//for each explained gene i find the shortest path to any driver gene and any phenotype genes
+	vector<int> shortestPathToDeiverGenes;
+	vector<int> shortestPathToPhenotypeGenes;
+	for (int i = 0; i < numExplainedGenes; ++i) {
+		int currentExplainedGeneId = explainedGensIds[i];
+		findShortestPath(currentExplainedGeneId, &shortestPathToDeiverGenes, &shortestPathToPhenotypeGenes,
+				&isDriverGeneInThisModule, &isPhenotypeGeneInThisModule, network, D, &isGeneInThisModule);
+	}
+
+	//for each explained gene, check if it belong to at least one path (with length < L) between a mutated gene and a phenotype gene
+	vector<int> geneIdToBeRemoved;
+	for (int i = 0; i < numExplainedGenes; ++i) {
+		int currentExplainedGeneId = explainedGensIds[i];
+		int disToDriver = shortestPathToDeiverGenes[currentExplainedGeneId];
+		int disToPhenotype = shortestPathToPhenotypeGenes[currentExplainedGeneId];
+		if(disToDriver < 0 or disToPhenotype < 0){
+			geneIdToBeRemoved.push_back(currentExplainedGeneId);
+		}else if(disToDriver + disToPhenotype > L){
+			geneIdToBeRemoved.push_back(currentExplainedGeneId);
+		}
+	}
+
+	int numDelete = geneIdToBeRemoved.size();
+	for(int i = 0; i < numDelete; i++){
+		list<int>::iterator dit = find(explainedGeneIdsList->begin(), explainedGeneIdsList->end(), geneIdToBeRemoved[i]);
+		explainedGeneIdsList->erase(dit);
+	}
+}
+
+void findShortestPath(int geneId, vector<int>* shortestPathToDeiverGenes, vector<int>* shortestPathToPhenotypeGenes,
+		vector<bool>* isDriverGeneInThisModule, vector<bool>* isPhenotypeGeneInThisModule, TIntAdjList* network,
+		int D, vector<bool>* isGeneInThisModule){
+	// Mark all the vertices as not visited
+	int totalGenes = network->size();
+	bool *visited = new bool[totalGenes];
+	for (int j = 0; j < totalGenes; j++) {
+		visited[j] = false;
+	}
+
+	bool foundDriver = false;
+	bool foundPhenotype = false;
+	int distantToDriver = -1;
+	int distantToPhenotype = -1;
+
+	// Create queue
+	queue<int> q;
+	vector<int> levels(totalGenes); // store level of each nodes
+	// Mark the current node as visited
+	q.push(geneId);
+	visited[geneId] = true;
+	int currentGeneId;
+	int currentLevel = 0;
+
+	//consider all nodes
+	while (!q.empty()) {
+		//read the root node
+		currentGeneId = q.front();
+		q.pop();
+		currentLevel = levels[currentGeneId];
+
+		if(foundDriver and foundPhenotype){
+			break;
+		}
+
+		//explore all the connected nodes
+		vector<int> adj = (*network)[currentGeneId];
+
+		int numAdj = adj.size();
+		for (int j = 0; j < numAdj; j++) {
+			int currentNeighborGeneId = (*network)[currentGeneId][j];
+			if (isGeneInThisModule->at(currentNeighborGeneId) and !visited[currentNeighborGeneId]) {
+				// check conditions before push to the queue
+				// |fold change| > F
+
+				if(!foundDriver and isDriverGeneInThisModule->at(currentNeighborGeneId)){
+					distantToDriver = levels[currentGeneId] + 1;
+					foundDriver = true;
+				}
+
+				if(!foundPhenotype and isPhenotypeGeneInThisModule->at(currentNeighborGeneId)){
+					distantToPhenotype = levels[currentGeneId] + 1;
+					foundPhenotype = true;
+				}
+
+				int degree = getNodeDegree(network, currentNeighborGeneId);
+				if (degree <= D and !isDriverGeneInThisModule->at(currentNeighborGeneId) and !isPhenotypeGeneInThisModule->at(currentNeighborGeneId)) {
+					// push explained genes to queue
+					q.push(currentNeighborGeneId);
+					// save level
+					levels[currentGeneId] = currentLevel + 1;
+				}
+
+				visited[currentNeighborGeneId] = true;
+			}
+		}
+	}
+
+
+	delete[] visited;
+
+	shortestPathToDeiverGenes->push_back(distantToDriver);
+	shortestPathToPhenotypeGenes->push_back(distantToPhenotype);
 
 }
 
