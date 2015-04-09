@@ -24,8 +24,9 @@ struct ExplainedGene{
 
 struct MutatedAndExplianedGenes{
 	//int mutatedGeneId; this is equal to the index of the vector
-	vector<int> explainedGenesFreqency;
+	vector<int>* explainedGenesFreqency;
 };
+
 
 /*
  * Functions for finding explained genes
@@ -49,8 +50,8 @@ void getExplainedGenesIdOnly(vector<int>* explainedGeneIds, TIntAdjList* network
 void getExplainedGenesIdOnlyUpDown(vector<int>* explainedGenesFrequency, TIntAdjList* network, vector<double>* sampleGeneExpression,
 		vector<int>* mutatedGeneIds, int L, int D, double F);
 
-void getMutatedAndExplainedGenes(vector<MutatedAndExplianedGenes>* mutatedAndExplainedGenes, TIntAdjList* network,
-		vector<double>* sampleGeneExpression, vector<int>* mutatedGeneIds, int L, int D, double F);
+//void getMutatedAndExplainedGenes(vector<MutatedAndExplianedGenes>* mutatedAndExplainedGenes, TIntAdjList* network,
+//		vector<double>* sampleGeneExpression, vector<int>* mutatedGeneIds, int L, int D, double F);
 
 // BFS search for finding explained genes of geneId
 void BFSforExplainedGenes(TIntAdjList* network, int geneId, int L, int D,

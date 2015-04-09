@@ -22,7 +22,7 @@ void readGeneExpression(const char* filename, GeneExpression* geneExpression,
 	inFile.open(filename, std::ifstream::in);
 	vector<int>* geneIds = geneExpression->genes;
 
-	map<string, int>::iterator end = geneSymbolToId->end(); // gene not found in the network
+	map<string, int>::iterator end = geneSymbolToId->end(); // for a gene not found in the network
 
 	if (inFile.is_open()) {
 
@@ -30,18 +30,18 @@ void readGeneExpression(const char* filename, GeneExpression* geneExpression,
 		string samples;
 		getline(inFile, samples);
 
-		while (inFile.good()) { //for each gene
+		while (inFile.good()) { //for each row (gene)
 			string s;
 			if (!getline(inFile, s))
 				break;
 
 			istringstream ss(s);
-			vector<double> row;
+			vector<double> row;	//to save expression values of each gene
 
-			int i = 0;	// for read gene in the first column;
-			bool found = false;	// is a currrent gene found in the network
+			int i = 0;	// for read gene symbol in the first column
+			bool found = false;	// is a current gene found in the network
 
-			while (ss) {	//for each column
+			while (ss) {	//for each column (sample)
 				string s;
 
 				if (!getline(ss, s, delim))
@@ -49,9 +49,8 @@ void readGeneExpression(const char* filename, GeneExpression* geneExpression,
 				if(i == 0){ //read gene symbols
 					map<string, int>::iterator it = geneSymbolToId->find(s);
 					if(it != end){	//found in the network
-						//cout << "\tfound " << s;
 						found = true;
-						geneIds->push_back(it->second);
+						geneIds->push_back(it->second);	//add the gene id to geneEx
 					}else{
 						found = false;
 					}
@@ -59,15 +58,14 @@ void readGeneExpression(const char* filename, GeneExpression* geneExpression,
 					row.push_back(atof(s.c_str()));
 				}
 
-				if(!found)	//not found in the network, so skip this gene (row)
+				if(!found)	//not found in the network, so skip this row (gene)
 					break;
 
-				i++;
+				i++;	//go to the next column (sample)
 			}
 
 			if(found){
 				geneExpression->matrix->push_back(row);
-				//cout << " and added" << endl;
 			}
 		}
 		inFile.close();
@@ -97,7 +95,7 @@ void readMutations(const char* filename, Mutations* mutations,
 				break;
 
 			istringstream ss(s);
-			vector<int> row;
+			vector<int> row;	//to save mutation values of each gene
 
 			int i = 0;	// for read gene in the first column;
 			bool found = false;	// found in the network
@@ -117,17 +115,13 @@ void readMutations(const char* filename, Mutations* mutations,
 				}else{		//read expression values
 					row.push_back(atoi(s.c_str()));
 				}
-
 				if(!found)
 					break;
-
 				i++;
 			}
-
 			if(found){
 				mutations->matrix->push_back(row);
 			}
-
 		}
 		inFile.close();
 	} else {
@@ -173,7 +167,7 @@ void readPointMutations(const char* filename, PointMutations* pointMutations,
 					}else{
 						found = false;
 					}
-				}else{		//read expression values
+				}else{		//read mutation values
 					row.push_back(atoi(s.c_str()));
 				}
 
@@ -232,7 +226,7 @@ void readCopyNumberVariation(const char* filename, CopyNumberVariation* copyNumb
 					}else{
 						found = false;
 					}
-				}else{		//read expression values
+				}else{		//read mutation values
 					row.push_back(atoi(s.c_str()));
 				}
 
@@ -262,7 +256,6 @@ int findIndex(vector<int>* geneIds, int currentGeneId){
 			return i;
 		}
 	}
-
 	return index;
 }
 

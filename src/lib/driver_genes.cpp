@@ -47,11 +47,11 @@ void createBipartiteGraph(vector<vector<MutatedAndExplianedGenes> >* mutatedAndE
 		//for each mutated gene j
 		for (int j = 0; j < numMutatedGenes; ++j) {
 			int currentMutatedGeneId = mutatedGeneIds[j];
-			vector<int> explainedGenesFrequency =
+			vector<int>* explainedGenesFrequency =
 					mutatedAndExplainedGenes[currentMutatedGeneId].explainedGenesFreqency;
 
 			for (int k = 0; k < totalGenes; ++k) {
-				if(explainedGenesFrequency[k] > 0){ // gene k is explained in sample i
+				if(explainedGenesFrequency->at(k) > 0){ // gene k is explained in sample i
 					if(isPhenotypeGenes->at(k)){		// gene k is a phenotype gene
 						BipartitePhenotypeNode node;
 						node.phenotypeGeneId = k;

@@ -70,20 +70,19 @@ void getExplainedGenesIdOnlyUpDown(vector<int>* explainedGenesFrequency, TIntAdj
 	}
 }
 
-void getMutatedAndExplainedGenes(vector<MutatedAndExplianedGenes>* mutatedAndExplainedGenes, TIntAdjList* network,
-		vector<double>* sampleGeneExpression, vector<int>* mutatedGeneIds, int L, int D, double F){
-	int numMutatedGenes = mutatedGeneIds->size();
-	int totalGenes = network->size();
-	for (int i = 0; i < numMutatedGenes; ++i) {	// for each mutated genes
-		int mutatedGeneId = mutatedGeneIds->at(i);
-		MutatedAndExplianedGenes* meg = &mutatedAndExplainedGenes->at(mutatedGeneId);
-		meg->explainedGenesFreqency = vector<int>(totalGenes);
-		//BFS for explained genes of the current mutated gene
-		BFSforExplainedGenesIdOnly(network, mutatedGeneId, L, D, F,
-				&(meg->explainedGenesFreqency), sampleGeneExpression);
-	}
-
-}
+//void getMutatedAndExplainedGenes(vector<MutatedAndExplianedGenes>* mutatedAndExplainedGenes, TIntAdjList* network,
+//		vector<double>* sampleGeneExpression, vector<int>* mutatedGeneIds, int L, int D, double F){
+//	int numMutatedGenes = mutatedGeneIds->size();
+//	int totalGenes = network->size();
+//	for (int i = 0; i < numMutatedGenes; ++i) {	// for each mutated genes
+//		int mutatedGeneId = mutatedGeneIds->at(i);
+//		MutatedAndExplianedGenes* meg = &mutatedAndExplainedGenes->at(mutatedGeneId);
+//		//BFS for explained genes of the current mutated gene
+//		BFSforExplainedGenesIdOnly(network, mutatedGeneId, L, D, F,
+//				meg->explainedGenesFreqency, sampleGeneExpression);
+//	}
+//
+//}
 
 
 void BFSforExplainedGenes(TIntAdjList* network, int geneId, int L, int D,
@@ -180,10 +179,6 @@ void BFSforExplainedGenesIdOnly(TIntAdjList* network, int geneId, int L, int D,
 			break;
 		}
 
-		//cout << currentLevel << " : " << currentGene << "(" <<
-		//		sampleGeneExpression->at(currentGene) << ")(" <<
-		//		getNodeDegree(network, currentGene) << ")" << endl;
-
 		//explore all the connected nodes
 		vector<int> adj = (*network)[currentGene];
 
@@ -196,7 +191,6 @@ void BFSforExplainedGenesIdOnly(TIntAdjList* network, int geneId, int L, int D,
 				if (fabs(sampleGeneExpression->at(geneId)) > F) {
 					// is explained gene
 					explainedGenesFrequency->at(geneId) += 1;
-//					cout << "gene " << geneId << " is explained" << endl;
 					int degree = getNodeDegree(network, geneId);
 					// check the degree
 					if (degree <= D) {

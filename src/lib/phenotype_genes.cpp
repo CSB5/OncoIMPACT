@@ -71,7 +71,7 @@ void addFrequncyForRealDataset(vector<int>* genesFrequency,	vector< vector<Mutat
 					mutatedAndExplainedGenesListReal->at(0);
 	int numMut = mutatedAndExplainedGenes.size();
 	for (int l = 0; l < numMut; ++l) {
-		vector<int> explainedGenesFreqency = mutatedAndExplainedGenes[l].explainedGenesFreqency;
+		vector<int>* explainedGenesFreqency = mutatedAndExplainedGenes[l].explainedGenesFreqency;
 	}
 
 }
@@ -84,11 +84,11 @@ void combineListOfExplainedGenes(
 
 	//for each mutated gene
 	for (int i = 0; i < numGenesMut; ++i) {
-		vector<int> explainedGenesFreqency =
+		vector<int>* explainedGenesFreqency =
 				mutatedAndExplainedGenes->at(mutatedGeneIds->at(i)).explainedGenesFreqency;
 		//for each corresponding gene
 		for (int j = 0; j < totalGenes; ++j) {
-			if (explainedGenesFreqency[j] > 0) {
+			if (explainedGenesFreqency->at(j) > 0) {
 				explainedGenesAll->at(j) = true;
 			}
 		}

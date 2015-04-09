@@ -88,12 +88,12 @@ void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedA
 		for(list<int>::iterator it = driverGeneIdsForASample.begin(); it != driverGeneIdsForASample.end(); it++, j++){
 
 			int currentMutatedGeneId = *it;
-			vector<int> explainedGenesFreqency = mutatedAndExplainedGenes[currentMutatedGeneId].explainedGenesFreqency;
+			vector<int>* explainedGenesFreqency = mutatedAndExplainedGenes[currentMutatedGeneId].explainedGenesFreqency;
 
 			modules[j].moduleId = j;
 			modules[j].driverGeneIds.push_back(currentMutatedGeneId);
 			for (int k = 0; k < totalGenes; ++k) {
-				if(explainedGenesFreqency[k] > 0){
+				if(explainedGenesFreqency->at(k) > 0){
 					if(isPhenotypeGenes->at(k)){
 						modules[j].phenotypeGeneIds.push_back(k);
 					}else{
@@ -108,37 +108,36 @@ void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedA
 
 
 		//TODO merge modules that share phenotype genes
-
 		//for each phenotype gene, find which modules contain it
-//		int numPhenotypeGenes = phenotypeGeneIds->size();
-//		for (int j = 0; j < numPhenotypeGenes; ++j) {
-//
-//			int currentPhenotypeGeneId = phenotypeGeneIds->at(j);
-//			vector<int> moduleIdsToMerge;
-//			bool isPhenotypeGeneInThisSample = false;
-//
-//			//for each module, find if it contains phenotype gene currentPhenotypeGeneId
-//			for(list<Module>::iterator it = modulesList->begin(); it != modulesList->end(); it++){
-//				list<int> phenotypeGeneIdsOfAModule = it->phenotypeGeneIds;
-//				bool found = (find(phenotypeGeneIdsOfAModule.begin(), phenotypeGeneIdsOfAModule.end(), currentPhenotypeGeneId) != phenotypeGeneIdsOfAModule.end());
-//				if(found){ // phenotypeGeneIds is a phenotype genes in this module of sample i
-//					moduleIdsToMerge.push_back(it->moduleId);
-//					isPhenotypeGeneInThisSample = true;
-//				}
-//			}
-//
-//			if (isPhenotypeGeneInThisSample) {	//then merge modules
-//				int numModulesToMerge = moduleIdsToMerge.size();
-//				if (numModulesToMerge > 1) {
-//					int currentModuleId = moduleIdsToMerge[0];
-//					for (int k = 1; k < numModulesToMerge; ++k) {
-//						int moduleId = moduleIdsToMerge[k];
-//						//merge module moduleId into the currentModuleId and deleted moduleId
-//						mergeModules(currentModuleId, moduleId, modulesList);
-//					}
-//				}	//else do not need to merge
-//			}
-//		}
+		int numPhenotypeGenes = phenotypeGeneIds->size();
+		for (int j = 0; j < numPhenotypeGenes; ++j) {
+
+			int currentPhenotypeGeneId = phenotypeGeneIds->at(j);
+			vector<int> moduleIdsToMerge;
+			bool isPhenotypeGeneInThisSample = false;
+
+			//for each module, find if it contains phenotype gene currentPhenotypeGeneId
+			for(list<Module>::iterator it = modulesList->begin(); it != modulesList->end(); it++){
+				list<int> phenotypeGeneIdsOfAModule = it->phenotypeGeneIds;
+				bool found = (find(phenotypeGeneIdsOfAModule.begin(), phenotypeGeneIdsOfAModule.end(), currentPhenotypeGeneId) != phenotypeGeneIdsOfAModule.end());
+				if(found){ // phenotypeGeneIds is a phenotype genes in this module of sample i
+					moduleIdsToMerge.push_back(it->moduleId);
+					isPhenotypeGeneInThisSample = true;
+				}
+			}
+
+			if (isPhenotypeGeneInThisSample) {	//then merge modules
+				int numModulesToMerge = moduleIdsToMerge.size();
+				if (numModulesToMerge > 1) {
+					int currentModuleId = moduleIdsToMerge[0];
+					for (int k = 1; k < numModulesToMerge; ++k) {
+						int moduleId = moduleIdsToMerge[k];
+						//merge module moduleId into the currentModuleId and deleted moduleId
+						mergeModules(currentModuleId, moduleId, modulesList);
+					}
+				}	//else do not need to merge
+			}
+		}
 
 		//cout << "sample #" << i << " has " << modulesListOfAllSamples->at(i).size() << " modules after merging\n";
 
