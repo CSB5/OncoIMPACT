@@ -124,6 +124,7 @@ void readNetwork(const char* filename, TIntAdjList* network,
 
 			istringstream ss(s);
 			vector<string> edge;
+			vector<string> edgeBackward;
 
 			while (ss) {
 				string s;
@@ -133,7 +134,12 @@ void readNetwork(const char* filename, TIntAdjList* network,
 				edge.push_back(s);
 			}
 
+			//add the other edge (b-a) in addition to (a-b)
+			edgeBackward.push_back(edge[1]);
+			edgeBackward.push_back(edge[0]);
+
 			edgesTemp.push_back(edge);
+			edgesTemp.push_back(edgeBackward);
 		}
 		inFile.close();
 	} else {
@@ -166,12 +172,29 @@ void readNetwork(const char* filename, TIntAdjList* network,
 	int numEdge = edgesTemp.size();
 	network->resize(numNode);
 
+	cout << "total number of edges = " << numEdge << endl;
+
 	int source = -1;
 	int target = -1;
 	for (int i = 0; i < numEdge; ++i) {
 		source = geneSymbolToId->find(edgesTemp[i][0])->second;
 		target = geneSymbolToId->find(edgesTemp[i][1])->second;
 		(*network)[source].push_back(target);
+	}
+
+	//delete the duplicated (target) nodes in the adjacency list
+	//(in case that the network file contains some backward edge)
+	for (int i = 0; i < numNode; ++i) {
+		//for a current gene i
+		int size = network->at(i).size();
+
+		//delete all duplicate
+		set<int> uniqueIds;
+		for (int j = 0; j < size; ++j) {
+			uniqueIds.insert(network->at(i)[j]);
+		}
+		network->at(i).clear();
+		network->at(i).assign(uniqueIds.begin(), uniqueIds.end());
 	}
 }
 

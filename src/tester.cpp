@@ -330,7 +330,7 @@ int main() {
 
 	//TEST print gene frequency of the real dataset
 	vector<string>* outputRealGenesFrequency = new vector<string>;
-	outputStr->push_back("gene_symbol\tfrequency");
+	outputRealGenesFrequency->push_back("gene_symbol\tfrequency");
 	for (int i = 0; i < totalGenes; ++i) {
 		string str = geneIdToSymbol[i] + "\t" + intToStr(genesFrequencyReal[i]);
 		outputRealGenesFrequency->push_back(str);
@@ -338,7 +338,6 @@ int main() {
 	filename = "genes_frequency.tsv";
 	writeStrVector(filename.c_str(), outputRealGenesFrequency);
 	delete outputRealGenesFrequency;
-
 
 	// the following have to be done 500 times to generate the null distribution
 	vector< vector<int> > nullDistribution(totalGenes);
@@ -424,14 +423,6 @@ int main() {
 	vector<BipartiteEdge>* bipartiteEdges = new vector<BipartiteEdge>(totalGenes);
 	createBipartiteGraph(&mutatedAndExplainedGenesListReal, &mutatedGeneIdsListReal, &isPhenotypeGenes, bipartiteEdges);
 
-//	int numPhenotypeGenes = 0;
-//	for (int i = 0; i < totalGenes; ++i) {
-//		if(isMutatedGenes[i]){
-//			numPhenotypeGenes += bipartiteEdges->at(i).phenotypeGeneIdsAndSampleIds.size();
-//		}
-//	}
-//	cout << "\t\ttotal number of edges is " << numPhenotypeGenes << endl;
-
 	//greedy minimum set covering
 	cout << "\tperforming greedy minimum set cover algorithm ...\n";
 	vector<int> driverGeneIds;	// to save diver gene ids
@@ -456,14 +447,14 @@ int main() {
 	findModulesInAllSamples(&mutatedAndExplainedGenesListReal, &modulesListOfAllSamples,
 			&mutatedGeneIdsListReal, &isPhenotypeGenes, &isDriverGenes, &phenotypeGeneIds);
 
-	filename = "merged_modules.txt";
+	filename = "merged_modules.tsv";
 	saveModules(&modulesListOfAllSamples, filename, &geneIdToSymbol);
 
 	cout << "trimming explained genes for all samples ...\n";
-	//TODO trim modules
-	trimSomeExplainedGenes(&modulesListOfAllSamples, &network, L, D);
+	//TODO FIX BUGS of trimming modules
+	trimSomeExplainedGenes(&modulesListOfAllSamples, &network, L, D, &geneIdToSymbol);
 
-	filename = "trimmed_modules.txt";
+	filename = "trimmed_modules.tsv";
 	saveModules(&modulesListOfAllSamples, filename, &geneIdToSymbol);
 
 	//delete the vector<int>* explainedGenesFreqency
