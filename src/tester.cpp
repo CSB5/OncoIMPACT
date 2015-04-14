@@ -20,6 +20,7 @@
 #include "header/merge_and_trim.h"
 #include "header/results.h"
 #include "header/parameters.h"
+#include "header/impact_scores.h"
 
 //#include <windows.h>
 #include <stdio.h>
@@ -191,30 +192,8 @@ int main() {
 	if(totalSamples < 50){
 		numSamples = totalSamples;
 	}
-	cout << "tuning parameters by using " << numSamples << " samples ..."
+	cout << "tuning parameters by using " << numSamples << " randomly choosing samples ..."
 			<< endl;
-
-	//TODO do we need to resampling the samples for every round? Yes
-	//list of samples id to be used for tuning the parameters
-	vector<int> rrank(totalSamples);
-	createPermutation(&rrank);	//return a permutation of [0, totalSamples-1]
-
-	//TODO create sub matrix for case of < 50 samples (just skip this part and use the original dataset)
-	//gene expression submatrix
-	TDoubleMatrix subGeneExpressionMatrix;
-	GeneExpression subGeneExpression;
-	subGeneExpression.genes = &genesEx;	// the same set of genes as the original gene expression matrix
-	subGeneExpression.matrix = &subGeneExpressionMatrix;	//subset of samples
-	randomlyChooseSamplesDouble(&originalGeneExpressionMatrix,
-			&subGeneExpressionMatrix, &rrank, numSamples);
-
-	//mutation submatrix
-	TIntegerMatrix subMutationMatrix;
-	Mutations subMutations;
-	subMutations.genes = &genesMut;	// the same set of genes as the combined mutation matrix
-	subMutations.matrix = &subMutationMatrix;
-	randomlyChooseSamplesInteger(&originalMutationMatrix, &subMutationMatrix,
-			&rrank, numSamples);
 
 	cout << "computing JS divergence for all parameters (L,D,F) ... " << endl;
 
@@ -237,17 +216,39 @@ int main() {
 	//initialize the vector to save the divergence of each set of parameters
 	vector<JSDivergence>* jsDivergences = new vector<JSDivergence>(numCombinations);
 
-	//findParameters(jsDivergences, &Ls, &Ds, &Fs, totalGenes, &subGeneExpression, &subMutations, &network);
+//OLD:
+//	//list of samples id to be used for tuning the parameters
+//	vector<int> rrank(totalSamples);
+//	createPermutation(&rrank);	//return a permutation of [0, totalSamples-1]
+//
+//	//TO DO create sub matrix for case of < 50 samples (just skip this part and use the original dataset)
+//	//gene expression submatrix
+//	TDoubleMatrix subGeneExpressionMatrix;
+//	GeneExpression subGeneExpression;
+//	subGeneExpression.genes = &genesEx;	// the same set of genes as the original gene expression matrix
+//	subGeneExpression.matrix = &subGeneExpressionMatrix;	//subset of samples
+//	randomlyChooseSamplesDouble(&originalGeneExpressionMatrix,
+//			&subGeneExpressionMatrix, &rrank, numSamples);
+//
+//	//mutation submatrix
+//	TIntegerMatrix subMutationMatrix;
+//	Mutations subMutations;
+//	subMutations.genes = &genesMut;	// the same set of genes as the combined mutation matrix
+//	subMutations.matrix = &subMutationMatrix;
+//	randomlyChooseSamplesInteger(&originalMutationMatrix, &subMutationMatrix,
+//			&rrank, numSamples);
+
+	findParameters(jsDivergences, &Ls, &Ds, &Fs, totalGenes, &geneExpression, &mutations, &network, numSamples);
 	//TODO write the JS divergence result to a file
 
 	cout << "DONE tunning parameters (" << (float(clock() - begin_time) / CLOCKS_PER_SEC)
 			<< " sec)\n";
 
 	//choose the best parameters
-	//JSDivergence maxJs;
-	//findMaximumJsDivergence(jsDivergences, &maxJs);
+	JSDivergence maxJs;
+	findMaximumJsDivergence(jsDivergences, &maxJs);
 
-	//cout << "the maximum divergence is " << maxJs.divergence << " when L, D, F = " << maxJs.L << ", " << maxJs.D << ", " << maxJs.F << endl;
+	cout << "the maximum divergence is " << maxJs.divergence << " when L, D, F = " << maxJs.L << ", " << maxJs.D << ", " << maxJs.F << endl;
 
 	//TODO set the L D F to maxJs
 	int L = 16;
@@ -331,7 +332,7 @@ int main() {
 
 	//OUTPUT: print gene frequency of the real dataset
 	vector<string>* outputRealGenesFrequency = new vector<string>;
-	outputRealGenesFrequency->push_back("gene_symbol\tfrequency");
+	outputRealGenesFrequency->push_back("GENE\tFREQUENCY");
 	for (int i = 0; i < totalGenes; ++i) {
 		string str = geneIdToSymbol[i] + "\t" + intToStr(genesFrequencyReal[i]);
 		outputRealGenesFrequency->push_back(str);
@@ -390,9 +391,6 @@ int main() {
 			explainedGenesFrequencyForPhenotypeGenes.push_back(explainedGenesFrequency);
 		}
 
-		//OLD: add the frequency of a current round to generate null distribution (to be added 500 times)
-		//addFrequencyForNullDistribution(&nullDistribution, &explainedGenesListForPhenotypeGenes);
-
 		//for each gene, count the frequency that exceed the real frequency
 		countGeneFrequencyGreaterThanRealFrequency(&geneFrequencyGreaterThanRealFrequencyCounter,
 				&explainedGenesFrequencyForPhenotypeGenes, &genesFrequencyReal);
@@ -401,20 +399,13 @@ int main() {
 	cout << endl; //for print progression
 
 	//collect phenotype genes
-	//consider only explained genes
-
 	vector<bool> isPhenotypeGenes(totalGenes);	// 1 for yes 0 for no
 	vector<int> phenotypeGeneIds;	// phenotype gene ids
-
-	//OLD:
-	//findPhenotypeGenes(&isPhenotypeGenes, &phenotypeGeneIds, &genesFrequencyReal,
-	//		&nullDistribution, &isExplainedGenes);
 
 	findPhenotypeGenesUsingCounter(&isPhenotypeGenes, &phenotypeGeneIds, &genesFrequencyReal,
 			&geneFrequencyGreaterThanRealFrequencyCounter, &isExplainedGenes, round, totalSamples, &geneIdToSymbol);
 
-	//string phenotypeGeneFileName = "phenotype_genes.txt";
-	//saveGeneSymbols(phenotypeGeneFileName.c_str(), &phenotypeGeneIds, &geneIdToSymbol);
+	cout << "\tthere are " << phenotypeGeneIds.size() << " phenotype genes";
 
 	/*
 	 * Find driver genes
@@ -434,20 +425,20 @@ int main() {
 	cout << "\tcreating bipartite graph ...\n";
 	//create bipartite graph ( mutated gene --- phenotype gene ). This is done at sample level, so have to remember sample id.
 	//BipartiteEdge: each mutated gene contains a pair of (phenotype gene id, sample id)
-	vector<BipartiteEdge>* bipartiteEdges = new vector<BipartiteEdge>(totalGenes);
-	createBipartiteGraph(&mutatedAndExplainedGenesListReal, &mutatedGeneIdsListReal, &isPhenotypeGenes, bipartiteEdges);
+	vector<BipartiteEdge>* bipartiteGraph = new vector<BipartiteEdge>(totalGenes);
+	createBipartiteGraph(&mutatedAndExplainedGenesListReal, &mutatedGeneIdsListReal, &isPhenotypeGenes, bipartiteGraph);
 
 	//greedy minimum set covering
 	cout << "\tperforming greedy minimum set cover algorithm ...\n";
 	vector<int> driverGeneIds;	// to save diver gene ids
-	findDriverGenes(bipartiteEdges, &mutatedGeneIdsList, &driverGeneIds);
+	findDriverGenes(bipartiteGraph, &mutatedGeneIdsList, &driverGeneIds);
 
 	int numDriverGenes = driverGeneIds.size();
 	cout << "\ttotal number of driver genes = " << numDriverGenes << endl;
-	filename = "driver_genes.txt";
+	filename = "output/driver_genes.tsv";
 	saveGeneSymbols(filename.c_str(), &driverGeneIds, &geneIdToSymbol);
 
-	delete bipartiteEdges;
+	delete bipartiteGraph;
 
 	cout << "merging modules for all samples ...\n";
 
@@ -461,15 +452,24 @@ int main() {
 	findModulesInAllSamples(&mutatedAndExplainedGenesListReal, &modulesListOfAllSamples,
 			&mutatedGeneIdsListReal, &isPhenotypeGenes, &isDriverGenes, &phenotypeGeneIds);
 
-	filename = "merged_modules.tsv";
+	filename = "output/merged_modules.tsv";
 	saveModules(&modulesListOfAllSamples, filename, &geneIdToSymbol);
 
 	cout << "trimming explained genes for all samples ...\n";
 	//TODO FIX BUGS of trimming modules
 	trimSomeExplainedGenes(&modulesListOfAllSamples, &network, L, D, &geneIdToSymbol);
 
-	filename = "trimmed_modules.tsv";
+	filename = "output/trimmed_modules.tsv";
 	saveModules(&modulesListOfAllSamples, filename, &geneIdToSymbol);
+
+	cout << "calculating IMPACT scores for all samples ...\n";
+
+	vector< vector<Driver> > driversOfAllSamples(totalSamples);
+	calculateImpactScoresForAllSamples(&modulesListOfAllSamples, &driversOfAllSamples, &originalGeneExpressionMatrix, &genesEx, totalGenes, F, &geneIdToSymbol);
+
+	cout << "aggregating IMPACT scores across all samples ...\n";
+
+	aggregateDriversAcrossSamples(&driversOfAllSamples, &geneIdToSymbol, totalGenes);
 
 	//delete the vector<int>* explainedGenesFreqency
 	for (int i = 0; i < totalSamples; ++i) {

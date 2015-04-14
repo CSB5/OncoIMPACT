@@ -138,7 +138,7 @@ void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedA
 		copy(modules.begin(), modules.end(), std::back_inserter(*modulesList));
 
 
-		//TODO merge modules that share phenotype genes
+		//merge modules that share phenotype genes
 		//for each phenotype gene, find which modules contain it
 		int numPhenotypeGenes = phenotypeGeneIds->size();
 		for (int j = 0; j < numPhenotypeGenes; ++j) {

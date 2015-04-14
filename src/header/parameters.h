@@ -21,9 +21,9 @@ struct JSDivergence{
 };
 
 void findParameters(vector<JSDivergence>* jsDivergences, vector<int>* Ls, vector<int>* Ds, vector<double>* Fs, int totalGenes,
-		GeneExpression* subGeneExpression, Mutations* subGeneMutation, TIntAdjList* network);
+		GeneExpression* geneExpression, Mutations* mutations, TIntAdjList* network, int numSamples);
 
-double calculateJSDivergence(vector< vector<int> >* realDistributionAll, vector< vector<int> >* randomDistributionAll, int numSamples);
+double calculateJSDivergence(const vector< vector<int> >* realDistributionAll, const vector< vector<int> >* randomDistributionAll, int numSamples);
 double getMedianNumberOfDeregulatedGenes(TDoubleMatrix* geneExpressionMatrix, double F);
 void findMaximumJsDivergence(vector<JSDivergence>* jsDivergences, JSDivergence* maxJs);
 
