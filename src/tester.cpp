@@ -124,7 +124,7 @@ int main() {
 			<< endl;
 
 	//TODO separate the combining code to a function in input.cpp
-	// create a list of mutated genes, which contain point mutation or CNV or both
+	//create a list of mutated genes, which contain point mutation or CNV or both
 	vector<int> genesMut; // gene ids ; size = # mutated genes
 	vector<bool>* isMutated = new vector<bool>(totalGenes);
 	//1. check point mutation
@@ -177,8 +177,8 @@ int main() {
 
 	totalSamples = originalMutationMatrix[0].size();
 
-	cout << "\ttotal genes in mutatation matrix is " << numGenesMut << endl;
-	cout << "\ttotal samples in mutatation matrix is " << totalSamples
+	cout << "\ttotal genes in mutation matrix is " << numGenesMut << endl;
+	cout << "\ttotal samples in mutation matrix is " << totalSamples
 			<< endl;
 
 	/*
@@ -194,12 +194,12 @@ int main() {
 	cout << "tuning parameters by using " << numSamples << " samples ..."
 			<< endl;
 
-	//TODO do we need to resampling the samples for every round?
+	//TODO do we need to resampling the samples for every round? Yes
 	//list of samples id to be used for tuning the parameters
 	vector<int> rrank(totalSamples);
 	createPermutation(&rrank);	//return a permutation of [0, totalSamples-1]
 
-	//TODO create sub matrix for case of < 50 samples
+	//TODO create sub matrix for case of < 50 samples (just skip this part and use the original dataset)
 	//gene expression submatrix
 	TDoubleMatrix subGeneExpressionMatrix;
 	GeneExpression subGeneExpression;
@@ -219,15 +219,15 @@ int main() {
 	cout << "computing JS divergence for all parameters (L,D,F) ... " << endl;
 
 	//initialize all the parameters to be tested
-//	int Ls[] = {2, 4, 6, 8, 10, 12, 14, 16, 18, 20};
+//	int LsVal[] = {2, 4, 6, 8, 10, 12, 14, 16, 18, 20};
 	int LsVal[] = {14, 16, 18, 20};	//fewer parameters for testing
 	vector<int> Ls(LsVal, LsVal + sizeof LsVal / sizeof LsVal[0]);
 	int numLs = Ls.size();
-//	int Ds[] = {10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100};
+//	int DsVal[] = {10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100};
 	int DsVal[] = {55, 60, 65, 70};	//fewer parameters for testing
 	vector<int> Ds(DsVal, DsVal + sizeof DsVal / sizeof DsVal[0]);
 	int numDs = Ds.size();	//fewer parameters for testing
-//	double Fs[] = {1, 1.5, 2, 2.5, 3};
+//	double FsVal[] = {1, 1.5, 2, 2.5, 3};
 	double FsVal[] = {2, 2.5};	//fewer parameters for testing
 	vector<double> Fs(FsVal, FsVal + sizeof FsVal / sizeof FsVal[0]);
 	int numFs = Fs.size();
@@ -237,7 +237,7 @@ int main() {
 	//initialize the vector to save the divergence of each set of parameters
 	vector<JSDivergence>* jsDivergences = new vector<JSDivergence>(numCombinations);
 
-	//TODO findParameters(jsDivergences, &Ls, &Ds, &Fs, totalGenes, &subGeneExpression, &subMutations, &network);
+	//findParameters(jsDivergences, &Ls, &Ds, &Fs, totalGenes, &subGeneExpression, &subMutations, &network);
 	//TODO write the JS divergence result to a file
 
 	cout << "DONE tunning parameters (" << (float(clock() - begin_time) / CLOCKS_PER_SEC)
@@ -245,7 +245,7 @@ int main() {
 
 	//choose the best parameters
 	//JSDivergence maxJs;
-	//TODO findMaximumJsDivergence(jsDivergences, &maxJs);
+	//findMaximumJsDivergence(jsDivergences, &maxJs);
 
 	//cout << "the maximum divergence is " << maxJs.divergence << " when L, D, F = " << maxJs.L << ", " << maxJs.D << ", " << maxJs.F << endl;
 
@@ -301,7 +301,7 @@ int main() {
 
 	}
 
-	//TEST: print all modules in all samples (mutatedAndExplainedGenesListReal)
+	//OUTPUT: print all modules in all samples (mutatedAndExplainedGenesListReal)
 	vector<string>* outputStr = new vector<string>;
 	outputStr->push_back("sample_id\tgene_symbol\ttype");
 	for (int i = 0; i < totalSamples; ++i) {
@@ -318,7 +318,7 @@ int main() {
 			}
 		}
 	}
-	filename = "original_modules.tsv";
+	filename = "output/raw_modules.tsv";
 	writeStrVector(filename.c_str(), outputStr);
 	delete outputStr;
 
@@ -328,20 +328,25 @@ int main() {
 			&mutatedAndExplainedGenesListReal, &mutatedGeneIdsListReal,
 			&isExplainedGenes);
 
-	//TEST print gene frequency of the real dataset
+
+	//OUTPUT: print gene frequency of the real dataset
 	vector<string>* outputRealGenesFrequency = new vector<string>;
 	outputRealGenesFrequency->push_back("gene_symbol\tfrequency");
 	for (int i = 0; i < totalGenes; ++i) {
 		string str = geneIdToSymbol[i] + "\t" + intToStr(genesFrequencyReal[i]);
 		outputRealGenesFrequency->push_back(str);
 	}
-	filename = "genes_frequency.tsv";
+	filename = "output/genes_frequency.tsv";
 	writeStrVector(filename.c_str(), outputRealGenesFrequency);
 	delete outputRealGenesFrequency;
 
-	// the following have to be done 500 times to generate the null distribution
-	vector< vector<int> > nullDistribution(totalGenes);
-	int round = 100;
+	//create a vector for counting the number of times (for each gene)
+	//the random samples have greater frequency than the real dataset
+	vector<int> geneFrequencyGreaterThanRealFrequencyCounter(totalGenes);
+
+	//OLD: the following have to be done 500-1000 times to generate the null distribution
+	//vector< vector<int> > nullDistribution(totalGenes);
+	int round = 500;
 
 	cout << "\tcreating null distribution (using " << round << " permutations) ... ";
 
@@ -350,7 +355,7 @@ int main() {
 
 	for (int r = 0; r < round; ++r) {
 		// a list for explained genes of each sample
-		vector<vector<int> > explainedGenesListForPhenotypeGenes;
+		vector<vector<int> > explainedGenesFrequencyForPhenotypeGenes;
 
 		//print progression
 		if (r % interval == 0) {
@@ -377,17 +382,20 @@ int main() {
 					&permutedGeneLabelsMut);
 
 			//find explained genes of a current sample
-			vector<int> explainedGeneIds(totalGenes);
-			getExplainedGenesIdOnly(&explainedGeneIds, &network,
+			vector<int> explainedGenesFrequency(totalGenes);
+			getExplainedGenesIdOnly(&explainedGenesFrequency, &network,
 					&sampleGeneExpression, &mutatedGeneIds, L, D, F);
 
 			//add explained genes to the list of all samples
-			explainedGenesListForPhenotypeGenes.push_back(explainedGeneIds);
+			explainedGenesFrequencyForPhenotypeGenes.push_back(explainedGenesFrequency);
 		}
 
-		// add the frequency of a current round to generate null distribution (to be added 500 times)
-		addFrequencyForNullDistribution(&nullDistribution,
-				&explainedGenesListForPhenotypeGenes);
+		//OLD: add the frequency of a current round to generate null distribution (to be added 500 times)
+		//addFrequencyForNullDistribution(&nullDistribution, &explainedGenesListForPhenotypeGenes);
+
+		//for each gene, count the frequency that exceed the real frequency
+		countGeneFrequencyGreaterThanRealFrequency(&geneFrequencyGreaterThanRealFrequencyCounter,
+				&explainedGenesFrequencyForPhenotypeGenes, &genesFrequencyReal);
 	}
 
 	cout << endl; //for print progression
@@ -397,10 +405,16 @@ int main() {
 
 	vector<bool> isPhenotypeGenes(totalGenes);	// 1 for yes 0 for no
 	vector<int> phenotypeGeneIds;	// phenotype gene ids
-	findPhenotypeGenes(&isPhenotypeGenes, &phenotypeGeneIds, &genesFrequencyReal,
-			&nullDistribution, &isExplainedGenes);
-	string phenotypeGeneFileName = "phenotype_genes.txt";
-	saveGeneSymbols(phenotypeGeneFileName.c_str(), &phenotypeGeneIds, &geneIdToSymbol);
+
+	//OLD:
+	//findPhenotypeGenes(&isPhenotypeGenes, &phenotypeGeneIds, &genesFrequencyReal,
+	//		&nullDistribution, &isExplainedGenes);
+
+	findPhenotypeGenesUsingCounter(&isPhenotypeGenes, &phenotypeGeneIds, &genesFrequencyReal,
+			&geneFrequencyGreaterThanRealFrequencyCounter, &isExplainedGenes, round, totalSamples, &geneIdToSymbol);
+
+	//string phenotypeGeneFileName = "phenotype_genes.txt";
+	//saveGeneSymbols(phenotypeGeneFileName.c_str(), &phenotypeGeneIds, &geneIdToSymbol);
 
 	/*
 	 * Find driver genes

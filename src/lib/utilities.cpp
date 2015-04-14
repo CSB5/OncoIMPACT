@@ -172,7 +172,7 @@ void readNetwork(const char* filename, TIntAdjList* network,
 	int numEdge = edgesTemp.size();
 	network->resize(numNode);
 
-	cout << "total number of edges = " << numEdge << endl;
+//	cout << "total number of edges = " << numEdge << endl;
 
 	int source = -1;
 	int target = -1;
@@ -362,6 +362,12 @@ void mapGeneIdToSymbol(vector<int>* ids, vector<string>* symbols,
  */
 
 string intToStr(int i){
+	stringstream ss;
+	ss << i;
+	return ss.str();
+}
+
+string doubleToStr(double i){
 	stringstream ss;
 	ss << i;
 	return ss.str();

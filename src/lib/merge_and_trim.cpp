@@ -181,10 +181,10 @@ void trimSomeExplainedGenes(vector< list<Module> >* modulesListOfAllSamples, TIn
 	//for each sample i
 	for (int i = 0; i < numSamples; ++i) {
 		list<Module>* modulesList = &modulesListOfAllSamples->at(i);
-		cout << "getting "<< modulesList->size() << " modules of sample #" << i << endl;
+//		cout << "getting "<< modulesList->size() << " modules of sample #" << i << endl;
 		//for each module
 		for(list<Module>::iterator it = modulesList->begin(); it != modulesList->end(); it++){
-			cout << "\tgetting a module\n";
+//			cout << "\tgetting a module\n";
 			Module* currentModule = &(*it);
 			trimModule(currentModule, network, L, D, geneIdToSymbol);
 		}
@@ -194,7 +194,7 @@ void trimSomeExplainedGenes(vector< list<Module> >* modulesListOfAllSamples, TIn
 void trimModule(Module* module, TIntAdjList* network, int L, int D, vector<string>* geneIdToSymbol){
 	int totalGenes = network->size();
 
-	cout << "\tgetting a list of genes within the module\n";
+//	cout << "\tgetting a list of genes within the module\n";
 
 	//get a list of explained gene ids
 	list<int>* explainedGeneIdsList = &module->explainedGeneIds;
@@ -239,12 +239,11 @@ void trimModule(Module* module, TIntAdjList* network, int L, int D, vector<strin
 	vector<int> shortestPathToPhenotypeGenes;	//has the same size as explainedGeneIdsList
 	for (list<int>::iterator it = explainedGeneIdsList->begin(); it != explainedGeneIdsList->end(); it++) {
 		int currentExplainedGeneId = *it;
-		cout << "finding the shortest paths for explained gene " << geneIdToSymbol->at(currentExplainedGeneId) << endl;
+//		cout << "finding the shortest paths for explained gene " << geneIdToSymbol->at(currentExplainedGeneId) << endl;
 		findShortestPath(currentExplainedGeneId, &shortestPathToDriverGenes, &shortestPathToPhenotypeGenes,
 				&isDriverGeneInThisModule, &isPhenotypeGeneInThisModule, network, D, &isGeneInThisModule, geneIdToSymbol);
 	}
 
-	//TODO check the correctness of the gene id to be deleted
 	//for each explained gene, check if it belong to at least one path (with length < L) between a mutated gene and a phenotype gene
 	vector<int> geneIdToBeRemoved;
 	int i = 0;
@@ -260,11 +259,11 @@ void trimModule(Module* module, TIntAdjList* network, int L, int D, vector<strin
 	}
 
 	int numDelete = geneIdToBeRemoved.size();
-	cout << "deleting " << numDelete << " explained genes" << endl;
+//	cout << "deleting " << numDelete << " explained genes" << endl;
 	for(int i = 0; i < numDelete; i++){
 		list<int>::iterator dit = find(explainedGeneIdsList->begin(), explainedGeneIdsList->end(), geneIdToBeRemoved[i]);
 		explainedGeneIdsList->erase(dit);
-		cout << "deleted " << geneIdToSymbol->at(geneIdToBeRemoved[i]) << endl;
+//		cout << "deleted " << geneIdToSymbol->at(geneIdToBeRemoved[i]) << endl;
 	}
 }
 
@@ -318,13 +317,13 @@ void findShortestPath(int geneId, vector<int>* shortestPathToDeiverGenes, vector
 				if(!foundDriver and isDriverGeneInThisModule->at(currentNeighborGeneId)){
 					distantToDriver = levels[currentGeneId] + 1;
 					foundDriver = true;
-					cout << "found a driver gene " << geneIdToSymbol->at(currentNeighborGeneId) << endl;
+//					cout << "found a driver gene " << geneIdToSymbol->at(currentNeighborGeneId) << endl;
 				}
 
 				if(!foundPhenotype and isPhenotypeGeneInThisModule->at(currentNeighborGeneId)){
 					distantToPhenotype = levels[currentGeneId] + 1;
 					foundPhenotype = true;
-					cout << "found a phenotype gene " << geneIdToSymbol->at(currentNeighborGeneId) << endl;
+//					cout << "found a phenotype gene " << geneIdToSymbol->at(currentNeighborGeneId) << endl;
 				}
 
 				int degree = getNodeDegree(network, currentNeighborGeneId);
@@ -343,8 +342,8 @@ void findShortestPath(int geneId, vector<int>* shortestPathToDeiverGenes, vector
 
 	delete[] visited;
 
-	cout << "\t\tdistance from " << geneIdToSymbol->at(geneId) << " to a driver is " << distantToDriver << endl;
-	cout << "\t\tdistance from " << geneIdToSymbol->at(geneId) << " to a phenotype is " << distantToPhenotype << endl;
+//	cout << "\t\tdistance from " << geneIdToSymbol->at(geneId) << " to a driver is " << distantToDriver << endl;
+//	cout << "\t\tdistance from " << geneIdToSymbol->at(geneId) << " to a phenotype is " << distantToPhenotype << endl;
 
 	shortestPathToDeiverGenes->push_back(distantToDriver);
 	shortestPathToPhenotypeGenes->push_back(distantToPhenotype);

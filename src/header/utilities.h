@@ -73,5 +73,6 @@ void mapGeneIdToSymbol(vector<int>* ids, vector<string>* symbols, vector<string>
  */
 
 string intToStr(int i);
+string doubleToStr(double i);
 
 #endif /* UTILITIES_H_ */

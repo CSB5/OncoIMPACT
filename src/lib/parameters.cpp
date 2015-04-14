@@ -24,7 +24,7 @@ void findParameters(vector<JSDivergence>* jsDivergences, vector<int>* Ls, vector
 	int numDs = Ds->size();
 	int numFs = Fs->size();
 
-	cout << "#L D F " << numLs << " " << numDs << " " << numFs << endl;
+//	cout << "#L D F " << numLs << " " << numDs << " " << numFs << endl;
 
 	int count = 0;	//count number of combinations
 	for (int li = 0; li < numLs; ++li) {
@@ -37,11 +37,10 @@ void findParameters(vector<JSDivergence>* jsDivergences, vector<int>* Ls, vector
 
 				cout << "\tcurrent parameters (L, D, F) is " << L << ", " << D << ", " << F << endl;
 
-				//TODO ignore the choice (of F) in which the median number of deregulated genes is more than half of the gene in the network or <300
 				double halfNumberOfGenesInNetwork = totalGenes/2;
 				double medianNumberOfDeregulatedGenes = getMedianNumberOfDeregulatedGenes(subGeneExpressionMatrix, F);
-//				cout << "\twhen F = " << F << " the median number of deregulated genes is " << medianNumberOfDeregulatedGenes << endl;
 
+				//ignore the choice (of F) in which the median number of deregulated genes is more than half of the gene in the network or <300
 				if(medianNumberOfDeregulatedGenes > halfNumberOfGenesInNetwork or medianNumberOfDeregulatedGenes < 300){
 					break;
 				}
@@ -59,7 +58,7 @@ void findParameters(vector<JSDivergence>* jsDivergences, vector<int>* Ls, vector
 				vector< vector<int> > realDistributionAll;
 				vector< vector<int> > randomDistributionAll;
 
-				//TODO why we have to do 100 round of gene label permutation? => to get the null distribution
+				//TODO update this to just count the number of times that the frequency is greater then the real frequency
 				int round = 100;
 				for (int i = 0; i < round; ++i) {
 
@@ -68,7 +67,7 @@ void findParameters(vector<JSDivergence>* jsDivergences, vector<int>* Ls, vector
 					 */
 
 					//find explained genes for real sub-sample (without gene label permutation)
-					//TODO are the results the same for all 100 round? (I think yes, so improve this)
+					//TODO are the results the same for all 100 round? (No, need to resample every round)
 					vector<int> realDistribution(totalGenes * 2);	//differentiate the up and down regulated genes
 					int sampleId = 0; //the first sample
 					for (; sampleId < numSamples; sampleId++) {
@@ -143,6 +142,7 @@ void findParameters(vector<JSDivergence>* jsDivergences, vector<int>* Ls, vector
 
 				double divergence = calculateJSDivergence(&realDistributionAll, &randomDistributionAll, numSamples);
 				jsDivergences->at(count).divergence = divergence;
+				//sometimes the divergence is not calculated because of the constraint of the number of deregulated genes
 				cout << "\t\tJS divergence = " << divergence << endl;
 				count++;
 
@@ -193,6 +193,7 @@ double calculateJSDivergence(vector<vector<int> >* realDistributionAll,
 	return jsDivergence / 2;
 }
 
+//TODO improve this by storing the median number of each F in the vector
 double getMedianNumberOfDeregulatedGenes(TDoubleMatrix* geneExpressionMatrix, double F) {
 	int numSamples = geneExpressionMatrix->at(0).size();
 	int numGenes = geneExpressionMatrix->size();

@@ -14,7 +14,7 @@
 
 //input: explainedGenesListForPhenotype = a list of explained genes of all samples
 //output: nullDistribution = a list contain the frequency of each round (of 500 round)
-void addFrequencyForNullDistribution(vector<vector<int> >* nullDistribution,
+/*void addFrequencyForNullDistribution(vector<vector<int> >* nullDistribution,
 		vector<vector<int> >* explainedGenesListForPhenotypeGenes) {
 	int totalGenes = nullDistribution->size(); // number of genes in the network
 	int numSamples = explainedGenesListForPhenotypeGenes->size();
@@ -37,6 +37,34 @@ void addFrequencyForNullDistribution(vector<vector<int> >* nullDistribution,
 	for (int i = 0; i < totalGenes; ++i) {
 		nullDistribution->at(i).push_back(frequency[i]);
 	}
+}*/
+
+void countGeneFrequencyGreaterThanRealFrequency(vector<int>* geneFrequencyGreaterThanRealFrequencyCounter,
+		vector< vector<int> >* explainedGenesFrequencyForPhenotypeGenes, vector<int>* genesFrequencyReal){
+	int totalGenes = geneFrequencyGreaterThanRealFrequencyCounter->size(); // number of genes in the network
+	int numSamples = explainedGenesFrequencyForPhenotypeGenes->size();
+
+	vector<int> frequencies(totalGenes);
+
+	//for each sample i
+	for (int i = 0; i < numSamples; ++i) {
+		vector<int> explainedGenesFrequency = explainedGenesFrequencyForPhenotypeGenes->at(i);
+
+		for (int j = 0; j < totalGenes; ++j) {
+			if(explainedGenesFrequency[j] > 0){
+				frequencies[j]++;	//count the number of samples
+			}
+		}
+	}
+
+
+	for (int i = 0; i < totalGenes; ++i) {
+		//if the frequency is greater than the real frequency
+		if(frequencies[i] > genesFrequencyReal->at(i)){
+			geneFrequencyGreaterThanRealFrequencyCounter->at(i)++;
+		}
+	}
+
 }
 
 void addFrequncyForRealDataset(vector<int>* genesFrequency,	vector< vector<MutatedAndExplianedGenes> >* mutatedAndExplainedGenesListReal,
@@ -102,7 +130,7 @@ void findPhenotypeGenes(vector<bool>* isPhenotypeGenes, vector<int>* phenotypeGe
 	int totalGenes = genesFrequency->size();
 	int round = nullDistribution->at(0).size();
 
-	//TODO use statistical test to find the phenotype genes
+	//TODO use statistical test to find the phenotype genes (created the findPhenotypeGenesUsingCounter)
 	//TEST simple use percentile
 	int p95 = ceil(round / 100 * 95);
 
@@ -120,6 +148,42 @@ void findPhenotypeGenes(vector<bool>* isPhenotypeGenes, vector<int>* phenotypeGe
 				//cout << i << endl;
 			}
 	}
+}
+
+void findPhenotypeGenesUsingCounter(vector<bool>* isPhenotypeGenes, vector<int>* phenotypeGeneIds,
+		vector<int>* genesFrequencyReal, vector<int>* geneFrequencyGreaterThanRealFrequencyCounter,
+		vector<bool>* isExplainedGenes, int round, int totalSamples, vector<string>* geneIdToSymbol){
+	int totalGenes = genesFrequencyReal->size();
+	vector<double> pValues(totalGenes);
+
+	//for each gene in the network
+	for (int i = 0; i < totalGenes; ++i) {
+		if (isExplainedGenes->at(i)){	//is the explained genes in the real samples
+			pValues[i] = 1.0 * geneFrequencyGreaterThanRealFrequencyCounter->at(i) / round;
+			if(pValues[i] == 0){
+				isPhenotypeGenes->at(i) = true;
+				phenotypeGeneIds->push_back(i);
+			}
+		}
+	}
+
+	//OUTPUT: print phenotype genes and their p-values
+	vector<string>* output = new vector<string>;
+	output->push_back("GENE\tP_VALUE\tIS_PHENOTYPE");
+	for (int i = 0; i < totalGenes; ++i) {
+		if (isExplainedGenes->at(i)){
+			string str = geneIdToSymbol->at(i) + "\t" + doubleToStr(pValues[i]);
+			if(isPhenotypeGenes->at(i)){
+				str = str + "\t" + "1";
+			}else{
+				str = str + "\t" + "0";
+			}
+			output->push_back(str);
+		}
+	}
+	string filename = "output/phenotype_genes.tsv";
+	writeStrVector(filename.c_str(), output);
+	delete output;
 }
 
 void printPhenotypeGenes(vector<bool>* isPhenotypeGenes, string phenotypeGeneFileName, vector<string>* geneIdToSymbol){
