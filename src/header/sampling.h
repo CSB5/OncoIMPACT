@@ -15,6 +15,6 @@
  */
 
 void randomlyChooseSamplesDouble(TDoubleMatrix* original, TDoubleMatrix* subSamples, vector<int>* rrank, int numSamples);
-void randomlyChooseSamplesInteger(TIntegerMatrix* original, TIntegerMatrix* subSamples, vector<int>* rrank, int numSamples);
+void randomlyChooseSamplesInt(const TIntegerMatrix* original, TIntegerMatrix* subSamples, const vector<int>* rrank, int numSamples);
 
 #endif /* SAMPLING_H_ */

@@ -34,7 +34,7 @@ int main() {
 	 * Start timer
 	 */
 
-	const clock_t begin_time = clock();
+	clock_t begin_time = clock();
 
 	/*
 	 * TODO Read configuration from a file
@@ -214,39 +214,19 @@ int main() {
 
 	int numCombinations = numLs * numDs * numFs;
 	//initialize the vector to save the divergence of each set of parameters
-	vector<JSDivergence>* jsDivergences = new vector<JSDivergence>(numCombinations);
+	vector<JSDivergence> jsDivergences(numCombinations);
 
-//OLD:
-//	//list of samples id to be used for tuning the parameters
-//	vector<int> rrank(totalSamples);
-//	createPermutation(&rrank);	//return a permutation of [0, totalSamples-1]
-//
-//	//TO DO create sub matrix for case of < 50 samples (just skip this part and use the original dataset)
-//	//gene expression submatrix
-//	TDoubleMatrix subGeneExpressionMatrix;
-//	GeneExpression subGeneExpression;
-//	subGeneExpression.genes = &genesEx;	// the same set of genes as the original gene expression matrix
-//	subGeneExpression.matrix = &subGeneExpressionMatrix;	//subset of samples
-//	randomlyChooseSamplesDouble(&originalGeneExpressionMatrix,
-//			&subGeneExpressionMatrix, &rrank, numSamples);
-//
-//	//mutation submatrix
-//	TIntegerMatrix subMutationMatrix;
-//	Mutations subMutations;
-//	subMutations.genes = &genesMut;	// the same set of genes as the combined mutation matrix
-//	subMutations.matrix = &subMutationMatrix;
-//	randomlyChooseSamplesInteger(&originalMutationMatrix, &subMutationMatrix,
-//			&rrank, numSamples);
+	findParameters(&jsDivergences, &Ls, &Ds, &Fs, totalGenes, &geneExpression, &mutations, &network, numSamples);
 
-	findParameters(jsDivergences, &Ls, &Ds, &Fs, totalGenes, &geneExpression, &mutations, &network, numSamples);
 	//TODO write the JS divergence result to a file
 
 	cout << "DONE tunning parameters (" << (float(clock() - begin_time) / CLOCKS_PER_SEC)
 			<< " sec)\n";
+	begin_time = clock();	//update the clock
 
 	//choose the best parameters
 	JSDivergence maxJs;
-	findMaximumJsDivergence(jsDivergences, &maxJs);
+	findMaximumJsDivergence(&jsDivergences, &maxJs);
 
 	cout << "the maximum divergence is " << maxJs.divergence << " when L, D, F = " << maxJs.L << ", " << maxJs.D << ", " << maxJs.F << endl;
 
@@ -254,8 +234,6 @@ int main() {
 	int L = 16;
 	int D = 65;
 	double F = 2.5;
-
-	delete jsDivergences;
 
 	/*
 	 * Find phenotype genes
@@ -398,6 +376,10 @@ int main() {
 
 	cout << endl; //for print progression
 
+	cout << "DONE finding phenotype genes (" << (float(clock() - begin_time) / CLOCKS_PER_SEC)
+			<< " sec)\n";
+	begin_time = clock();	//update the clock
+
 	//collect phenotype genes
 	vector<bool> isPhenotypeGenes(totalGenes);	// 1 for yes 0 for no
 	vector<int> phenotypeGeneIds;	// phenotype gene ids
@@ -439,6 +421,10 @@ int main() {
 	saveGeneSymbols(filename.c_str(), &driverGeneIds, &geneIdToSymbol);
 
 	delete bipartiteGraph;
+
+	cout << "DONE finding driver genes (" << (float(clock() - begin_time) / CLOCKS_PER_SEC)
+			<< " sec)\n";
+	begin_time = clock();	//update the clock
 
 	cout << "merging modules for all samples ...\n";
 

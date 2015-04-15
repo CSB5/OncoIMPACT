@@ -6,29 +6,31 @@
  */
 
 #include "../header/sampling.h"
+#include <iostream>
 
 void randomlyChooseSamplesDouble(TDoubleMatrix* original, TDoubleMatrix* subSamples, vector<int>* rrank, int numSamples){
 	int totalGenes = original->size();
 
 	for (int i = 0; i < totalGenes; ++i) {
-		vector<double> row;
+		vector<double> rowDouble;
 		for (int j = 0; j < numSamples; ++j) {
-			row.push_back(original->at(i)[rrank->at(j)]);
+			rowDouble.push_back(original->at(i)[rrank->at(j)]);
 		}
-		subSamples->push_back(row);
+		subSamples->push_back(rowDouble);
 	}
 }
 
 
-void randomlyChooseSamplesInteger(TIntegerMatrix* original, TIntegerMatrix* subSamples, vector<int>* rrank, int numSamples){
+void randomlyChooseSamplesInt(const TIntegerMatrix* original, TIntegerMatrix* subSamples, const vector<int>* rrank, int numSamples){
 	int totalGenes = original->size();
 
 	for (int i = 0; i < totalGenes; ++i) {
-		vector<int> row;
+		vector<int> rowInt;
 		for (int j = 0; j < numSamples; ++j) {
-			row.push_back(original->at(i)[rrank->at(j)]);
+			rowInt.push_back(original->at(i)[rrank->at(j)]);
 		}
-		subSamples->push_back(row);
+		subSamples->push_back(rowInt);
 	}
+
 }
 

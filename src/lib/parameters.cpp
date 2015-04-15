@@ -21,7 +21,7 @@ void findParameters(vector<JSDivergence>* jsDivergences, vector<int>* Ls,
 
 	TDoubleMatrix* originalGeneExpressionMatrix = geneExpression->matrix;
 	TIntegerMatrix* originalMutationMatrix = mutations->matrix;
-	int totalSamples = originalGeneExpressionMatrix->at(0).size();
+	int totalSamples = originalMutationMatrix->at(0).size();
 
 	int numLs = Ls->size();
 	int numDs = Ds->size();
@@ -72,6 +72,34 @@ void findParameters(vector<JSDivergence>* jsDivergences, vector<int>* Ls,
 
 				cout << "\t\tcreating frequency distribution...";
 
+				//TODO move the resampling to the loop of 100 rounds
+				/*
+				 * resample numSamples samples for every round
+				 */
+
+				//list of samples id to be used for tuning the parameters
+				vector<int> rrank(totalSamples);
+				createPermutation(&rrank);	//return a permutation of [0, totalSamples-1]
+
+				//TODO create sub matrix for case of < 50 samples (just skip this part and use the original dataset)
+				//probably this can be done by pre-generating 100 sub matrix (all sets of params will use the same 100 sub matrix)
+
+				//gene expression submatrix
+				TDoubleMatrix subGeneExpressionMatrix;
+				GeneExpression subGeneExpression;
+				subGeneExpression.genes = genesEx;	// the same set of genes as the original gene expression matrix
+				subGeneExpression.matrix = &subGeneExpressionMatrix;	//subset of samples
+				randomlyChooseSamplesDouble(originalGeneExpressionMatrix,
+						&subGeneExpressionMatrix, &rrank, numSamples);
+
+				//mutation submatrix
+				TIntegerMatrix subMutationMatrix;
+				Mutations subMutations;
+				subMutations.genes = genesMut;	// the same set of genes as the combined mutation matrix
+				subMutations.matrix = &subMutationMatrix;
+				randomlyChooseSamplesInt(originalMutationMatrix, &subMutationMatrix,
+						&rrank, numSamples);
+
 
 				//count the number of times that the frequency is greater then the real frequency
 				int round = 100;
@@ -89,31 +117,6 @@ void findParameters(vector<JSDivergence>* jsDivergences, vector<int>* Ls,
 						cout << string(progStatus.length(), '\b');
 					}
 
-					/*
-					 * resample numSamples samples for every round
-					 */
-
-					//list of samples id to be used for tuning the parameters
-					vector<int> rrank(totalSamples);
-					createPermutation(&rrank);	//return a permutation of [0, totalSamples-1]
-
-					//TODO create sub matrix for case of < 50 samples (just skip this part and use the original dataset)
-
-					//gene expression submatrix
-					TDoubleMatrix subGeneExpressionMatrix;
-					GeneExpression subGeneExpression;
-					subGeneExpression.genes = genesEx;	// the same set of genes as the original gene expression matrix
-					subGeneExpression.matrix = &subGeneExpressionMatrix;	//subset of samples
-					randomlyChooseSamplesDouble(originalGeneExpressionMatrix,
-							&subGeneExpressionMatrix, &rrank, numSamples);
-
-					//mutation submatrix
-					TIntegerMatrix subMutationMatrix;
-					Mutations subMutations;
-					subMutations.genes = genesMut;	// the same set of genes as the combined mutation matrix
-					subMutations.matrix = &subMutationMatrix;
-					randomlyChooseSamplesInteger(originalMutationMatrix, &subMutationMatrix,
-							&rrank, numSamples);
 
 					/*
 					 * find explained genes for real samples
@@ -145,6 +148,8 @@ void findParameters(vector<JSDivergence>* jsDivergences, vector<int>* Ls,
 						}
 					}
 					realDistributionAll->push_back(realDistribution);
+
+//					cout << "calculated distribution of real samples" << endl;
 
 					/*
 					 * find explained genes for random sub-sample (with gene label permutation)
@@ -192,13 +197,16 @@ void findParameters(vector<JSDivergence>* jsDivergences, vector<int>* Ls,
 
 				cout << endl;	//for progression printing
 
+				cout << "calculated distribution of random samples" << endl;
+
 				cout << "\t\tcalculating JS divergence..." << endl;
 
 				//calculate JS divergence
 				//TODO ERROR double free or corruption while returning from the function
 //				double divergence = calculateJSDivergence(realDistributionAll, randomDistributionAll, numSamples);
-				cout << "\t\tcalculated JS divergence..." << endl;
+
 				jsDivergences->at(count).divergence = calculateJSDivergence(realDistributionAll, randomDistributionAll, numSamples);
+				cout << "\t\tcalculated JS divergence..." << endl;
 				cout << "\t\tsaved JS divergence..." << endl;
 
 				delete realDistributionAll;
