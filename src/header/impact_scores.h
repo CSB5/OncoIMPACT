@@ -15,6 +15,7 @@ struct Driver{
 	int sampleId;
 	int moduleId;
 	double impactScore;
+	double aggregatedImpactScore;
 	bool isDeregulated;
 };
 
@@ -22,6 +23,12 @@ void calculateImpactScoresForAllSamples(vector< list<Module> >* modulesListOfAll
 		vector< vector<Driver> >* drivers, TDoubleMatrix* originalGeneExpressionMatrix, vector<int>* GenesEx,
 		int totalGenes, double F, vector<string>* geneIdToSymbol);
 
-void aggregateDriversAcrossSamples(vector< vector<Driver> >* driversOfAllSamples, vector<string>* geneIdToSymbol, int totalGenes);
+void aggregateDriversAcrossSamples(vector< vector<Driver> >* driversOfAllSamples, vector<double>* driverAggregatedScores,
+		vector<int>* driversFrequency, vector<string>* geneIdToSymbol, int totalGenes);
+
+void getDetailDriversFreqeuncy(vector< vector<Driver> >* driversOfAllSamples,
+		vector<int>* pointMutationDriversFrequency, vector<int>* deletionDriversFrequency, vector<int>* amplificationDriversFrequency,
+		TIntegerMatrix* originalPointMutationsMatrix, TIntegerMatrix* originalCNVsMatrix,
+		vector<int>* genesPointMut, vector<int>* genesCNV);
 
 #endif /* IMPACT_SCORES_H_ */

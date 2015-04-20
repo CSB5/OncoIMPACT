@@ -17,7 +17,7 @@
 #include "../header/input.h"
 
 void readGeneExpression(const char* filename, GeneExpression* geneExpression,
-		char delim, map<string, int>* geneSymbolToId){
+		char delim, map<string, int>* geneSymbolToId, vector<string>* sampleIdToName){
 	ifstream inFile;
 	inFile.open(filename, std::ifstream::in);
 	vector<int>* geneIds = geneExpression->genes;
@@ -27,8 +27,16 @@ void readGeneExpression(const char* filename, GeneExpression* geneExpression,
 	if (inFile.is_open()) {
 
 		//read the first line (sample name)
-		string samples;
-		getline(inFile, samples);
+		string samplesList;
+		getline(inFile, samplesList);
+		istringstream ss(samplesList);
+		string s;
+		getline(ss, s, delim);	//discard the first column (GENE header)
+		while (ss) {	//for each column (sample)
+			if (!getline(ss, s, delim))
+				break;
+			sampleIdToName->push_back(s);
+		}
 
 		while (inFile.good()) { //for each row (gene)
 			string s;

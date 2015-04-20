@@ -120,7 +120,7 @@ void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedA
 
 //		cout << "sample #" << i << " has " << modules.size() << " driver genes\n";
 
-//		cout << "deleting the drivers that do not connect to any phenotype genes in this sample\n";
+		//eleting the drivers that do not connect to any phenotype genes in this sample
 		//on sample level, if the driver genes do not connect to any phenotype genes on the sample, they are not drivers
 		for(list<Module>::iterator it = modules.begin(); it != modules.end(); ){
 			Module currentModule  = *it;

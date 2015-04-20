@@ -43,7 +43,7 @@ struct CopyNumberVariation{
  */
 
 void readGeneExpression(const char* filename, GeneExpression* geneExpression,
-		char delim, map<string, int>* geneSymbolToId);
+		char delim, map<string, int>* geneSymbolToId, vector<string>* sampleIdToName);
 void readMutations(const char* filename, Mutations* pointMutations,
 		char delim, map<string, int>* geneSymbolToId);
 void readPointMutations(const char* filename, PointMutations* pointMutations,

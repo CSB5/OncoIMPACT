@@ -7,6 +7,7 @@
 
 #include "../header/impact_scores.h"
 #include "../header/utilities.h"
+#include "../header/input.h"
 #include <cmath>
 #include <iostream>
 
@@ -91,9 +92,9 @@ void calculateImpactScoresForAllSamples(vector< list<Module> >* modulesListOfAll
 	delete outputDrivers;
 }
 
-void aggregateDriversAcrossSamples(vector< vector<Driver> >* driversOfAllSamples, vector<string>* geneIdToSymbol, int totalGenes){
+void aggregateDriversAcrossSamples(vector< vector<Driver> >* driversOfAllSamples, vector<double>* driverAggregatedScores,
+		vector<int>* driversFrequency, vector<string>* geneIdToSymbol, int totalGenes){
 	vector<double> sumImpact(totalGenes);
-	vector<int> countSamples(totalGenes);
 	vector<bool> isDriver(totalGenes);
 
 	int totalSamples = driversOfAllSamples->size();
@@ -105,28 +106,91 @@ void aggregateDriversAcrossSamples(vector< vector<Driver> >* driversOfAllSamples
 		//for each driver j of the sample i
 		for (unsigned int j = 0; j < drivers.size(); ++j) {
 			isDriver[drivers[j].geneId] = true;
-			countSamples[drivers[j].geneId]++;
+			driversFrequency->at(drivers[j].geneId)++;
 			sumImpact[drivers[j].geneId] += drivers[j].impactScore;
 		}
 	}
 
 	//OUTPUT: print aggregated drivers
-	vector<string>* outputDrivers = new vector<string>;
-	outputDrivers->push_back("DRIVER\tIMPACT_SCORE");
+//	vector<string>* outputDrivers = new vector<string>;
+//	outputDrivers->push_back("DRIVER\tIMPACT_SCORE");
 
 	for (int i = 0; i < totalGenes; ++i) {
+		driverAggregatedScores->at(i) = 0;	//initialization
+
 		if(isDriver[i]){
 			//TODO which one is correct?
-			//string str = geneIdToSymbol->at(i) + "\t" + doubleToStr(sumImpact[i]/countSamples[i]);
-			string str = geneIdToSymbol->at(i) + "\t" + doubleToStr(sumImpact[i]/totalSamples);
-			outputDrivers->push_back(str);
+			double aggregatedScore = sumImpact[i]/totalSamples; //sumImpact[i]/driversFrequency->at(i)
+			driverAggregatedScores->at(i) = aggregatedScore;
+//			string str = geneIdToSymbol->at(i) + "\t" + doubleToStr(aggregatedScore);
+//			outputDrivers->push_back(str);
 		}
 	}
 
 	//OUTPUT: print aggregated drivers (cont.)
-	string filename = "output/drivers_aggregation.tsv";
-	writeStrVector(filename.c_str(), outputDrivers);
-	delete outputDrivers;
+//	string filename = "output/drivers_aggregation.tsv";
+//	writeStrVector(filename.c_str(), outputDrivers);
+//	delete outputDrivers;
+}
+
+void getDetailDriversFreqeuncy(vector< vector<Driver> >* driversOfAllSamples,
+		vector<int>* pointMutationDriversFrequency, vector<int>* deletionDriversFrequency, vector<int>* amplificationDriversFrequency,
+		TIntegerMatrix* originalPointMutationsMatrix, TIntegerMatrix* originalCNVsMatrix,
+		vector<int>* genesPointMut, vector<int>* genesCNV){
+
+	int totalSamples = driversOfAllSamples->size();
+
+	//for each sample i
+	for (int i = 0; i < totalSamples; ++i) {
+		vector<Driver> drivers = driversOfAllSamples->at(i);
+
+		//for each driver j of the sample i
+		for (unsigned int j = 0; j < drivers.size(); ++j) {
+			int driverGeneId = drivers[j].geneId;
+
+			//check point mutation, deletion, amplification
+			bool hasPointMut;
+			bool hasCNV;
+
+			if(findIndex(genesPointMut, driverGeneId) != -1){
+				hasPointMut = true;
+			}else{
+				hasPointMut = false;
+			}
+
+			if(findIndex(genesCNV, driverGeneId) != -1){
+				hasCNV = true;
+			}else{
+				hasCNV = false;
+			}
+
+			int pointMutation = 0;
+			if(hasPointMut){
+				pointMutation = originalPointMutationsMatrix->at(findIndex(genesPointMut, driverGeneId))[i];
+			}
+
+			int cnv = 0;
+			if(hasCNV){
+				cnv = originalCNVsMatrix->at(findIndex(genesCNV, driverGeneId))[i];
+			}
+
+			//if driver j is a point mutation driver in sample i
+			if(pointMutation > 0){
+				pointMutationDriversFrequency->at(driverGeneId)++;
+			}
+
+			//if driver j is a deletion driver in sample i
+			if(cnv > 0){
+				amplificationDriversFrequency->at(driverGeneId)++;
+			}
+
+			//if driver j is a amplification driver in sample i
+			if(cnv < 0){
+				deletionDriversFrequency->at(driverGeneId)++;
+			}
+
+		}
+	}
 }
 
 

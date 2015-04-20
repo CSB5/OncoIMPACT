@@ -222,6 +222,12 @@ void BFSforExplainedGenesIdOnly(TIntAdjList* network, int geneId, int L, int D,
 void BFSforExplainedGenesIdOnlyUpDown(TIntAdjList* network, int geneId, int L, int D,
 		double F, vector<bool>* explainedGenesFrequency, vector<double>* sampleGeneExpression) {
 
+	//initialize explainedGenesFrequency
+	int totalGenesUpDown = explainedGenesFrequency->size();
+	for (int i = 0; i < totalGenesUpDown; ++i) {
+		explainedGenesFrequency->at(i) = false;
+	}
+
 //	cout << "begin BFS\n";
 
 	int totalGenes = network->size();
@@ -263,7 +269,7 @@ void BFSforExplainedGenesIdOnlyUpDown(TIntAdjList* network, int geneId, int L, i
 				int geneId = (*network)[currentGeneId][j];
 				if (fabs(sampleGeneExpression->at(geneId)) > F) {
 
-					cout << "gene " << geneId << " has foldchange = " << sampleGeneExpression->at(geneId) << endl;
+//					cout << "gene " << geneId << " has foldchange = " << sampleGeneExpression->at(geneId) << endl;
 
 					// is explained gene
 					if(sampleGeneExpression->at(geneId) > 0.0){ 	// up regulated

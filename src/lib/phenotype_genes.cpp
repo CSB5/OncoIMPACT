@@ -124,31 +124,31 @@ void combineListOfExplainedGenes(
 
 }
 
-void findPhenotypeGenes(vector<bool>* isPhenotypeGenes, vector<int>* phenotypeGeneIds,
-		vector<int>* genesFrequency, vector<vector<int> >* nullDistribution,
-		vector<bool>* isExplainedGenes) {
-	int totalGenes = genesFrequency->size();
-	int round = nullDistribution->at(0).size();
-
-	//TO DO use statistical test to find the phenotype genes (created the findPhenotypeGenesUsingCounter)
-	//TEST simple use percentile
-	int p95 = ceil(round / 100 * 95);
-
-	//for each gene in the network
-	for (int i = 0; i < totalGenes; ++i) {
-		vector<int> distribution = nullDistribution->at(i);
-		sort(distribution.begin(), distribution.end());
-		int cutoff = distribution[p95];
-		if (isExplainedGenes->at(i))
-//			cout << "cutoff for gene " << i << " is " << cutoff << endl;
-			if (isExplainedGenes->at(i)
-					and genesFrequency->at(i) > cutoff) {
-				isPhenotypeGenes->at(i) = true; // mark that this gene is a phenotype genes
-				phenotypeGeneIds->push_back(i);
-				//cout << i << endl;
-			}
-	}
-}
+//void findPhenotypeGenes(vector<bool>* isPhenotypeGenes, vector<int>* phenotypeGeneIds,
+//		vector<int>* genesFrequency, vector<vector<int> >* nullDistribution,
+//		vector<bool>* isExplainedGenes) {
+//	int totalGenes = genesFrequency->size();
+//	int round = nullDistribution->at(0).size();
+//
+//	//TO DO use statistical test to find the phenotype genes (created the findPhenotypeGenesUsingCounter)
+//	//TEST simple use percentile
+//	int p95 = ceil(round / 100 * 95);
+//
+//	//for each gene in the network
+//	for (int i = 0; i < totalGenes; ++i) {
+//		vector<int> distribution = nullDistribution->at(i);
+//		sort(distribution.begin(), distribution.end());
+//		int cutoff = distribution[p95];
+//		if (isExplainedGenes->at(i))
+////			cout << "cutoff for gene " << i << " is " << cutoff << endl;
+//			if (isExplainedGenes->at(i)
+//					and genesFrequency->at(i) > cutoff) {
+//				isPhenotypeGenes->at(i) = true; // mark that this gene is a phenotype genes
+//				phenotypeGeneIds->push_back(i);
+//				//cout << i << endl;
+//			}
+//	}
+//}
 
 void findPhenotypeGenesUsingCounter(vector<bool>* isPhenotypeGenes, vector<int>* phenotypeGeneIds,
 		vector<int>* genesFrequencyReal, vector<int>* geneFrequencyGreaterThanRealFrequencyCounter,

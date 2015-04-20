@@ -62,6 +62,9 @@ int main() {
 	 * Note: the set of samples is the same as in mutation matrix (also the same order)
 	 */
 
+	//sample id mapping
+	vector<string> sampleIdToName;
+
 	TDoubleMatrix originalGeneExpressionMatrix;
 	cout << "reading gene expression matrix ..." << endl;
 	filename = "GBM/EXPR.txt";
@@ -71,7 +74,7 @@ int main() {
 	geneExpression.genes = &genesEx;
 	geneExpression.matrix = &originalGeneExpressionMatrix;
 	readGeneExpression(filename.c_str(), &geneExpression, '\t',
-			&geneSymbolToId);
+			&geneSymbolToId, &sampleIdToName);
 
 	int totalSamples = originalGeneExpressionMatrix[0].size(); // = originalMutationMatrix.size()
 	int numGenesEx = originalGeneExpressionMatrix.size();
@@ -128,6 +131,10 @@ int main() {
 	//create a list of mutated genes, which contain point mutation or CNV or both
 	vector<int> genesMut; // gene ids ; size = # mutated genes
 	vector<bool>* isMutated = new vector<bool>(totalGenes);
+	//initialize isMutated, pointMutationCount, CNVCount
+	for (int i = 0; i < totalGenes; ++i) {
+		isMutated->at(i) = false;
+	}
 	//1. check point mutation
 	for (int i = 0; i < numGenesPointMut; ++i) {
 		isMutated->at(genesPointMut[i]) = true;
@@ -216,22 +223,22 @@ int main() {
 	//initialize the vector to save the divergence of each set of parameters
 	vector<JSDivergence> jsDivergences(numCombinations);
 
-	findParameters(&jsDivergences, &Ls, &Ds, &Fs, totalGenes, &geneExpression, &mutations, &network, numSamples);
-
-	//TODO write the JS divergence result to a file
-
-	cout << "DONE tunning parameters (" << (float(clock() - begin_time) / CLOCKS_PER_SEC)
-			<< " sec)\n";
-	begin_time = clock();	//update the clock
-
-	//choose the best parameters
-	JSDivergence maxJs;
-	findMaximumJsDivergence(&jsDivergences, &maxJs);
-
-	cout << "the maximum divergence is " << maxJs.divergence << " when L, D, F = " << maxJs.L << ", " << maxJs.D << ", " << maxJs.F << endl;
+//	findParameters(&jsDivergences, &Ls, &Ds, &Fs, totalGenes, &geneExpression, &mutations, &network, numSamples);
+//
+//	//TODO write the JS divergence result to a file
+//
+//	cout << "DONE tunning parameters (" << (float(clock() - begin_time) / CLOCKS_PER_SEC)
+//			<< " sec)\n";
+//	begin_time = clock();	//update the clock
+//
+//	//choose the best parameters
+//	JSDivergence maxJs;
+//	findMaximumJsDivergence(&jsDivergences, &maxJs);
+//
+//	cout << "the maximum divergence is " << maxJs.divergence << " when L, D, F = " << maxJs.L << ", " << maxJs.D << ", " << maxJs.F << endl;
 
 	//TODO set the L D F to maxJs
-	int L = 16;
+	int L = 20;
 	int D = 65;
 	double F = 2.5;
 
@@ -325,6 +332,8 @@ int main() {
 
 	//OLD: the following have to be done 500-1000 times to generate the null distribution
 	//vector< vector<int> > nullDistribution(totalGenes);
+
+	//TODO the following have to be done 500-1000 times to generate the null distribution
 	int round = 500;
 
 	cout << "\tcreating null distribution (using " << round << " permutations) ... ";
@@ -445,6 +454,7 @@ int main() {
 	//TODO FIX BUGS of trimming modules
 	trimSomeExplainedGenes(&modulesListOfAllSamples, &network, L, D, &geneIdToSymbol);
 
+	//TODO print sample modules
 	filename = "output/trimmed_modules.tsv";
 	saveModules(&modulesListOfAllSamples, filename, &geneIdToSymbol);
 
@@ -454,8 +464,53 @@ int main() {
 	calculateImpactScoresForAllSamples(&modulesListOfAllSamples, &driversOfAllSamples, &originalGeneExpressionMatrix, &genesEx, totalGenes, F, &geneIdToSymbol);
 
 	cout << "aggregating IMPACT scores across all samples ...\n";
+	vector<double> driverAggregatedScores(totalGenes);
+	vector<int> driversFrequency(totalGenes);
+	vector<int> pointMutationDriversFrequency(totalGenes);
+	vector<int> deletionDriversFrequency(totalGenes);
+	vector<int> amplificationDriversFrequency(totalGenes);
+	vector<int> mutationFrequency(totalGenes);
+	vector<int> pointMutationFrequency(totalGenes);
+	vector<int> deletionFrequency(totalGenes);
+	vector<int> amplificationFrequency(totalGenes);
+	//initialization
+	for (int i = 0; i < totalGenes; ++i) {
+		driverAggregatedScores[i] = 0;
+		driversFrequency[i] = 0;
+		pointMutationDriversFrequency[i] = 0;
+		deletionDriversFrequency[i] = 0;
+		amplificationDriversFrequency[i] = 0;
+		mutationFrequency[i] = 0;
+		pointMutationFrequency[i] = 0;
+		deletionFrequency[i] = 0;
+		amplificationFrequency[i] = 0;
+	}
+	aggregateDriversAcrossSamples(&driversOfAllSamples, &driverAggregatedScores, &driversFrequency, &geneIdToSymbol, totalGenes);
 
-	aggregateDriversAcrossSamples(&driversOfAllSamples, &geneIdToSymbol, totalGenes);
+	cout << "getting driver frequency ...\n";
+	getDetailDriversFreqeuncy(&driversOfAllSamples,
+			&pointMutationDriversFrequency, &deletionDriversFrequency, &amplificationDriversFrequency,
+			&originalPointMutationsMatrix, &originalCNVsMatrix,
+			&genesPointMut, &genesCNV);
+
+	cout << "getting mutation frequency ...\n";
+	getMutationFrequency(&originalMutationMatrix, &mutationFrequency, &genesMut);
+	getDetailMutationFrequency(&originalPointMutationsMatrix, &originalCNVsMatrix, &genesPointMut, &genesCNV,
+			&pointMutationFrequency, &deletionFrequency, &amplificationFrequency);
+
+	filename = "output/samples/";
+	cout << "printing impact scores for all samples ...\n";
+	printSampleDriverList(&driversOfAllSamples, filename, &geneIdToSymbol, &sampleIdToName,
+			&originalPointMutationsMatrix, &originalCNVsMatrix, &genesPointMut, &genesCNV,
+			&driverAggregatedScores, &driversFrequency, &mutationFrequency);
+
+	//TODO printing aggregated impact scores
+	cout << "printing aggregated impact scores ...\n";
+	filename = "output/drivers_aggregation.tsv";
+	printAggregatedDriverList(&driverGeneIds, filename, &geneIdToSymbol, &sampleIdToName,
+			&driverAggregatedScores, &driversFrequency, &mutationFrequency,
+			&pointMutationDriversFrequency, &deletionDriversFrequency, &amplificationDriversFrequency,
+			&pointMutationFrequency, &deletionFrequency, &amplificationFrequency);
 
 	//delete the vector<int>* explainedGenesFreqency
 	for (int i = 0; i < totalSamples; ++i) {

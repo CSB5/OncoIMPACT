@@ -369,7 +369,8 @@ string intToStr(int i){
 
 string doubleToStr(double i){
 	stringstream ss;
-	ss << i;
+	ss.precision(3);
+	ss << fixed << i;
 	return ss.str();
 }
 
