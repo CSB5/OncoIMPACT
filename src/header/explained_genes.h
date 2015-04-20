@@ -47,7 +47,7 @@ void getExplainedGenes(vector<ExplainedGene>* explainedGenes, TIntAdjList* netwo
 void getExplainedGenesIdOnly(vector<int>* explainedGeneIds, TIntAdjList* network, vector<double>* sampleGeneExpression,
 		vector<int>* mutatedGeneIds, int L, int D, double F);
 
-void getExplainedGenesIdOnlyUpDown(vector<int>* explainedGenesFrequency, TIntAdjList* network, vector<double>* sampleGeneExpression,
+void getExplainedGenesIdOnlyUpDown(vector<bool>* explainedGenesFrequency, TIntAdjList* network, vector<double>* sampleGeneExpression,
 		vector<int>* mutatedGeneIds, int L, int D, double F);
 
 //void getMutatedAndExplainedGenes(vector<MutatedAndExplianedGenes>* mutatedAndExplainedGenes, TIntAdjList* network,
@@ -61,7 +61,7 @@ void BFSforExplainedGenesIdOnly(TIntAdjList* network, int geneId, int L, int D,
 		double F, vector<int>* explainedGenes, vector<double>* sampleGeneExpression);
 
 void BFSforExplainedGenesIdOnlyUpDown(TIntAdjList* network, int geneId, int L, int D,
-		double F, vector<int>* explainedGenesFrequency, vector<double>* sampleGeneExpression);
+		double F, vector<bool>* explainedGenesFrequency, vector<double>* sampleGeneExpression);
 
 // return genesCount: # samples containing explained genes
 void getGeneFrequencyOfSamples(vector<int>* genesCount, int totalGenes,

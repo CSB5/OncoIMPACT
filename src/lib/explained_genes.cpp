@@ -13,8 +13,15 @@
 
 void getGeneExpressionFromSampleId(TDoubleMatrix* geneExpressionMatrix,
 		vector<int>* genesEx, vector<double>* sampleExpression, int sampleId) {
-	int totalGenes = geneExpressionMatrix->size();
+	//TODO not sure if I need this
+	int totalGenes = sampleExpression->size();
 	for (int i = 0; i < totalGenes; ++i) {
+		sampleExpression->at(i) = 0;
+	}
+	
+	int totalExGenes = genesEx->size();
+
+	for (int i = 0; i < totalExGenes; ++i) {
 		sampleExpression->at(genesEx->at(i)) =
 				geneExpressionMatrix->at(i)[sampleId];
 	}
@@ -59,12 +66,12 @@ void getExplainedGenesIdOnly(vector<int>* explainedGenesFrequency, TIntAdjList* 
 //output: explained genes frequency
 //up regulated gene frequency is in the first half [0,totalGenes - 1]
 //down regulated gene frequency is in the second half [totalGenes, totalGenes * 2 - 1]
-void getExplainedGenesIdOnlyUpDown(vector<int>* explainedGenesFrequency, TIntAdjList* network, vector<double>* sampleGeneExpression,
+void getExplainedGenesIdOnlyUpDown(vector<bool>* explainedGenesFrequency, TIntAdjList* network, vector<double>* sampleGeneExpression,
 		vector<int>* mutatedGeneIds, int L, int D, double F){
 	int numMutatedGenes = mutatedGeneIds->size();
 	for (int i = 0; i < numMutatedGenes; ++i) {	// for each mutated genes
 		//BFS
-		//cout << "For mutated gene: " << mutatedGeneIds->at(i) << endl;
+//		cout << "For mutated gene: " << mutatedGeneIds->at(i) << endl;
 		BFSforExplainedGenesIdOnlyUpDown(network, mutatedGeneIds->at(i), L, D, F,
 				explainedGenesFrequency, sampleGeneExpression);
 	}
@@ -88,15 +95,15 @@ void getExplainedGenesIdOnlyUpDown(vector<int>* explainedGenesFrequency, TIntAdj
 void BFSforExplainedGenes(TIntAdjList* network, int geneId, int L, int D,
 		double F, vector<ExplainedGene>* explainedGenes, vector<double>* sampleGeneExpression) {
 	// Mark all the vertices as not visited
-	int numNode = network->size();
-	bool *visited = new bool[numNode];
-	for (int j = 0; j < numNode; j++) {
+	int totalGenes = network->size();
+	bool *visited = new bool[totalGenes];
+	for (int j = 0; j < totalGenes; j++) {
 		visited[j] = false;
 	}
 
 	// Create queue
 	queue<int> q;
-	vector<int> levels(numNode); // store level of each nodes
+	vector<int> levels(totalGenes); // store level of each nodes
 	// Mark the current node as visited
 	q.push(geneId);
 	visited[geneId] = true;
@@ -213,52 +220,58 @@ void BFSforExplainedGenesIdOnly(TIntAdjList* network, int geneId, int L, int D,
 //up regulated gene frequency is in the first half [0,totalGenes - 1]
 //down regulated gene frequency is in the second half [totalGenes, totalGenes * 2 - 1]
 void BFSforExplainedGenesIdOnlyUpDown(TIntAdjList* network, int geneId, int L, int D,
-		double F, vector<int>* explainedGenesFrequency, vector<double>* sampleGeneExpression) {
-	int totalGenes = explainedGenesFrequency->size() / 2;
+		double F, vector<bool>* explainedGenesFrequency, vector<double>* sampleGeneExpression) {
+
+//	cout << "begin BFS\n";
+
+	int totalGenes = network->size();
 
 	// Mark all the vertices as not visited
-	int numNode = network->size();
-	bool *visited = new bool[numNode];
-	for (int j = 0; j < numNode; j++) {
+	bool *visited = new bool[totalGenes];
+	for (int j = 0; j < totalGenes; j++) {
 		visited[j] = false;
 	}
 
 	// Create queue
 	queue<int> q;
-	vector<int> levels(numNode); // store level of each nodes
+	vector<int> levels(totalGenes); // store level of each nodes
 	// Mark the current node as visited
 	q.push(geneId);
 	visited[geneId] = true;
-	int currentGene;
+	int currentGeneId;
 	int currentLevel = 0;
 
 	//consider all nodes that are in <= L distant
 	while (!q.empty() && currentLevel <= L) {
 		//read the root node
-		currentGene = q.front();
+		currentGeneId = q.front();
 		q.pop();
-		currentLevel = levels[currentGene];
+		currentLevel = levels[currentGeneId];
 
 		if (currentLevel > L) {
 			break;
 		}
 
 		//explore all the connected nodes
-		vector<int> adj = (*network)[currentGene];
+		vector<int> adj = (*network)[currentGeneId];
 
 		int numAdj = adj.size();
 		for (int j = 0; j < numAdj; j++) {
-			if (!visited[(*network)[currentGene][j]]) {
+			if (!visited[(*network)[currentGeneId][j]]) {
 				// check conditions before push to the queue
 				// |fold change| > F
-				int geneId = (*network)[currentGene][j];
+				int geneId = (*network)[currentGeneId][j];
 				if (fabs(sampleGeneExpression->at(geneId)) > F) {
+
+					cout << "gene " << geneId << " has foldchange = " << sampleGeneExpression->at(geneId) << endl;
+
 					// is explained gene
-					if(sampleGeneExpression->at(geneId) > 0){ 	// up regulated
-						explainedGenesFrequency->at(geneId) += 1;
-					}else{	// down regulated
-						explainedGenesFrequency->at(geneId + totalGenes) += 1;
+					if(sampleGeneExpression->at(geneId) > 0.0){ 	// up regulated
+						explainedGenesFrequency->at(geneId) = true;
+					}else{											// down regulated
+						explainedGenesFrequency->at(geneId + totalGenes) = true; //+9452
 					}
+
 					int degree = getNodeDegree(network, geneId);
 					// check the degree
 					if (degree <= D) {
@@ -270,12 +283,16 @@ void BFSforExplainedGenesIdOnlyUpDown(TIntAdjList* network, int geneId, int L, i
 				}
 				// mark visited
 				visited[geneId] = true;
+
 			}
 		}
 	}
 
 
 	delete[] visited;
+
+//	cout << "end BFS\n";
+
 }
 
 //TODO use only one BFS for all L's values
