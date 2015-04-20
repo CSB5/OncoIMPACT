@@ -317,11 +317,32 @@ void getDetailMutationFrequency(TIntegerMatrix* originalPointMutationsMatrix,
 		for (int j = 0; j < totalSamples; ++j) {
 			if (originalCNVsMatrix->at(currentRowIdInMutationMatrix)[j] != 0) {
 				if (originalCNVsMatrix->at(currentRowIdInMutationMatrix)[j] > 0) {
-					amplificationFrequency->at(currentGeneId)++;}
+					amplificationFrequency->at(currentGeneId)++;
+				}
 				else {
-					deletionFrequency->at(currentGeneId)++;}
+					deletionFrequency->at(currentGeneId)++;
 				}
 			}
 		}
 	}
+}
 
+void saveJSDivergences(vector<JSDivergence>* jsDivergences, string filename){
+	vector<string> outputStr;
+	outputStr.push_back("L\tD\tF\tJS Divergence");
+
+	int total = jsDivergences->size();
+	int D, L;
+	double F, divergence;
+	for (int i = 0; i < total; ++i) {
+		D = jsDivergences->at(i).D;
+		L = jsDivergences->at(i).L;
+		F = jsDivergences->at(i).F;
+		divergence = jsDivergences->at(i).divergence;
+
+		string str = intToStr(L) + "\t" + intToStr(D) + "\t" + doubleToStr(F) + "\t" + doubleToStr(divergence);
+		outputStr.push_back(str);
+	}
+
+	writeStrVector(filename.c_str(), &outputStr);
+}

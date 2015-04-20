@@ -11,6 +11,7 @@
 #include "utilities.h"
 #include "merge_and_trim.h"
 #include "impact_scores.h"
+#include "parameters.h"
 
 struct SampleDriver{
 	string gene;
@@ -57,5 +58,7 @@ void printAggregatedDriverList(vector<int>* driverGeneIds, string filename, vect
 		vector<int>* pointMutationDriversFrequency, vector<int>* deletionDriversFrequency, vector<int>* amplificationDriversFrequency,
 		vector<int>* pointMutationFrequency, vector<int>* deletionFrequency, vector<int>* amplificationFrequency);
 bool sortByAggregatedImpactScore(const AggregatedDriver& first, const AggregatedDriver& second);
+
+void saveJSDivergences(vector<JSDivergence>* jsDivergences, string filename);
 
 #endif /* RESULTS_H_ */

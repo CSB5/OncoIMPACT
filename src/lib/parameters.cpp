@@ -50,7 +50,7 @@ void findParameters(vector<JSDivergence>* jsDivergences, vector<int>* Ls,
 	vector<TIntegerMatrix>* subMutationMatrix = new vector<TIntegerMatrix>(round);
 	vector<Mutations>* subMutations = new vector<Mutations>(round);
 
-	cout << "generating 100 random subsample size of " << numSamples << endl;
+//	cout << "generating 100 random subsample size of " << numSamples << endl;
 
 	for (int i = 0; i < round; ++i) {
 		//list of samples id to be used for tuning the parameters
@@ -258,8 +258,6 @@ double calculateJSDivergence(const vector<vector<int> >* realDistributionAll,
 		}
 	}
 
-//	cout << "\t\tcreated frequency distribution...\n";
-
 	//2. compute divergence
 	//from perl code
 	//$js += $P_v * log( 2 * $P_v / ( $P_v + $Q_v ) ) / $log_2 if($P_v != 0);   # P Log ( P /(P+Q)/2 )
@@ -278,8 +276,6 @@ double calculateJSDivergence(const vector<vector<int> >* realDistributionAll,
 			}
 		}
 	}
-
-//	cout << "\t\tcomputed JS divergence = " << jsDivergence / 2 << endl;
 
 	return jsDivergence / 2;
 }

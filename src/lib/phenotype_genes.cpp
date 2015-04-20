@@ -169,15 +169,10 @@ void findPhenotypeGenesUsingCounter(vector<bool>* isPhenotypeGenes, vector<int>*
 
 	//OUTPUT: print phenotype genes and their p-values
 	vector<string>* output = new vector<string>;
-	output->push_back("GENE\tP_VALUE\tIS_PHENOTYPE");
+	output->push_back("GENE\tP_VALUE");
 	for (int i = 0; i < totalGenes; ++i) {
-		if (isExplainedGenes->at(i)){
+		if (isPhenotypeGenes->at(i)){
 			string str = geneIdToSymbol->at(i) + "\t" + doubleToStr(pValues[i]);
-			if(isPhenotypeGenes->at(i)){
-				str = str + "\t" + "1";
-			}else{
-				str = str + "\t" + "0";
-			}
 			output->push_back(str);
 		}
 	}

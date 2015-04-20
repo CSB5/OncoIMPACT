@@ -223,19 +223,21 @@ int main() {
 	//initialize the vector to save the divergence of each set of parameters
 	vector<JSDivergence> jsDivergences(numCombinations);
 
-//	findParameters(&jsDivergences, &Ls, &Ds, &Fs, totalGenes, &geneExpression, &mutations, &network, numSamples);
-//
-//	//TODO write the JS divergence result to a file
-//
-//	cout << "DONE tunning parameters (" << (float(clock() - begin_time) / CLOCKS_PER_SEC)
-//			<< " sec)\n";
-//	begin_time = clock();	//update the clock
-//
-//	//choose the best parameters
-//	JSDivergence maxJs;
-//	findMaximumJsDivergence(&jsDivergences, &maxJs);
-//
-//	cout << "the maximum divergence is " << maxJs.divergence << " when L, D, F = " << maxJs.L << ", " << maxJs.D << ", " << maxJs.F << endl;
+	findParameters(&jsDivergences, &Ls, &Ds, &Fs, totalGenes, &geneExpression, &mutations, &network, numSamples);
+
+	//TODO write the JS divergence result to a file
+	filename = "output/js_divergences";
+	saveJSDivergences(&jsDivergences, filename);
+
+	cout << "DONE tunning parameters (" << (float(clock() - begin_time) / CLOCKS_PER_SEC)
+			<< " sec)\n";
+	begin_time = clock();	//update the clock
+
+	//choose the best parameters
+	JSDivergence maxJs;
+	findMaximumJsDivergence(&jsDivergences, &maxJs);
+
+	cout << "the maximum divergence is " << maxJs.divergence << " when L, D, F = " << maxJs.L << ", " << maxJs.D << ", " << maxJs.F << endl;
 
 	//TODO set the L D F to maxJs
 	int L = 20;
@@ -246,7 +248,7 @@ int main() {
 	 * Find phenotype genes
 	 */
 
-	cout << "finding phenotype genes ..." << endl;
+	cout << "finding phenotype genes using (L,D,F) = (" << L << "," << D << "," << F << ") ..." << endl;
 
 	// A vector for collecting mutated genes and the corresponding explained genes for all samples
 	// sample, mutated genes, explained genes
@@ -330,10 +332,7 @@ int main() {
 	//the random samples have greater frequency than the real dataset
 	vector<int> geneFrequencyGreaterThanRealFrequencyCounter(totalGenes);
 
-	//OLD: the following have to be done 500-1000 times to generate the null distribution
-	//vector< vector<int> > nullDistribution(totalGenes);
-
-	//TODO the following have to be done 500-1000 times to generate the null distribution
+	//the following have to be done 500-1000 times to generate the null distribution
 	int round = 500;
 
 	cout << "\tcreating null distribution (using " << round << " permutations) ... ";
@@ -463,7 +462,6 @@ int main() {
 	vector< vector<Driver> > driversOfAllSamples(totalSamples);
 	calculateImpactScoresForAllSamples(&modulesListOfAllSamples, &driversOfAllSamples, &originalGeneExpressionMatrix, &genesEx, totalGenes, F, &geneIdToSymbol);
 
-	cout << "aggregating IMPACT scores across all samples ...\n";
 	vector<double> driverAggregatedScores(totalGenes);
 	vector<int> driversFrequency(totalGenes);
 	vector<int> pointMutationDriversFrequency(totalGenes);
@@ -485,6 +483,8 @@ int main() {
 		deletionFrequency[i] = 0;
 		amplificationFrequency[i] = 0;
 	}
+
+	cout << "aggregating IMPACT scores across all samples ...\n";
 	aggregateDriversAcrossSamples(&driversOfAllSamples, &driverAggregatedScores, &driversFrequency, &geneIdToSymbol, totalGenes);
 
 	cout << "getting driver frequency ...\n";
@@ -504,7 +504,6 @@ int main() {
 			&originalPointMutationsMatrix, &originalCNVsMatrix, &genesPointMut, &genesCNV,
 			&driverAggregatedScores, &driversFrequency, &mutationFrequency);
 
-	//TODO printing aggregated impact scores
 	cout << "printing aggregated impact scores ...\n";
 	filename = "output/drivers_aggregation.tsv";
 	printAggregatedDriverList(&driverGeneIds, filename, &geneIdToSymbol, &sampleIdToName,
