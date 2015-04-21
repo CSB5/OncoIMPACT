@@ -134,7 +134,7 @@ void BFSforExplainedGenes(TIntAdjList* network, int geneId, int L, int D,
 				// check conditions before push to the queue
 				// |fold change| > F
 				int geneId = (*network)[currentGene][j];
-				if (fabs(sampleGeneExpression->at(geneId)) > F) {
+				if (fabs(sampleGeneExpression->at(geneId)) >= F) {	//TODO in pl code used >=, but in paper said >
 					// is explained gene
 					explainedGenes->at(geneId).expression = sampleGeneExpression->at(geneId);
 					explainedGenes->at(geneId).frequency++;
@@ -195,7 +195,7 @@ void BFSforExplainedGenesIdOnly(TIntAdjList* network, int geneId, int L, int D,
 				// check conditions before push to the queue
 				// |fold change| > F
 				int geneId = (*network)[currentGene][j];
-				if (fabs(sampleGeneExpression->at(geneId)) > F) {
+				if (fabs(sampleGeneExpression->at(geneId)) >= F) {
 					// is explained gene
 					explainedGenesFrequency->at(geneId) += 1;
 					int degree = getNodeDegree(network, geneId);
@@ -267,9 +267,7 @@ void BFSforExplainedGenesIdOnlyUpDown(TIntAdjList* network, int geneId, int L, i
 				// check conditions before push to the queue
 				// |fold change| > F
 				int geneId = (*network)[currentGeneId][j];
-				if (fabs(sampleGeneExpression->at(geneId)) > F) {
-
-//					cout << "gene " << geneId << " has foldchange = " << sampleGeneExpression->at(geneId) << endl;
+				if (fabs(sampleGeneExpression->at(geneId)) >= F) {
 
 					// is explained gene
 					if(sampleGeneExpression->at(geneId) > 0.0){ 	// up regulated

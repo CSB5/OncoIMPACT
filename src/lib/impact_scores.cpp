@@ -43,7 +43,7 @@ void calculateImpactScoresForAllSamples(vector< list<Module> >* modulesListOfAll
 			//sum up the fold change
 			for(list<int>::iterator git = module.driverGeneIds.begin(); git != module.driverGeneIds.end(); git++){
 				//deregulated driver gene
-				if(rowId[*git] != -1 and fabs(originalGeneExpressionMatrix->at(rowId[*git])[i]) > F){
+				if(rowId[*git] != -1 and fabs(originalGeneExpressionMatrix->at(rowId[*git])[i]) >= F){
 					score += fabs(originalGeneExpressionMatrix->at(rowId[*git])[i]);
 				}
 				moduleSize++;
@@ -70,7 +70,7 @@ void calculateImpactScoresForAllSamples(vector< list<Module> >* modulesListOfAll
 				string str = intToStr(i) + "\t" + geneIdToSymbol->at(*git) + "\t" + doubleToStr(score, 3) + "\t";
 
 				//check if the driver gene is also a deregulated gene
-				if(rowId[*git] != -1 and fabs(originalGeneExpressionMatrix->at(rowId[*git])[i]) > F){
+				if(rowId[*git] != -1 and fabs(originalGeneExpressionMatrix->at(rowId[*git])[i]) >= F){
 					driver.isDeregulated = true;
 					str = str + "1\t" + intToStr(moduleSize) + "\t" + intToStr(numDrivers);
 				}else{

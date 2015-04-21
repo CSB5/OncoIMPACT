@@ -399,8 +399,6 @@ int main() {
 //	begin_time = clock();	//update the clock
 //	cout << "\tthere are " << phenotypeGeneIds.size() << " phenotype genes" << endl;
 //
-//	//OUTPUT: print gene frequency and phenotype genes of the real datasetvoid
-//	printExplinedGenesFrequencyAndPhonotype(&explainedGenesFrequencyRealUpDown, &pValues, &isPhenotypeGenes, &geneIdToSymbol, &network, &originalGeneExpressionMatrix, &genesEx, F);
 
 	//TEST: use phenotype genes list from previous version
 	readGenesList("original_phenotype_genes.txt", &phenotypeGeneIds, &geneSymbolToId);
@@ -409,6 +407,10 @@ int main() {
 	for (int i = 0; i < numPhenotypeGene; ++i) {
 		isPhenotypeGenes[phenotypeGeneIds[i]] = true;
 	}
+
+	//OUTPUT: print gene frequency and phenotype genes of the real dataset
+	//TODO the result of this part is not the same (different explained gene frequency
+	printExplinedGenesFrequencyAndPhonotype(&explainedGenesFrequencyRealUpDown, &pValues, &isPhenotypeGenes, &geneIdToSymbol, &network, &originalGeneExpressionMatrix, &genesEx, F);
 
 	/*
 	 * Find driver genes

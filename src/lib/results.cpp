@@ -387,7 +387,7 @@ void printExplinedGenesFrequencyAndPhonotype(vector<int>* explainedGenesFrequenc
 	for (list<ExplainedGeneDetail>::iterator it = explainedGenesList.begin();
 			it != explainedGenesList.end(); it++) {
 		string str = it->gene + "\t" + intToStr(it->degree) + "\t"
-				+ intToStr(it->numSampleExplained) + "\t"
+				+ intToStr(it->numSampleDeregulated) + "\t"
 				+ doubleToStr(1.0 * it->numSampleDeregulated / totalSamples, 2) + "\t"
 				+ intToStr(it->numSampleExplained) + "\t"
 				+ doubleToStr(1.0 * it->numSampleExplained / totalSamples, 2) + "\t"
@@ -415,14 +415,14 @@ int getNumSamplesOfDeregulatedGene(TDoubleMatrix* originalGeneExpressionMatrix, 
 	if(geneIdUpDown < totalGenes){	//up
 		geneId = geneIdUpDown;
 		for (int i = 0; i < totalSamples; ++i) {
-			if(originalGeneExpressionMatrix->at(findIndex(genesEx, geneId))[i] > F){
+			if(originalGeneExpressionMatrix->at(findIndex(genesEx, geneId))[i] >= F){
 				numSamples++;
 			}
 		}
 	}else{							//down
 		geneId = geneIdUpDown-totalGenes;
 		for (int i = 0; i < totalSamples; ++i) {
-			if(originalGeneExpressionMatrix->at(findIndex(genesEx, geneId))[i] < -F){
+			if(originalGeneExpressionMatrix->at(findIndex(genesEx, geneId))[i] <= -F){
 				numSamples++;
 			}
 		}

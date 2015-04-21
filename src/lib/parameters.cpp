@@ -293,7 +293,7 @@ double getMedianNumberOfDeregulatedGenes(TDoubleMatrix* geneExpressionMatrix,
 		int count = 0;
 		//for each gene j
 		for (int j = 0; j < numGenes; ++j) {
-			if (fabs(geneExpressionMatrix->at(j)[i]) > F) {
+			if (fabs(geneExpressionMatrix->at(j)[i]) >= F) {
 				count++;
 			}
 		}
