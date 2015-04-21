@@ -238,6 +238,7 @@ void findParameters(vector<JSDivergence>* jsDivergences, vector<int>* Ls,
 
 }
 
+//TODO the result is quite different from the original version
 double calculateJSDivergence(const vector<vector<int> >* realDistributionAll,
 		const vector<vector<int> >* randomDistributionAll, int numSamples) {
 	int round = randomDistributionAll->size();
@@ -265,8 +266,8 @@ double calculateJSDivergence(const vector<vector<int> >* realDistributionAll,
 
 	double jsDivergence = 0;
 	for (int i = 0; i < numSamples; ++i) {
-		double pi = realFrequencyDistribution[i];
-		double qi = randomFrequencyDistribution[i];
+		double pi = 1.0 * realFrequencyDistribution[i] / (totalGenes*2);	// *2 because now we are considering up and down
+		double qi = 1.0 * randomFrequencyDistribution[i] / (totalGenes*2);
 		if (qi > 0 or pi > 0) {
 			if (pi != 0) {	//real frequency is zero
 				jsDivergence += pi * log(pi / ((pi + qi) / 2));

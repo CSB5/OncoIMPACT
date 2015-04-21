@@ -39,6 +39,15 @@ struct AggregatedDriver{
 	double amplificationFrequency;
 };
 
+struct ExplainedGeneDetail{
+	string gene;
+	int degree;
+	int numSampleDeregulated;
+	int numSampleExplained;
+	bool isPhenotype;
+	double pValue;
+};
+
 void saveModules(vector< list<Module> > * modulesListOfAllSamples, string filename, vector<string>* geneIdToSymbol);
 
 void printSampleDriverList(vector< vector<Driver> >* driversOfAllSamples, string filename, vector<string>* geneIdToSymbol, vector<string>* sampleIdToName,
@@ -60,5 +69,9 @@ void printAggregatedDriverList(vector<int>* driverGeneIds, string filename, vect
 bool sortByAggregatedImpactScore(const AggregatedDriver& first, const AggregatedDriver& second);
 
 void saveJSDivergences(vector<JSDivergence>* jsDivergences, string filename);
+
+void printExplinedGenesFrequencyAndPhonotype(vector<int>* explainedGenesFrequencyRealUpDown, vector<double>* pValues, vector<bool>* isPhenotypeGenes,
+		vector<string>* geneIdToSymbol, TIntAdjList* network, TDoubleMatrix* originalGeneExpressionMatrix, vector<int>* genesEx, double F);
+int getNumSamplesOfDeregulatedGene(TDoubleMatrix* originalGeneExpressionMatrix, vector<int>* genesEx, double F, int geneIdUpDown, int totalGenesUpDown);
 
 #endif /* RESULTS_H_ */

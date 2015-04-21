@@ -13,7 +13,7 @@
 
 //void addFrequencyForNullDistribution(vector< vector<int> >* nullDistribution, vector< vector<int> >* explainedGenesListForPhenotypeGenes);
 void countGeneFrequencyGreaterThanRealFrequency(vector<int>* geneFrequencyGreaterThanRealFrequencyCounter,
-		vector< vector<int> >* explainedGenesFrequencyForPhenotypeGenes, vector<int>* genesFrequencyReal);
+		vector< vector<bool> >* explainedGenesFrequencyUpDownRandom, vector<int>* genesFrequencyReal);
 
 void addFrequncyForRealDataset(vector<int>* genesFrequency,	vector< vector<MutatedAndExplianedGenes> >* mutatedAndExplainedGenesListReal,
 		vector< vector<int> >* mutatedGeneIdsListReal, vector<bool>* isExplainedGenes);
@@ -26,8 +26,8 @@ void findPhenotypeGenes(vector<bool>* isPhenotypeGenes, vector<int>* phenotypeGe
 		vector<int>* genesFrequency, vector<vector<int> >* nullDistribution,
 		vector<bool>* isExplainedGenes);
 
-void findPhenotypeGenesUsingCounter(vector<bool>* isPhenotypeGenes, vector<int>* phenotypeGeneIds,
-		vector<int>* genesFrequencyReal, vector<int>* geneFrequencyGreaterThanRealFrequencyCounter,
+void findPhenotypeGenesUsingCounter(vector<bool>* isPhenotypeGenes, vector<int>* phenotypeGeneIds, vector<double>* pValues,
+		vector<int>* genesFrequencyRealUpDown, vector<int>* geneFrequencyGreaterThanRealFrequencyCounter,
 		vector<bool>* isExplainedGenes, int round, int totalSamples, vector<string>* geneIdToSymbol);
 
 void printPhenotypeGenes(vector<bool>* isPhenotypeGenes, string phenotypeGeneFileName, vector<string>* geneIdToSymbol);

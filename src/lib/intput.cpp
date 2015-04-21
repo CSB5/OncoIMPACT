@@ -267,6 +267,28 @@ int findIndex(vector<int>* geneIds, int currentGeneId){
 	return index;
 }
 
+void readGenesList(const char* filename, vector<int>* geneIds, map<string, int>* geneSymbolToId){
+	ifstream inFile;
+	inFile.open(filename, std::ifstream::in);
+
+	if (inFile.is_open()) {
+
+		//read the output from the
+		while (inFile.good()) {
+			string s;
+			if (!getline(inFile, s))
+				break;
+
+			istringstream ss(s);
+			map<string, int>::iterator it = geneSymbolToId->find(s);
+			geneIds->push_back(it->second);
+
+		}
+		inFile.close();
+	} else {
+		cerr << "Error opening file\n";
+	}
+}
 
 
 

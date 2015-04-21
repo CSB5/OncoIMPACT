@@ -67,7 +67,7 @@ void calculateImpactScoresForAllSamples(vector< list<Module> >* modulesListOfAll
 				driver.impactScore = score;
 
 				//OUTPUT: print drivers and impact scores for all samples (cont.)
-				string str = intToStr(i) + "\t" + geneIdToSymbol->at(*git) + "\t" + doubleToStr(score) + "\t";
+				string str = intToStr(i) + "\t" + geneIdToSymbol->at(*git) + "\t" + doubleToStr(score, 3) + "\t";
 
 				//check if the driver gene is also a deregulated gene
 				if(rowId[*git] != -1 and fabs(originalGeneExpressionMatrix->at(rowId[*git])[i]) > F){
@@ -122,7 +122,7 @@ void aggregateDriversAcrossSamples(vector< vector<Driver> >* driversOfAllSamples
 			//TODO which one is correct?
 			double aggregatedScore = sumImpact[i]/totalSamples; //sumImpact[i]/driversFrequency->at(i)
 			driverAggregatedScores->at(i) = aggregatedScore;
-//			string str = geneIdToSymbol->at(i) + "\t" + doubleToStr(aggregatedScore);
+//			string str = geneIdToSymbol->at(i) + "\t" + doubleToStr(aggregatedScore, 3);
 //			outputDrivers->push_back(str);
 		}
 	}

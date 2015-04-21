@@ -107,10 +107,10 @@ void printSampleDriverList(vector<vector<Driver> >* driversOfAllSamples,
 		for (list<SampleDriver>::iterator it = sampleDriversList.begin();
 				it != sampleDriversList.end(); it++) {
 			string str = it->gene + "\t" + it->type + "\t"
-					+ doubleToStr(it->impactScore) + "\t"
-					+ doubleToStr(it->aggregatedImpactScore) + "\t"
-					+ doubleToStr(it->driverFrequency) + "\t"
-					+ doubleToStr(it->mutationFrequency) + "\t"
+					+ doubleToStr(it->impactScore, 3) + "\t"
+					+ doubleToStr(it->aggregatedImpactScore, 3) + "\t"
+					+ doubleToStr(it->driverFrequency, 3) + "\t"
+					+ doubleToStr(it->mutationFrequency, 3) + "\t"
 					+ it->cancerCensus + "\t" + it->panCancer;
 			outputStr.push_back(str);
 		}
@@ -192,16 +192,16 @@ void printAggregatedDriverList(vector<int>* driverGeneIds, string filename,
 
 	for (list<AggregatedDriver>::iterator it = aggregatedDriversList.begin();
 			it != aggregatedDriversList.end(); it++) {
-		string str = it->gene + "\t" + doubleToStr(it->driverFrequency) + "\t"
-				+ doubleToStr(it->driverPointMutationFrequency) + "\t"
-				+ doubleToStr(it->driverDeletionFrequency) + "\t"
-				+ doubleToStr(it->driverAmplificationFrequency) + "\t"
+		string str = it->gene + "\t" + doubleToStr(it->driverFrequency, 3) + "\t"
+				+ doubleToStr(it->driverPointMutationFrequency, 3) + "\t"
+				+ doubleToStr(it->driverDeletionFrequency, 3) + "\t"
+				+ doubleToStr(it->driverAmplificationFrequency, 3) + "\t"
 				+ it->cancerCensus + "\t" + it->panCancer + "\t"
-				+ doubleToStr(it->aggregatedImpactScore) + "\t"
-				+ doubleToStr(it->mutationFrequency) + "\t"
-				+ doubleToStr(it->pointMutationFrequency) + "\t"
-				+ doubleToStr(it->deletionFrequency) + "\t"
-				+ doubleToStr(it->amplificationFrequency);
+				+ doubleToStr(it->aggregatedImpactScore, 10) + "\t"
+				+ doubleToStr(it->mutationFrequency, 3) + "\t"
+				+ doubleToStr(it->pointMutationFrequency, 3) + "\t"
+				+ doubleToStr(it->deletionFrequency, 3) + "\t"
+				+ doubleToStr(it->amplificationFrequency, 3);
 		outputStr.push_back(str);
 	}
 
@@ -340,9 +340,92 @@ void saveJSDivergences(vector<JSDivergence>* jsDivergences, string filename){
 		F = jsDivergences->at(i).F;
 		divergence = jsDivergences->at(i).divergence;
 
-		string str = intToStr(L) + "\t" + intToStr(D) + "\t" + doubleToStr(F) + "\t" + doubleToStr(divergence);
+		string str = intToStr(L) + "\t" + intToStr(D) + "\t" + doubleToStr(F, 1) + "\t" + doubleToStr(divergence, 5);
 		outputStr.push_back(str);
 	}
 
 	writeStrVector(filename.c_str(), &outputStr);
+}
+
+void printExplinedGenesFrequencyAndPhonotype(vector<int>* explainedGenesFrequencyRealUpDown, vector<double>* pValues, vector<bool>* isPhenotypeGenes,
+		vector<string>* geneIdToSymbol, TIntAdjList* network, TDoubleMatrix* originalGeneExpressionMatrix, vector<int>* genesEx, double F){
+	int totalGenesUpDown = explainedGenesFrequencyRealUpDown->size();
+	int totalGenes = isPhenotypeGenes->size();
+	int totalSamples = originalGeneExpressionMatrix->at(0).size();
+
+	list<ExplainedGeneDetail> explainedGenesList;
+
+	for (int i = 0; i < totalGenesUpDown; ++i) {
+		//only print explained genes
+		if(explainedGenesFrequencyRealUpDown->at(i) > 0){
+			ExplainedGeneDetail exGene;
+			if(i < totalGenes){
+				exGene.gene = geneIdToSymbol->at(i) + "_UP";
+				exGene.degree = network->at(i).size();
+				exGene.isPhenotype = isPhenotypeGenes->at(i);
+			}else{
+				exGene.gene = geneIdToSymbol->at(i-totalGenes) + "_DOWN";
+				exGene.degree = network->at(i-totalGenes).size();
+				exGene.isPhenotype = isPhenotypeGenes->at(i-totalGenes);
+			}
+
+			exGene.numSampleExplained = explainedGenesFrequencyRealUpDown->at(i);
+			exGene.numSampleDeregulated = getNumSamplesOfDeregulatedGene(originalGeneExpressionMatrix, genesEx, F, i, totalGenesUpDown);
+			exGene.pValue = pValues->at(i);
+
+			explainedGenesList.push_back(exGene);
+		}
+	}
+
+	//sorting
+
+	//save to file
+	vector<string>* outputStr = new vector<string>;
+	string filename = "output/explained_and_phenotype_genes.tsv";
+	outputStr->push_back("GENE\tDEGREE\tNUM_SAMPLE_DEREGULATED\tFREQUENCY_SAMPLE_DEREGULATED\tNUM_SAMPLE_EXPLAINED\tNUM_SAMPLE_EXPLAINED\tFREQUENCY_SAMPLE_EXPLAINED\tEXPLAINED\\DEREGULATED\tIS_PHENOTYPE");
+
+	for (list<ExplainedGeneDetail>::iterator it = explainedGenesList.begin();
+			it != explainedGenesList.end(); it++) {
+		string str = it->gene + "\t" + intToStr(it->degree) + "\t"
+				+ intToStr(it->numSampleExplained) + "\t"
+				+ doubleToStr(1.0 * it->numSampleDeregulated / totalSamples, 2) + "\t"
+				+ intToStr(it->numSampleExplained) + "\t"
+				+ doubleToStr(1.0 * it->numSampleExplained / totalSamples, 2) + "\t"
+				+ doubleToStr(1.0 * it->numSampleExplained / it->numSampleDeregulated, 2) + "\t";
+
+		//note that the p-values can be different for up and down, but if the gene is a phenotype gene, it will say Y
+		if(it->isPhenotype){
+			str += "Y\t" + doubleToStr(it->pValue, 5);
+		}else{
+			str += "N\t" + doubleToStr(it->pValue, 5);
+		}
+		outputStr->push_back(str);
+	}
+
+	writeStrVector(filename.c_str(), outputStr);
+	delete outputStr;
+}
+
+int getNumSamplesOfDeregulatedGene(TDoubleMatrix* originalGeneExpressionMatrix, vector<int>* genesEx, double F, int geneIdUpDown, int totalGenesUpDown){
+	int numSamples = 0;
+	int totalSamples = originalGeneExpressionMatrix->at(0).size();
+	int totalGenes = totalGenesUpDown/2;
+
+	int geneId;
+	if(geneIdUpDown < totalGenes){	//up
+		geneId = geneIdUpDown;
+		for (int i = 0; i < totalSamples; ++i) {
+			if(originalGeneExpressionMatrix->at(findIndex(genesEx, geneId))[i] > F){
+				numSamples++;
+			}
+		}
+	}else{							//down
+		geneId = geneIdUpDown-totalGenes;
+		for (int i = 0; i < totalSamples; ++i) {
+			if(originalGeneExpressionMatrix->at(findIndex(genesEx, geneId))[i] < -F){
+				numSamples++;
+			}
+		}
+	}
+	return numSamples;
 }

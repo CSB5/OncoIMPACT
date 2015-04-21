@@ -220,12 +220,12 @@ void BFSforExplainedGenesIdOnly(TIntAdjList* network, int geneId, int L, int D,
 //up regulated gene frequency is in the first half [0,totalGenes - 1]
 //down regulated gene frequency is in the second half [totalGenes, totalGenes * 2 - 1]
 void BFSforExplainedGenesIdOnlyUpDown(TIntAdjList* network, int geneId, int L, int D,
-		double F, vector<bool>* explainedGenesFrequency, vector<double>* sampleGeneExpression) {
+		double F, vector<bool>* isExplainedGenes, vector<double>* sampleGeneExpression) {
 
 	//initialize explainedGenesFrequency
-	int totalGenesUpDown = explainedGenesFrequency->size();
+	int totalGenesUpDown = isExplainedGenes->size();
 	for (int i = 0; i < totalGenesUpDown; ++i) {
-		explainedGenesFrequency->at(i) = false;
+		isExplainedGenes->at(i) = false;
 	}
 
 //	cout << "begin BFS\n";
@@ -273,9 +273,9 @@ void BFSforExplainedGenesIdOnlyUpDown(TIntAdjList* network, int geneId, int L, i
 
 					// is explained gene
 					if(sampleGeneExpression->at(geneId) > 0.0){ 	// up regulated
-						explainedGenesFrequency->at(geneId) = true;
+						isExplainedGenes->at(geneId) = true;
 					}else{											// down regulated
-						explainedGenesFrequency->at(geneId + totalGenes) = true; //+9452
+						isExplainedGenes->at(geneId + totalGenes) = true; //+9452
 					}
 
 					int degree = getNodeDegree(network, geneId);

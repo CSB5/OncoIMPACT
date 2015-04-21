@@ -367,9 +367,9 @@ string intToStr(int i){
 	return ss.str();
 }
 
-string doubleToStr(double i){
+string doubleToStr(double i, int prec){
 	stringstream ss;
-	ss.precision(3);
+	ss.precision(prec);
 	ss << fixed << i;
 	return ss.str();
 }

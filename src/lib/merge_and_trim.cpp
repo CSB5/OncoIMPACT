@@ -96,7 +96,20 @@ void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedA
 		for(list<int>::iterator it = driverGeneIdsForASample.begin(); it != driverGeneIdsForASample.end(); it++, j++){
 
 			int currentMutatedGeneId = *it;
-			vector<int>* explainedGenesFreqency = mutatedAndExplainedGenes[currentMutatedGeneId].explainedGenesFreqency;
+			vector<bool>* isExplainedGenesUpDown = mutatedAndExplainedGenes[currentMutatedGeneId].isExplainedGenesUpDown;
+			int totalGenesUpDown = isExplainedGenesUpDown->size();
+			//convert to non UpDown
+			vector<bool> isExplianedGenes(totalGenes);
+			for (int k = 0; k < totalGenesUpDown; ++k) {
+				if(isExplainedGenesUpDown->at(k)){
+					if(k < totalGenes){
+						isExplianedGenes[k] = true;
+					}else{
+						isExplianedGenes[k-totalGenes] = true;
+					}
+				}
+
+			}
 
 			Module currentModule;
 
@@ -104,7 +117,7 @@ void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedA
 			currentModule.driverGeneIds.push_back(currentMutatedGeneId);
 			for (int k = 0; k < totalGenes; ++k) {
 				if(k != currentMutatedGeneId){	//if the gene k is not the current mutated gene
-					if(explainedGenesFreqency->at(k) > 0){	//k is an explained gene
+					if(isExplianedGenes[k] > 0){	//k is an explained gene
 						if(isPhenotypeGenes->at(k)){
 							currentModule.phenotypeGeneIds.push_back(k);
 						}else{
