@@ -143,7 +143,6 @@ void printAggregatedDriverList(vector<int>* driverGeneIds, string filename,
 	outputStr.push_back(
 			"GENE\tDRIVER_FREQUENCY\tDRIVER_SNV_FREQUENCY\tDRIVER_DELTION_FREQUENCY\tDRIVER_AMPLIFICATION_FREQUENCY\tCANCER_CENSUS\tPAN_CANCER\t"
 					"IMPACT\tMUTATION_FREQUENCY\tSNV_FREQUENCY\tDELTION_FREQUENCY\tAMPLIFICATION_FREQUENCY");
-	//TODO for aggregated results: outputStr.push_back("GENE\tDRIVER_FREQUENCY\tDRIVER_SNV_FREQUENCY\tDRIVER_DELTION_FREQUENCYDRIVER_AMPLIFICATION_FREQUENCY\tCANCER_CENSUS\tPAN_CANCER\tIMPACT\tMUTATION_FREQUENCY\tSNV_FREQUENCY\tDELTION_FREQUENCY\tAMPLIFICATION_FREQUENCY");
 
 	int totalSamples = sampleIdToName->size();
 	int totalDrivers = driverGeneIds->size();
@@ -173,8 +172,6 @@ void printAggregatedDriverList(vector<int>* driverGeneIds, string filename,
 				currentDriverGeneId);
 		driver.mutationFrequency = 1.0
 				* mutationFrequency->at(currentDriverGeneId) / totalSamples;
-
-		//TODO create function to find these values
 		driver.pointMutationFrequency = 1.0
 				* pointMutationFrequency->at(currentDriverGeneId)
 				/ totalSamples;

@@ -29,7 +29,7 @@ void findParameters(vector<JSDivergence>* jsDivergences, vector<int>* Ls,
 
 	int totalGenesUpDown = totalGenes * 2;
 
-	//TODO ignore the choice (of F) in which the median number of deregulated genes is more than half of the gene in the network or <300
+	//ignore the choice (of F) in which the median number of deregulated genes is more than half of the gene in the network or <300
 	double halfNumberOfGenesInNetwork = totalGenes / 2;
 	vector<double> medianNumberOfDeregulatedGenes(Fs->size());
 	for (unsigned i = 0; i < Fs->size(); ++i) {
@@ -106,8 +106,6 @@ void findParameters(vector<JSDivergence>* jsDivergences, vector<int>* Ls,
 				vector< vector<int> >* realDistributionAll = new vector< vector<int> >;
 				vector< vector<int> >* randomDistributionAll = new vector< vector<int> >;
 
-//				cout << "\t\tcreating frequency distribution...";
-
 				//count the number of times that the frequency is greater then the real frequency
 				int progress = 1;
 				int interval = round / 100;
@@ -131,8 +129,6 @@ void findParameters(vector<JSDivergence>* jsDivergences, vector<int>* Ls,
 					vector<int> realDistribution(totalGenesUpDown);//differentiate the up and down regulated genes
 					for (int sampleId = 0; sampleId < numSamples; sampleId++) {
 
-//						cout << "Sample #" << sampleId << endl;
-
 						vector<double> sampleGeneExpression(totalGenes); //expression of all genes in the network
 						getGeneExpressionFromSampleId(&subGeneExpressionMatrix->at(i),
 								genesEx, &sampleGeneExpression, sampleId);
@@ -140,8 +136,6 @@ void findParameters(vector<JSDivergence>* jsDivergences, vector<int>* Ls,
 						vector<int> mutatedGeneIds; // to store gene id of mutated genes
 						getMutatedGeneIdsFromSampleId(&subMutations->at(i),
 								&mutatedGeneIds, sampleId, genesMut);
-
-//						cout << "finding explained genes... " << endl;
 
 						vector<bool>* explainedGenesFrequency = new vector<bool>(totalGenesUpDown);//differentiate the up and down regulated genes
 						getExplainedGenesIdOnlyUpDown(explainedGenesFrequency,
@@ -159,7 +153,6 @@ void findParameters(vector<JSDivergence>* jsDivergences, vector<int>* Ls,
 					}
 					realDistributionAll->push_back(realDistribution);
 
-//					cout << "calculated distribution of real samples" << endl;
 
 					/*
 					 * find explained genes for random sub-sample (with gene label permutation)
@@ -203,26 +196,18 @@ void findParameters(vector<JSDivergence>* jsDivergences, vector<int>* Ls,
 					}
 					randomDistributionAll->push_back(randomDistribution);
 
-//					cout << "calculated distribution of random samples" << endl;
 
 				}	//end for loop of 100 round
 
 				cout << endl;	//for progression printing
 
-//				cout << "\t\tcalculating JS divergence..." << endl;
-
 				//calculate JS divergence
-				//TODO ERROR double free or corruption while returning from the function
-//				double divergence = calculateJSDivergence(realDistributionAll, randomDistributionAll, numSamples);
-
 				jsDivergences->at(count).divergence = calculateJSDivergence(realDistributionAll, randomDistributionAll, numSamples);
-//				cout << "\t\tcalculated JS divergence..." << endl;
+				//Note: sometimes the divergence is not calculated because of the constraint of the number of deregulated genes
 
 				delete realDistributionAll;
 				delete randomDistributionAll;
 
-				//Note: sometimes the divergence is not calculated because of the constraint of the number of deregulated genes
-//				cout << "\t\tJS divergence = " << divergence << endl;
 				count++;
 
 			} //end for loop for Fs

@@ -13,7 +13,8 @@
 
 void getGeneExpressionFromSampleId(TDoubleMatrix* geneExpressionMatrix,
 		vector<int>* genesEx, vector<double>* sampleExpression, int sampleId) {
-	//TODO not sure if I need this
+
+	//initialization
 	int totalGenes = sampleExpression->size();
 	for (int i = 0; i < totalGenes; ++i) {
 		sampleExpression->at(i) = 0;
@@ -134,7 +135,7 @@ void BFSforExplainedGenes(TIntAdjList* network, int geneId, int L, int D,
 				// check conditions before push to the queue
 				// |fold change| > F
 				int geneId = (*network)[currentGene][j];
-				if (fabs(sampleGeneExpression->at(geneId)) >= F) {	//TODO in pl code used >=, but in paper said >
+				if (fabs(sampleGeneExpression->at(geneId)) >= F) {	//in pl code used >=, but in paper said >
 					// is explained gene
 					explainedGenes->at(geneId).expression = sampleGeneExpression->at(geneId);
 					explainedGenes->at(geneId).frequency++;
@@ -228,8 +229,6 @@ void BFSforExplainedGenesIdOnlyUpDown(TIntAdjList* network, int geneId, int L, i
 		isExplainedGenes->at(i) = false;
 	}
 
-//	cout << "begin BFS\n";
-
 	int totalGenes = network->size();
 
 	// Mark all the vertices as not visited
@@ -269,6 +268,8 @@ void BFSforExplainedGenesIdOnlyUpDown(TIntAdjList* network, int geneId, int L, i
 				int geneId = (*network)[currentGeneId][j];
 				if (fabs(sampleGeneExpression->at(geneId)) >= F) {
 
+					//TODO what if this gene is a mutated gene?
+
 					// is explained gene
 					if(sampleGeneExpression->at(geneId) > 0.0){ 	// up regulated
 						isExplainedGenes->at(geneId) = true;
@@ -294,8 +295,6 @@ void BFSforExplainedGenesIdOnlyUpDown(TIntAdjList* network, int geneId, int L, i
 
 
 	delete[] visited;
-
-//	cout << "end BFS\n";
 
 }
 

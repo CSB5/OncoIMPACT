@@ -82,7 +82,8 @@ void calculateImpactScoresForAllSamples(vector< list<Module> >* modulesListOfAll
 
 				outputDrivers->push_back(str);
 			}
-		}
+
+		}	//end for each module
 
 	}
 
@@ -111,10 +112,6 @@ void aggregateDriversAcrossSamples(vector< vector<Driver> >* driversOfAllSamples
 		}
 	}
 
-	//OUTPUT: print aggregated drivers
-//	vector<string>* outputDrivers = new vector<string>;
-//	outputDrivers->push_back("DRIVER\tIMPACT_SCORE");
-
 	for (int i = 0; i < totalGenes; ++i) {
 		driverAggregatedScores->at(i) = 0;	//initialization
 
@@ -122,15 +119,8 @@ void aggregateDriversAcrossSamples(vector< vector<Driver> >* driversOfAllSamples
 			//TODO which one is correct?
 			double aggregatedScore = sumImpact[i]/totalSamples; //sumImpact[i]/driversFrequency->at(i)
 			driverAggregatedScores->at(i) = aggregatedScore;
-//			string str = geneIdToSymbol->at(i) + "\t" + doubleToStr(aggregatedScore, 3);
-//			outputDrivers->push_back(str);
 		}
 	}
-
-	//OUTPUT: print aggregated drivers (cont.)
-//	string filename = "output/drivers_aggregation.tsv";
-//	writeStrVector(filename.c_str(), outputDrivers);
-//	delete outputDrivers;
 }
 
 void getDetailDriversFreqeuncy(vector< vector<Driver> >* driversOfAllSamples,
