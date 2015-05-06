@@ -10,7 +10,90 @@
 #include "../header/results.h"
 #include "../header/utilities.h"
 
-void saveModules(vector<list<Module> > * modulesListOfAllSamples,
+void saveModules(vector<list<Module> > * modulesListOfAllSamples, vector<vector<MutatedAndExplianedGenes> >* mutatedAndExplainedGenesListReal,
+		string filename, vector<string>* geneIdToSymbol, vector<string>* sampleIdToName) {
+	int totalSamples = modulesListOfAllSamples->size();
+	int totalGenesUpDown = geneIdToSymbol->size() * 2;
+	vector<string> outputStr;
+
+	//get a list of nodes (gene symbol, type)
+	vector<int> geneIds;
+	for (int i = 0; i < totalSamples; ++i) {
+
+		vector<MutatedAndExplianedGenes> mutatedAndExplainedGenes = mutatedAndExplainedGenesListReal->at(i);
+		list<Module> modulesList = modulesListOfAllSamples->at(i);
+
+		//for each module
+		for (list<Module>::iterator it = modulesList.begin();
+				it != modulesList.end(); it++) {
+
+			//get sample name
+			string str = sampleIdToName->at(i) + "." + intToStr(it->moduleId) + "\t";
+//			cout << "writing for " << sampleIdToName->at(i) << "." << it->moduleId << endl;
+
+			//to tell whether the explained/phenotype gene is up or down regulated in the current module
+			vector<bool> isExplainedGenesUpDown(totalGenesUpDown);
+			for (int j = 0; j < totalGenesUpDown; ++j) {
+				isExplainedGenesUpDown[j] = false;
+			}
+
+			int numDrivers = it->driverGeneIds.size();
+			//get driver genes
+			for (list<int>::iterator g = it->driverGeneIds.begin();
+					g != it->driverGeneIds.end(); g++) {
+
+				vector<bool>* isExplainedGenesUpDownOfACurrentDriver = mutatedAndExplainedGenes[*g].isExplainedGenesUpDown;
+				for (int j = 0; j < totalGenesUpDown; ++j) {
+					if(isExplainedGenesUpDownOfACurrentDriver->at(j)){
+						isExplainedGenesUpDown[j] = true;
+					}
+				}
+
+				str += geneIdToSymbol->at(*g) + ";";
+//				cout << "for driver " << geneIdToSymbol->at(*g) << endl;
+
+			}
+
+			str += "\t";
+
+			int numPhenotypeGenes = it->phenotypeGeneIds.size();
+			//get phenotype genes
+			for (list<int>::iterator g = it->phenotypeGeneIds.begin();
+					g != it->phenotypeGeneIds.end(); g++) {
+
+				if(isExplainedGenesUpDown[*g]){
+					str += geneIdToSymbol->at(*g) + "_UP" + ";";
+				}else{
+					str += geneIdToSymbol->at(*g) + "_DOWN" + ";";
+				}
+			}
+
+			str += "\t";
+
+			int numExplainedGenes = it->explainedGeneIds.size();
+			//get explained genes
+			for (list<int>::iterator g = it->explainedGeneIds.begin();
+					g != it->explainedGeneIds.end(); g++) {
+
+				if(isExplainedGenesUpDown[*g]){
+					str += geneIdToSymbol->at(*g) + "_UP" + ";";
+				}else{
+					str += geneIdToSymbol->at(*g) + "_DOWN" + ";";
+				}
+			}
+
+			str += "\t" + intToStr(numDrivers) + "_" + intToStr(numPhenotypeGenes) + "_" + intToStr(numExplainedGenes);
+			outputStr.push_back(str);
+		}
+	}
+
+	//get a list of edges (gene symbol, gene symbol)
+	//do not need now because the original network file can be used
+
+	writeStrVector(filename.c_str(), &outputStr);
+}
+
+void saveModulesCytoscape(vector<list<Module> > * modulesListOfAllSamples,
 		string filename, vector<string>* geneIdToSymbol) {
 	int totalSamples = modulesListOfAllSamples->size();
 	vector<string> outputStr;
@@ -60,6 +143,8 @@ void saveModules(vector<list<Module> > * modulesListOfAllSamples,
 
 	writeStrVector(filename.c_str(), &outputStr);
 }
+
+
 
 void printSampleDriverList(vector<vector<Driver> >* driversOfAllSamples,
 		string pathname, vector<string>* geneIdToSymbol,
@@ -378,8 +463,8 @@ void printExplinedGenesFrequencyAndPhonotype(vector<int>* explainedGenesFrequenc
 
 	//save to file
 	vector<string>* outputStr = new vector<string>;
-	string filename = "output/explained_and_phenotype_genes.tsv";
-	outputStr->push_back("GENE\tDEGREE\tNUM_SAMPLE_DEREGULATED\tFREQUENCY_SAMPLE_DEREGULATED\tNUM_SAMPLE_EXPLAINED\tNUM_SAMPLE_EXPLAINED\tFREQUENCY_SAMPLE_EXPLAINED\tEXPLAINED\\DEREGULATED\tIS_PHENOTYPE");
+	string filename = "output/exp_gene_freq.dat";
+	//outputStr->push_back("GENE\tDEGREE\tNUM_SAMPLE_DEREGULATED\tFREQUENCY_SAMPLE_DEREGULATED\tNUM_SAMPLE_EXPLAINED\tNUM_SAMPLE_EXPLAINED\tFREQUENCY_SAMPLE_EXPLAINED\tEXPLAINED\\DEREGULATED\tIS_PHENOTYPE");
 
 	for (list<ExplainedGeneDetail>::iterator it = explainedGenesList.begin();
 			it != explainedGenesList.end(); it++) {

@@ -38,20 +38,22 @@ void mergeModules(int currentModuleId, int moduleId, list<Module>* modulesList){
 
 	//merge phenotype genes
 	for(list<int>::iterator it = toBeMergedRef->phenotypeGeneIds.begin(); it != toBeMergedRef->phenotypeGeneIds.end(); it++){
-		bool found = find(toBeMergedRef->driverGeneIds.begin(), toBeMergedRef->driverGeneIds.end(), *it) != toBeMergedRef->driverGeneIds.end();
-		if(!found){
+		//TODO check this
+//		bool found = find(toBeMergedRef->driverGeneIds.begin(), toBeMergedRef->driverGeneIds.end(), *it) != toBeMergedRef->driverGeneIds.end();
+//		if(!found){
 			currentRef->phenotypeGeneIds.push_back(*it);
-		}
+//		}
 	}
 	currentRef->phenotypeGeneIds.sort();
 	currentRef->phenotypeGeneIds.unique();
 
 	//merge explained genes
 	for(list<int>::iterator it = toBeMergedRef->explainedGeneIds.begin(); it != toBeMergedRef->explainedGeneIds.end(); it++){
-		bool found = find(toBeMergedRef->driverGeneIds.begin(), toBeMergedRef->driverGeneIds.end(), *it) != toBeMergedRef->driverGeneIds.end();
-		if(!found){
+		//TODO check this
+//		bool found = find(toBeMergedRef->driverGeneIds.begin(), toBeMergedRef->driverGeneIds.end(), *it) != toBeMergedRef->driverGeneIds.end();
+//		if(!found){
 			currentRef->explainedGeneIds.push_back(*it);
-		}
+//		}
 	}
 	currentRef->explainedGeneIds.sort();
 	currentRef->explainedGeneIds.unique();
@@ -67,6 +69,7 @@ void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedA
 		vector< vector<int> >* mutatedGeneIdsListReal, vector<bool>* isPhenotypeGenes, vector<bool>* isDriverGenes, vector<int>* phenotypeGeneIds){
 	int totalSamples = mutatedAndExplainedGenesListReal->size();
 	int totalGenes = isPhenotypeGenes->size();
+	int totalGenesUpDown = totalGenes * 2;
 
 	for (int i = 0; i < totalSamples; ++i) {
 
@@ -74,32 +77,41 @@ void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedA
 		vector<MutatedAndExplianedGenes> mutatedAndExplainedGenes = mutatedAndExplainedGenesListReal->at(i);
 
 		//get a list of driver gene ids of sample i
-		list<int> driverGeneIdsForASample;
+		list<int> driverGeneIdsForASample;	//this initially contain all the mutated genes of the current sample
 		vector<int> mutatedGeneIdsList = mutatedGeneIdsListReal->at(i);
-		for (unsigned j = 0; j < mutatedGeneIdsList.size(); ++j) {
-			driverGeneIdsForASample.push_back(mutatedGeneIdsList[j]);
-		}
+
 
 		int mode = 0;	//0 = sensitive, 1 = stringent
 		if(mode == 0){
 			//TODO SENSITIVE MODE
-			//delete modules in which the mutated gene in not a driver which covers phenotype genes in this sample or other samples
-			list<int>::iterator it = driverGeneIdsForASample.begin();
-			while (it != driverGeneIdsForASample.end()) {
-				int currentMutatedGeneId = *it;
-				if (isDriverGenes->at(currentMutatedGeneId)) {//current mutated gene is a driver
-					it++;	//go to next element
-				} else {				//current mutated gene is not a driver
-					it = driverGeneIdsForASample.erase(it);	//remove from the list (the pointer automatically go to the next element)
+			for (unsigned j = 0; j < mutatedGeneIdsList.size(); ++j) {
+				int currentMutatedGeneId = mutatedGeneIdsList[j];
+				if (isDriverGenes->at(currentMutatedGeneId)) { //current mutated gene is a driver in at least one sample
+
+					//check if current mutated gene is connected to at least one phenotype in this sample
+					bool isConnectedWithPhenotype = false;
+					vector<bool>* isExplainedGenesUpDown = mutatedAndExplainedGenes[currentMutatedGeneId].isExplainedGenesUpDown;
+					for (int k = 0; k < totalGenesUpDown; ++k) {
+						if(isExplainedGenesUpDown->at(k)){
+							if(k < totalGenes){
+								if(isPhenotypeGenes->at(k)){
+									isConnectedWithPhenotype = true;
+								}
+							}else{
+								if(isPhenotypeGenes->at(k-totalGenes)){
+									isConnectedWithPhenotype = true;
+								}
+							}
+						}
+					}
+					//then the current mutated gene is a possible driver
+					if(isConnectedWithPhenotype){
+						driverGeneIdsForASample.push_back(currentMutatedGeneId);
+					}
 				}
 			}
 		}else{
 			//TODO STRINGENT MODE
-			//delete modules in which the mutated gene in not a driver which covers phenotype genes in this sample
-			list<int>::iterator it = driverGeneIdsForASample.begin();
-			while (it != driverGeneIdsForASample.end()) {
-
-			}
 		}
 
 		//create module (prepare for merging and trimming)
@@ -111,31 +123,27 @@ void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedA
 
 			//get the list of explained genes of the current driver gene in sample i
 			vector<bool>* isExplainedGenesUpDown = mutatedAndExplainedGenes[currentDriverGeneId].isExplainedGenesUpDown;
-			int totalGenesUpDown = isExplainedGenesUpDown->size();
-			//convert to non UpDown
-			vector<bool> isExplianedGenes(totalGenes);
-			for (int k = 0; k < totalGenesUpDown; ++k) {
-				if(isExplainedGenesUpDown->at(k)){
-					if(k < totalGenes){
-						isExplianedGenes[k] = true;
-					}else{
-						isExplianedGenes[k-totalGenes] = true;
-					}
-				}
-			}
 
 			Module currentModule;
 
 			currentModule.moduleId = j;
 			currentModule.driverGeneIds.push_back(currentDriverGeneId);
-			for (int k = 0; k < totalGenes; ++k) {
-				if(k != currentDriverGeneId){	//if the gene k is not the current mutated gene
-					//TODO this might be the reason why the impact score is greater than the previous version => add and !isDriverGenes->at(k)
-					if(isExplianedGenes[k]){	//k is an explained gene
+
+			for (int k = 0; k < totalGenesUpDown; ++k) {
+				if(k < totalGenes){	//up
+					if(isExplainedGenesUpDown->at(k)){	//k is an explained gene
 						if(isPhenotypeGenes->at(k)){
 							currentModule.phenotypeGeneIds.push_back(k);
 						}else{
 							currentModule.explainedGeneIds.push_back(k);
+						}
+					}
+				}else{				//down
+					if(isExplainedGenesUpDown->at(k)){	//k is an explained gene
+						if(isPhenotypeGenes->at(k - totalGenes)){
+							currentModule.phenotypeGeneIds.push_back(k - totalGenes);
+						}else{
+							currentModule.explainedGeneIds.push_back(k - totalGenes);
 						}
 					}
 				}
@@ -160,6 +168,7 @@ void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedA
 
 		//cout << "sample #" << i << " has " << modules.size() << " modules before merging\n";
 
+		//add modules data to the modulesListOfAllSamples
 		list<Module>* modulesList = &modulesListOfAllSamples->at(i);
 		copy(modules.begin(), modules.end(), std::back_inserter(*modulesList));
 

@@ -50,6 +50,9 @@ void getExplainedGenesIdOnly(vector<int>* explainedGeneIds, TIntAdjList* network
 void getExplainedGenesIdOnlyUpDown(vector<bool>* explainedGenesFrequency, TIntAdjList* network, vector<double>* sampleGeneExpression,
 		vector<int>* mutatedGeneIds, int L, int D, double F);
 
+void BFSforExplainedGenesIdOnlyUpDownIncludingMutatedGene(TIntAdjList* network, int mutatedGeneId, int L, int D,
+		double F, vector<bool>* isExplainedGenes, vector<double>* sampleGeneExpression, int currentSampleId, map<string, int>* geneSymbolToId);
+
 //void getMutatedAndExplainedGenes(vector<MutatedAndExplianedGenes>* mutatedAndExplainedGenes, TIntAdjList* network,
 //		vector<double>* sampleGeneExpression, vector<int>* mutatedGeneIds, int L, int D, double F);
 

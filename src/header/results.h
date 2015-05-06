@@ -48,7 +48,10 @@ struct ExplainedGeneDetail{
 	double pValue;
 };
 
-void saveModules(vector< list<Module> > * modulesListOfAllSamples, string filename, vector<string>* geneIdToSymbol);
+void saveModules(vector<list<Module> > * modulesListOfAllSamples, vector<vector<MutatedAndExplianedGenes> >* mutatedAndExplainedGenesListReal,
+		string filename, vector<string>* geneIdToSymbol, vector<string>* sampleIdToName);
+void saveModulesCytoscape(vector<list<Module> > * modulesListOfAllSamples,
+		string filename, vector<string>* geneIdToSymbol);
 
 void printSampleDriverList(vector< vector<Driver> >* driversOfAllSamples, string filename, vector<string>* geneIdToSymbol, vector<string>* sampleIdToName,
 		TIntegerMatrix* originalPointMutationsMatrix, TIntegerMatrix* originalCNVsMatrix, vector<int>* genesPointMut, vector<int>* genesCNV,

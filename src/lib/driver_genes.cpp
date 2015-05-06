@@ -54,26 +54,23 @@ void createBipartiteGraph(vector<vector<MutatedAndExplianedGenes> >* mutatedAndE
 					mutatedAndExplainedGenes[currentMutatedGeneId].isExplainedGenesUpDown;
 			int totalGenesUpDown = isExplainedGenesUpDown->size();
 
-			//convert to non UpDown
-			vector<bool> isExplianedGenes(totalGenes);
-			for (int k = 0; k < totalGenesUpDown; ++k) {
-				if(isExplainedGenesUpDown->at(k)){
-					if(k < totalGenes){
-						isExplianedGenes[k] = true;
-					}else{
-						isExplianedGenes[k-totalGenes] = true;
-					}
-				}
-			}
-
 			//for each explained gene k
-			for (int k = 0; k < totalGenes; ++k) {
-				if(isExplianedGenes[k] > 0){ 			// gene k is explained in sample i
-					if(isPhenotypeGenes->at(k)){		// gene k is a phenotype gene
-						BipartitePhenotypeNode node;
-						node.phenotypeGeneId = k;
-						node.sampleId = i;
-						bipartiteEdges->at(currentMutatedGeneId).phenotypeGeneIdsAndSampleIds.push_back(node);
+			for (int k = 0; k < totalGenesUpDown; ++k) {
+				if(isExplainedGenesUpDown->at(k)){ 			// gene k is explained in sample i
+					if(k < totalGenes){	//upregulated
+						if(isPhenotypeGenes->at(k)){		// gene k is a phenotype gene (also consider up and down)
+							BipartitePhenotypeNode node;
+							node.phenotypeGeneIdUpDown = k;		//this is find because each sample has either up or down (not both)
+							node.sampleId = i;
+							bipartiteEdges->at(currentMutatedGeneId).phenotypeGeneIdsAndSampleIds.push_back(node);
+						}
+					}else{				//downregulated
+						if(isPhenotypeGenes->at(k-totalGenes)){		// gene k-totalGenes is a phenotype gene
+							BipartitePhenotypeNode node;
+							node.phenotypeGeneIdUpDown = k;
+							node.sampleId = i;
+							bipartiteEdges->at(currentMutatedGeneId).phenotypeGeneIdsAndSampleIds.push_back(node);
+						}
 					}
 				}
 			}
@@ -88,43 +85,73 @@ void findDriverGenes(vector<BipartiteEdge>* bipartiteEdges, list<int>* mutatedGe
 	while(!coveredAll){
 
 		//find a mutated genes that cover the maximum number of genes (e.g. count = 2 if the same genes is phenotype in 2 samples)
-		int max = 0;
-		int maxGeneId = -1;
-		list<int>::iterator maxRef;	//pointer to the mutated gene that cover maximum number of phenotype genes
-		list<BipartitePhenotypeNode> coveredPhenotypeGens;
+		int maxCovered = 0;
+		vector<int> maxGeneIds;
+
+		vector<list<int>::iterator> maxRefs;	//pointer to the mutated gene that cover maximum number of phenotype genes
+		vector<int> coveredSampleCount;
 
 		list<int>::iterator it = mutatedGeneIdsList->begin();
 
 		//loop for finding the mutated gene that cover maximum number of phenotype genes
 		while (it != mutatedGeneIdsList->end()){
 			int currentMutatedGeneId = *it;
-			int numEdges = bipartiteEdges->at(currentMutatedGeneId).phenotypeGeneIdsAndSampleIds.size();	//# (phenotype gene id, sample id)
+			list<BipartitePhenotypeNode> edgesCovered = bipartiteEdges->at(currentMutatedGeneId).phenotypeGeneIdsAndSampleIds;
+			int numEdgesCovered = edgesCovered.size();	//# (phenotype gene id, sample id)
 
-			if(numEdges > max){
-				max = numEdges;
-				maxGeneId = currentMutatedGeneId;
-				maxRef = it;
+			//count number of samples
+			set<int> uniqueSampleIds;
+			for (list<BipartitePhenotypeNode>::iterator eit = edgesCovered.begin(); eit != edgesCovered.end(); ++eit) {
+				uniqueSampleIds.insert(eit->sampleId);
+			}
+			int numSampleCovered = uniqueSampleIds.size();
+
+			if(numEdgesCovered >= maxCovered){
+				maxCovered = numEdgesCovered;
+				maxGeneIds.push_back(currentMutatedGeneId);
+				maxRefs.push_back(it);
+				coveredSampleCount.push_back(numSampleCovered);
+
+//				cout << "mutated gene " << currentMutatedGeneId << " covers " << numEdgesCovered << " edges and " << numSampleCovered << " samples" << endl;
 			}
 
-			if(numEdges > 0){
+			if(numEdgesCovered > 0){
 				it++;
 			}else{	//deleted the mutated genes that do not connect to any phenotype gene
 				it = mutatedGeneIdsList->erase(it); //erase the current element and return the pointer to next element
 			}
 		}
 
+
+		int maxGeneId = -1;
+		list<int>::iterator maxRef;
+
 		//TODO if there are more than one mutated genes that have the same number of covers (CHECK with the original code first)
-		//choose the one that cover more samples first
+		if(maxGeneIds.size() > 1){
+			//choose the one that cover more samples first
+			int maxSample = 0;
+			int numGenes = maxGeneIds.size();
+			for (int i = 0; i < numGenes; ++i) {
+				if(coveredSampleCount[i] > maxSample){
+					maxSample = coveredSampleCount[i];
+					maxGeneId = maxGeneIds[i];
+					maxRef = maxRefs[i];
+				}
+			}
+		}else{	//there is only one mutated gene that has maximum covering
+			maxGeneId = maxGeneIds[0];
+			maxRef = maxRefs[0];
+		}
 
 		//cout << "Driver = " << maxGeneId << " covered " << max << " (phenotype gene id, sample id)" << endl;
-
 		driverGeneIds->push_back(maxGeneId);
 		//deleted mutated gene from list
 		mutatedGeneIdsList->erase(maxRef);
 		// a list of covered genes to be deleted
+		list<BipartitePhenotypeNode> coveredPhenotypeGens;
 		coveredPhenotypeGens = bipartiteEdges->at(maxGeneId).phenotypeGeneIdsAndSampleIds;
-		//deleted all edges connecting to the covered (phenotype gene id, sample id)s
 
+		//deleted all edges connecting to the covered (phenotype gene id, sample id)s
 		//for each mutated genes
 		for (list<int>::iterator mutIt = mutatedGeneIdsList->begin(); mutIt != mutatedGeneIdsList->end(); mutIt++){
 			int currentMutatedGeneId = *mutIt;
@@ -132,12 +159,12 @@ void findDriverGenes(vector<BipartiteEdge>* bipartiteEdges, list<int>* mutatedGe
 
 			//for each covered genes
 			for (list<BipartitePhenotypeNode>::iterator coveredIt = coveredPhenotypeGens.begin(); coveredIt != coveredPhenotypeGens.end(); coveredIt++){
-				int currentPhenotypeGeneId = coveredIt->phenotypeGeneId;
+				int currentPhenotypeGeneIdUpDown = coveredIt->phenotypeGeneIdUpDown;
 				int currentSampleId = coveredIt->sampleId;
 
 				list<BipartitePhenotypeNode>::iterator nodeIt = currentNodes->begin();
 				while(nodeIt != currentNodes->end()){
-					if(nodeIt->sampleId == currentSampleId and nodeIt->phenotypeGeneId == currentPhenotypeGeneId){	//already covered, then delete
+					if(nodeIt->sampleId == currentSampleId and nodeIt->phenotypeGeneIdUpDown == currentPhenotypeGeneIdUpDown){	//already covered, then delete
 						nodeIt = currentNodes->erase(nodeIt); //erase the current element and return the pointer to next element
 					}else{	//go to check next (phenotype gene id, sample id)
 						nodeIt++;

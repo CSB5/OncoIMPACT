@@ -223,7 +223,7 @@ int main() {
 	vector<double> Fs(FsVal, FsVal + sizeof FsVal / sizeof FsVal[0]);
 	int numFs = Fs.size();
 
-
+	//TODO debug the js divegence calculation (the results are quite different from the original)
 //	int numCombinations = numLs * numDs * numFs;
 //	//initialize the vector to save the divergence of each set of parameters
 //	vector<JSDivergence> jsDivergences(numCombinations);
@@ -283,8 +283,8 @@ int main() {
 			MutatedAndExplianedGenes* meg = &mutatedAndExplainedGenes[mutatedGeneId];
 			meg->isExplainedGenesUpDown = new vector<bool>(totalGenes * 2);	//to tell whether each gene is an explained gene in this sample i
 			//BFS for explained genes of the current mutated gene
-			BFSforExplainedGenesIdOnlyUpDown(&network, mutatedGeneId, L, D, F,
-					meg->isExplainedGenesUpDown, &sampleGeneExpression);
+			BFSforExplainedGenesIdOnlyUpDownIncludingMutatedGene(&network, mutatedGeneId, L, D, F,
+					meg->isExplainedGenesUpDown, &sampleGeneExpression, i, &geneSymbolToId);
 		}
 
 		//add explained genes to the list of all samples
@@ -355,10 +355,11 @@ int main() {
 			}
 		}
 	}
-	filename = "output/original_modules.tsv";
+	filename = "output/MODULE.dat";
 	writeStrVector(filename.c_str(), outputStr);
 	delete outputStr;
 
+	//TODO debug the finding phenotype part (the results are quite different from the original)
 //	//create a vector for counting the number of times (for each gene) the random samples have greater frequency than the real samples
 //	vector<int> geneFrequencyGreaterThanRealFrequencyCounter(totalGenesUpDown);
 //	for (int i = 0; i < totalGenesUpDown; ++i) {
@@ -430,7 +431,7 @@ int main() {
 //	cout << "\tthere are " << phenotypeGeneIds.size() << " phenotype genes" << endl;
 
 
-	//TEST: use phenotype genes list from previous version
+	//[debugging] use phenotype genes list from previous version
 	readGenesList("original_phenotype_genes.txt", &phenotypeGeneIds, &geneSymbolToId);
 	int numPhenotypeGene = phenotypeGeneIds.size();
 	cout << "use phonotype genes list from previous version (" << numPhenotypeGene << " genes)" << endl;
@@ -439,7 +440,6 @@ int main() {
 	}
 
 	//OUTPUT: print gene frequency and phenotype genes of the real dataset
-	//TODO the result of this part is not the same (different explained gene frequency)
 	printExplinedGenesFrequencyAndPhonotype(&explainedGenesFrequencyRealUpDown, &pValues, &isPhenotypeGenes, &geneIdToSymbol, &network, &originalGeneExpressionMatrix, &genesEx, F);
 
 	/*
@@ -457,36 +457,34 @@ int main() {
 	cout << "\ttotal number of mutated genes is " << mutatedGeneIdsList.size() << endl;
 
 	cout << "\tcreating bipartite graph ...\n";
+
 	//create bipartite graph ( mutated gene --- phenotype gene ). This is done at sample level, so have to remember sample id.
 	//BipartiteEdge: each mutated gene contains a pair of (phenotype gene id, sample id)
-	vector<BipartiteEdge>* bipartiteGraph = new vector<BipartiteEdge>(totalGenes);
-	createBipartiteGraph(&mutatedAndExplainedGenesListReal, &mutatedGeneIdsListReal, &isPhenotypeGenes, bipartiteGraph, &geneIdToSymbol);
-
-//	int CDKN2Aid = geneSymbolToId.find("CDKN2A")->second;
-//	list<BipartitePhenotypeNode> CDKN2Aedges = bipartiteGraph->at(CDKN2Aid).phenotypeGeneIdsAndSampleIds;
-//	for (list<BipartitePhenotypeNode>::iterator it = CDKN2Aedges.begin(); it != CDKN2Aedges.end(); it++) {
-//		cout << CDKN2Aid << "\tCDKN2A\t" << geneIdToSymbol[it->phenotypeGeneId] << "\t" << it->sampleId << endl;
-//	}
+//	vector<BipartiteEdge>* bipartiteGraph = new vector<BipartiteEdge>(totalGenes);
+//	createBipartiteGraph(&mutatedAndExplainedGenesListReal, &mutatedGeneIdsListReal, &isPhenotypeGenes, bipartiteGraph, &geneIdToSymbol);
 
 	//greedy minimum set covering
 	cout << "\tperforming greedy minimum set cover algorithm ...\n";
 	vector<int> driverGeneIds;	// to save diver gene ids
-	findDriverGenes(bipartiteGraph, &mutatedGeneIdsList, &driverGeneIds);
+//	findDriverGenes(bipartiteGraph, &mutatedGeneIdsList, &driverGeneIds);
+//
+//	delete bipartiteGraph;
+//
+//	cout << "DONE finding driver genes (" << (float(clock() - begin_time) / CLOCKS_PER_SEC)
+//			<< " sec)\n";
+//	begin_time = clock();	//update the clock
 
+	//[debugging] use driver genes list from previous version
+	readGenesList("original_driver_genes.txt", &driverGeneIds, &geneSymbolToId);
 	int numDriverGenes = driverGeneIds.size();
-
-	delete bipartiteGraph;
-
-	cout << "DONE finding driver genes (" << (float(clock() - begin_time) / CLOCKS_PER_SEC)
-			<< " sec)\n";
-	begin_time = clock();	//update the clock
-
-	cout << "merging modules for all samples ...\n";
-
 	vector<bool> isDriverGenes(totalGenes);
 	for (int i = 0; i < numDriverGenes; ++i) {
 		isDriverGenes[driverGeneIds[i]] = true;
 	}
+
+	cout << "\ttotal driver genes = " << numDriverGenes << endl;
+
+	cout << "merging modules for all samples ...\n";
 
 	//merge modules and trim explained genes for each sample
 	//use mutatedAndExplainedGenesListReal (samples, mutated genes, explained genesUpDown)
@@ -495,14 +493,15 @@ int main() {
 			&mutatedGeneIdsListReal, &isPhenotypeGenes, &isDriverGenes, &phenotypeGeneIds);
 
 	filename = "output/merged_modules.tsv";
-	saveModules(&modulesListOfAllSamples, filename, &geneIdToSymbol);
+	saveModulesCytoscape(&modulesListOfAllSamples, filename, &geneIdToSymbol);
 
 	cout << "trimming explained genes for all samples ...\n";
 	trimSomeExplainedGenes(&modulesListOfAllSamples, &network, L, D, &geneIdToSymbol);
 
+	cout << "writing final module to FINAL_MODULE.dat ...\n";
+	filename = "output/FINAL_MODULE.dat";
 	//TODO print sample modules
-	filename = "output/trimmed_modules.tsv";
-	saveModules(&modulesListOfAllSamples, filename, &geneIdToSymbol);
+	saveModules(&modulesListOfAllSamples, &mutatedAndExplainedGenesListReal, filename, &geneIdToSymbol, &sampleIdToName);
 
 	cout << "calculating IMPACT scores for all samples ...\n";
 
@@ -552,7 +551,7 @@ int main() {
 			&driverAggregatedScores, &driversFrequency, &mutationFrequency);
 
 	cout << "printing aggregated impact scores ...\n";
-	filename = "output/drivers_aggregation.tsv";
+	filename = "output/driver_list.txt";
 	printAggregatedDriverList(&driverGeneIds, filename, &geneIdToSymbol, &sampleIdToName,
 			&driverAggregatedScores, &driversFrequency, &mutationFrequency,
 			&pointMutationDriversFrequency, &deletionDriversFrequency, &amplificationDriversFrequency,

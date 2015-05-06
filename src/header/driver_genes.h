@@ -13,7 +13,7 @@
 #include <list>
 
 struct BipartitePhenotypeNode{
-	int phenotypeGeneId;
+	int phenotypeGeneIdUpDown;
 	int sampleId;
 };
 
