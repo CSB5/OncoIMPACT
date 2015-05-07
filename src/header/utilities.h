@@ -74,5 +74,6 @@ void mapGeneIdToSymbol(vector<int>* ids, vector<string>* symbols, vector<string>
 
 string intToStr(int i);
 string doubleToStr(double i, int prec);
+bool trimStr(std::string& str, const std::string& from);
 
 #endif /* UTILITIES_H_ */

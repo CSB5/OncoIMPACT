@@ -291,4 +291,44 @@ void readGenesList(const char* filename, vector<int>* geneIds, map<string, int>*
 }
 
 
+void readGenesListUpDown(const char* filename, vector<int>* geneIdsUpDown, map<string, int>* geneSymbolToId){
+	ifstream inFile;
+	inFile.open(filename, std::ifstream::in);
+
+	int totalGenes = geneSymbolToId->size();
+
+	if (inFile.is_open()) {
+
+		//read the output from the
+		while (inFile.good()) {
+			string s;
+			if (!getline(inFile, s))
+				break;
+
+			istringstream ss(s);
+		  	size_t foundUp = s.find("UP");
+		  	size_t foundDown = s.find("DOWN");
+
+		  	trimStr(s, "_");
+		  	string currentGeneName = s;
+
+			map<string, int>::iterator it = geneSymbolToId->find(currentGeneName);
+
+		  	if (foundUp!=std::string::npos){
+		  		//the gene is upregulated
+		  		geneIdsUpDown->push_back(it->second);
+		  	}
+
+		  	if (foundDown!=std::string::npos){
+		  		//the gene is downregulated
+		  		geneIdsUpDown->push_back(it->second + totalGenes);
+		  	}
+
+		}
+		inFile.close();
+	} else {
+		cerr << "Error opening file\n";
+	}
+}
+
 

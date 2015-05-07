@@ -13,7 +13,8 @@
 void saveModules(vector<list<Module> > * modulesListOfAllSamples, vector<vector<MutatedAndExplianedGenes> >* mutatedAndExplainedGenesListReal,
 		string filename, vector<string>* geneIdToSymbol, vector<string>* sampleIdToName) {
 	int totalSamples = modulesListOfAllSamples->size();
-	int totalGenesUpDown = geneIdToSymbol->size() * 2;
+	int totalGenes = geneIdToSymbol->size();
+	int totalGenesUpDown = totalGenes * 2;
 	vector<string> outputStr;
 
 	//get a list of nodes (gene symbol, type)
@@ -56,30 +57,40 @@ void saveModules(vector<list<Module> > * modulesListOfAllSamples, vector<vector<
 
 			str += "\t";
 
-			int numPhenotypeGenes = it->phenotypeGeneIds.size();
+			int numPhenotypeGenes = it->phenotypeGeneIdsUpDown.size();
 			//get phenotype genes
-			for (list<int>::iterator g = it->phenotypeGeneIds.begin();
-					g != it->phenotypeGeneIds.end(); g++) {
+			for (list<int>::iterator g = it->phenotypeGeneIdsUpDown.begin();
+					g != it->phenotypeGeneIdsUpDown.end(); g++) {
 
-				if(isExplainedGenesUpDown[*g]){
-					str += geneIdToSymbol->at(*g) + "_UP" + ";";
+				int currentPhenotypeGeneId = *g;
+
+				if(currentPhenotypeGeneId < totalGenes){
+					//up
+					str += geneIdToSymbol->at(currentPhenotypeGeneId) + "_UP" + ";";
 				}else{
-					str += geneIdToSymbol->at(*g) + "_DOWN" + ";";
+					//down
+					str += geneIdToSymbol->at(currentPhenotypeGeneId - totalGenes) + "_DOWN" + ";";
 				}
+
 			}
 
 			str += "\t";
 
-			int numExplainedGenes = it->explainedGeneIds.size();
+			int numExplainedGenes = it->explainedGeneIdsUpDown.size();
 			//get explained genes
-			for (list<int>::iterator g = it->explainedGeneIds.begin();
-					g != it->explainedGeneIds.end(); g++) {
+			for (list<int>::iterator g = it->explainedGeneIdsUpDown.begin();
+					g != it->explainedGeneIdsUpDown.end(); g++) {
 
-				if(isExplainedGenesUpDown[*g]){
-					str += geneIdToSymbol->at(*g) + "_UP" + ";";
+				int currentExplainedGeneId = *g;
+
+				if(currentExplainedGeneId < totalGenes){
+					//up
+					str += geneIdToSymbol->at(currentExplainedGeneId) + "_UP" + ";";
 				}else{
-					str += geneIdToSymbol->at(*g) + "_DOWN" + ";";
+					//down
+					str += geneIdToSymbol->at(currentExplainedGeneId - totalGenes) + "_DOWN" + ";";
 				}
+
 			}
 
 			str += "\t" + intToStr(numDrivers) + "_" + intToStr(numPhenotypeGenes) + "_" + intToStr(numExplainedGenes);
@@ -96,6 +107,7 @@ void saveModules(vector<list<Module> > * modulesListOfAllSamples, vector<vector<
 void saveModulesCytoscape(vector<list<Module> > * modulesListOfAllSamples,
 		string filename, vector<string>* geneIdToSymbol) {
 	int totalSamples = modulesListOfAllSamples->size();
+	int totalGenes = geneIdToSymbol->size();
 	vector<string> outputStr;
 	outputStr.push_back("GENE\tGENE_TYPE\tSAMPLE_ID\tMODULE_ID");
 
@@ -119,18 +131,39 @@ void saveModulesCytoscape(vector<list<Module> > * modulesListOfAllSamples,
 			}
 
 			//get phenotype genes
-			for (list<int>::iterator g = it->phenotypeGeneIds.begin();
-					g != it->phenotypeGeneIds.end(); g++) {
-				string str = "" + geneIdToSymbol->at(*g) + "\tPHENOTYPE\t"
-						+ intToStr(i) + "\t" + intToStr(j);
+			for (list<int>::iterator g = it->phenotypeGeneIdsUpDown.begin();
+					g != it->phenotypeGeneIdsUpDown.end(); g++) {
+				int currentPhenotypeGeneId = *g;
+				string str;
+
+				if(currentPhenotypeGeneId < totalGenes){
+					//up
+					str = "" + geneIdToSymbol->at(currentPhenotypeGeneId) + "\tPHENOTYPE\t"
+							+ intToStr(i) + "\t" + intToStr(j);
+				}else{
+					//down
+					str = "" + geneIdToSymbol->at(currentPhenotypeGeneId - totalGenes) + "\tPHENOTYPE\t"
+							+ intToStr(i) + "\t" + intToStr(j);
+				}
+
 				outputStr.push_back(str);
 			}
 
 			//get explained genes
-			for (list<int>::iterator g = it->explainedGeneIds.begin();
-					g != it->explainedGeneIds.end(); g++) {
-				string str = "" + geneIdToSymbol->at(*g) + "\tEXPLAINED\t"
-						+ intToStr(i) + "\t" + intToStr(j);
+			for (list<int>::iterator g = it->explainedGeneIdsUpDown.begin();
+					g != it->explainedGeneIdsUpDown.end(); g++) {
+				int currentExplainedGeneId = *g;
+				string str;
+
+				if(currentExplainedGeneId < totalGenes){
+					//up
+					str = "" + geneIdToSymbol->at(currentExplainedGeneId) + "\tEXPLAINED\t"
+							+ intToStr(i) + "\t" + intToStr(j);
+				}else{
+					//down
+					str = "" + geneIdToSymbol->at(currentExplainedGeneId - totalGenes) + "\tEXPLAINED\t"
+							+ intToStr(i) + "\t" + intToStr(j);
+				}
 				outputStr.push_back(str);
 			}
 
@@ -214,7 +247,7 @@ bool sortByImpactScore(const SampleDriver& first, const SampleDriver& second) {
 	}
 }
 
-void printAggregatedDriverList(vector<int>* driverGeneIds, string filename,
+void printAggregatedDriverList(vector<DriverGene>* driverGenes, string filename,
 		vector<string>* geneIdToSymbol, vector<string>* sampleIdToName,
 		vector<double>* driverAggregatedScores, vector<int>* driversFrequency,
 		vector<int>* mutationFrequency,
@@ -230,14 +263,14 @@ void printAggregatedDriverList(vector<int>* driverGeneIds, string filename,
 					"IMPACT\tMUTATION_FREQUENCY\tSNV_FREQUENCY\tDELTION_FREQUENCY\tAMPLIFICATION_FREQUENCY");
 
 	int totalSamples = sampleIdToName->size();
-	int totalDrivers = driverGeneIds->size();
+	int totalDrivers = driverGenes->size();
 
 	list<AggregatedDriver> aggregatedDriversList;
 
 	for (int i = 0; i < totalDrivers; ++i) {
 
 		AggregatedDriver driver;
-		int currentDriverGeneId = driverGeneIds->at(i);
+		int currentDriverGeneId = driverGenes->at(i).geneId;
 
 		driver.gene = geneIdToSymbol->at(currentDriverGeneId);
 		driver.driverFrequency = 1.0 * driversFrequency->at(currentDriverGeneId)
@@ -432,7 +465,7 @@ void saveJSDivergences(vector<JSDivergence>* jsDivergences, string filename){
 void printExplinedGenesFrequencyAndPhonotype(vector<int>* explainedGenesFrequencyRealUpDown, vector<double>* pValues, vector<bool>* isPhenotypeGenes,
 		vector<string>* geneIdToSymbol, TIntAdjList* network, TDoubleMatrix* originalGeneExpressionMatrix, vector<int>* genesEx, double F){
 	int totalGenesUpDown = explainedGenesFrequencyRealUpDown->size();
-	int totalGenes = isPhenotypeGenes->size();
+	int totalGenes = totalGenesUpDown / 2;
 	int totalSamples = originalGeneExpressionMatrix->at(0).size();
 
 	list<ExplainedGeneDetail> explainedGenesList;
@@ -444,13 +477,12 @@ void printExplinedGenesFrequencyAndPhonotype(vector<int>* explainedGenesFrequenc
 			if(i < totalGenes){
 				exGene.gene = geneIdToSymbol->at(i) + "_UP";
 				exGene.degree = network->at(i).size();
-				exGene.isPhenotype = isPhenotypeGenes->at(i);
 			}else{
 				exGene.gene = geneIdToSymbol->at(i-totalGenes) + "_DOWN";
 				exGene.degree = network->at(i-totalGenes).size();
-				exGene.isPhenotype = isPhenotypeGenes->at(i-totalGenes);
 			}
 
+			exGene.isPhenotype = isPhenotypeGenes->at(i);
 			exGene.numSampleExplained = explainedGenesFrequencyRealUpDown->at(i);
 			exGene.numSampleDeregulated = getNumSamplesOfDeregulatedGene(originalGeneExpressionMatrix, genesEx, F, i, totalGenesUpDown);
 			exGene.pValue = pValues->at(i);

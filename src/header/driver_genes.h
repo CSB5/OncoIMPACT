@@ -22,13 +22,18 @@ struct BipartiteEdge{
 	list<BipartitePhenotypeNode> phenotypeGeneIdsAndSampleIds;
 };
 
+struct DriverGene{
+	int geneId;
+	vector<int> sampleIds;
+};
+
 void getAllMutatedGenes(vector< vector<int> >* mutatedGeneIdsListReal, vector<bool>* isMutatedGenes, list<int>* mutatedGeneIdsList);
 
 void createBipartiteGraph(vector<vector<MutatedAndExplianedGenes> >* mutatedAndExplainedGenesListReal,
 		vector< vector<int> >* mutatedGeneIdsListReal, vector<bool>* isPhenotypeGenes,
 		vector<BipartiteEdge>* bipartiteEdges, vector<string>* geneIdToSymbol);
 
-void findDriverGenes(vector<BipartiteEdge>* bipartiteEdges, list<int>* mutatedGeneIdsList, vector<int>* driverGeneIds);
+void findDriverGenes(vector<BipartiteEdge>* bipartiteEdges, list<int>* mutatedGeneIdsList, vector<DriverGene>* driverGenes);
 //Note mutatedGeneIdsListReal is a sample level mutated genes list, while mutatedGeneIdsList is a list of all mutated genes
 
 #endif /* DRIVER_GENES_H_ */

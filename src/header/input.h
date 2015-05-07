@@ -51,6 +51,7 @@ void readPointMutations(const char* filename, PointMutations* pointMutations,
 void readCopyNumberVariation(const char* filename, CopyNumberVariation* copyNumberVariation,
 		char delim, map<string, int>* geneSymbolToId);
 void readGenesList(const char* filename, vector<int>* geneIds, map<string, int>* geneSymbolToId);
+void readGenesListUpDown(const char* filename, vector<int>* geneIdsUpDown, map<string, int>* geneSymbolToId);
 
 int findIndex(vector<int>* geneIds, int currentGeneId);
 

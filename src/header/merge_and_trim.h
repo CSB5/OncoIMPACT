@@ -12,12 +12,13 @@
 #include <algorithm>
 #include "utilities.h"
 #include "explained_genes.h"
+#include "driver_genes.h"
 
 struct Module{
 	int moduleId; //on sample level
 	list<int> driverGeneIds;
-	list<int> phenotypeGeneIds;
-	list<int> explainedGeneIds;
+	list<int> phenotypeGeneIdsUpDown;
+	list<int> explainedGeneIdsUpDown;
 };
 
 //merge module moduleId into the currentModuleId and deleted moduleId
@@ -25,7 +26,7 @@ void mergeModules(int currentModuleId, int moduleId, list<Module>* modulesList);
 
 
 void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedAndExplainedGenesListReal, vector< list<Module> >* modulesListOfAllSamples,
-		vector< vector<int> >* mutatedGeneIdsListReal, vector<bool>* isPhenotypeGenes, vector<bool>* isDriverGenes, vector<int>* phenotypeGeneIds);
+		vector< vector<int> >* mutatedGeneIdsListReal, vector<bool>* isPhenotypeGenesUpDown, vector<DriverGene>* driverGenes, vector<int>* phenotypeGeneIds, int mode);
 
 void trimSomeExplainedGenes(vector< list<Module> >* modulesListOfAllSamples, TIntAdjList* network, int L, int D, vector<string>* geneIdToSymbol);
 

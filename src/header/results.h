@@ -65,7 +65,7 @@ void getMutationFrequency(TIntegerMatrix* originalMutationMatrix, vector<int>* m
 void getDetailMutationFrequency(TIntegerMatrix* originalPointMutationsMatrix, TIntegerMatrix* originalCNVsMatrix, vector<int>* genesPointMut, vector<int>* genesCNV,
 		vector<int>* pointMutationFrequency, vector<int>* deletionFrequency, vector<int>* amplificationFrequency);
 
-void printAggregatedDriverList(vector<int>* driverGeneIds, string filename, vector<string>* geneIdToSymbol, vector<string>* sampleIdToName,
+void printAggregatedDriverList(vector<DriverGene>* driverGenes, string filename, vector<string>* geneIdToSymbol, vector<string>* sampleIdToName,
 		vector<double>* driverAggregatedScores, vector<int>* driversFrequency, vector<int>* mutationFrequency,
 		vector<int>* pointMutationDriversFrequency, vector<int>* deletionDriversFrequency, vector<int>* amplificationDriversFrequency,
 		vector<int>* pointMutationFrequency, vector<int>* deletionFrequency, vector<int>* amplificationFrequency);

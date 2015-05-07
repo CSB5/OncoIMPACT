@@ -42,13 +42,23 @@ void calculateImpactScoresForAllSamples(vector< list<Module> >* modulesListOfAll
 
 			//sum up the fold change
 
-			for(list<int>::iterator git = module.explainedGeneIds.begin(); git != module.explainedGeneIds.end(); git++){
-				score += fabs(originalGeneExpressionMatrix->at(rowId[*git])[i]);
+			for(list<int>::iterator git = module.explainedGeneIdsUpDown.begin(); git != module.explainedGeneIdsUpDown.end(); git++){
+				int currentExplainedGeneId = *git;
+				if(currentExplainedGeneId < totalGenes){	//up
+					score += fabs(originalGeneExpressionMatrix->at(rowId[currentExplainedGeneId])[i]);
+				}else{										//down
+					score += fabs(originalGeneExpressionMatrix->at(rowId[currentExplainedGeneId - totalGenes])[i]);
+				}
 				moduleSize++;
 			}
 
-			for(list<int>::iterator git = module.phenotypeGeneIds.begin(); git != module.phenotypeGeneIds.end(); git++){
-				score += fabs(originalGeneExpressionMatrix->at(rowId[*git])[i]);
+			for(list<int>::iterator git = module.phenotypeGeneIdsUpDown.begin(); git != module.phenotypeGeneIdsUpDown.end(); git++){
+				int currentPhenotypeGeneId = *git;
+				if(currentPhenotypeGeneId < totalGenes){	//up
+					score += fabs(originalGeneExpressionMatrix->at(rowId[currentPhenotypeGeneId])[i]);
+				}else{										//down
+					score += fabs(originalGeneExpressionMatrix->at(rowId[currentPhenotypeGeneId - totalGenes])[i]);
+				}
 				moduleSize++;
 			}
 
@@ -81,7 +91,7 @@ void calculateImpactScoresForAllSamples(vector< list<Module> >* modulesListOfAll
 	}
 
 	//OUTPUT: print drivers and impact scores for all samples (cont.)
-	string filename = "output/drivers_all_samples.tsv";
+	string filename = "output/driver_all_samples.dat";
 	writeStrVector(filename.c_str(), outputDrivers);
 	delete outputDrivers;
 }
