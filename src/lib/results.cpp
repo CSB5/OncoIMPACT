@@ -463,7 +463,7 @@ void saveJSDivergences(vector<JSDivergence>* jsDivergences, string filename){
 }
 
 void printExplinedGenesFrequencyAndPhonotype(vector<int>* explainedGenesFrequencyRealUpDown, vector<double>* pValues, vector<bool>* isPhenotypeGenes,
-		vector<string>* geneIdToSymbol, TIntAdjList* network, TDoubleMatrix* originalGeneExpressionMatrix, vector<int>* genesEx, double F, int mode){
+		vector<string>* geneIdToSymbol, TIntAdjList* network, TDoubleMatrix* originalGeneExpressionMatrix, vector<int>* genesEx, double F){
 	int totalGenesUpDown = explainedGenesFrequencyRealUpDown->size();
 	int totalGenes = totalGenesUpDown / 2;
 	int totalSamples = originalGeneExpressionMatrix->at(0).size();
@@ -495,13 +495,8 @@ void printExplinedGenesFrequencyAndPhonotype(vector<int>* explainedGenesFrequenc
 
 	//save to file
 	vector<string>* outputStr = new vector<string>;
-	string filename;
-	if(mode == 0){
-		filename = "output/sensitive/exp_gene_freq.dat";
-	}else{
-		filename = "output/stringent/exp_gene_freq.dat";
-	}
-	//outputStr->push_back("GENE\tDEGREE\tNUM_SAMPLE_DEREGULATED\tFREQUENCY_SAMPLE_DEREGULATED\tNUM_SAMPLE_EXPLAINED\tNUM_SAMPLE_EXPLAINED\tFREQUENCY_SAMPLE_EXPLAINED\tEXPLAINED\\DEREGULATED\tIS_PHENOTYPE");
+	string filename = "output/exp_gene_freq.dat";
+	//outputStr->push_back("GENE\tDEGREE\tNUM_SAMPLE_DEREGULATED\tFREQUENCY_SAMPLE_DEREGULATED\tNUM_SAMPLE_EXPLAINED\tFREQUENCY_SAMPLE_EXPLAINED\tEXPLAINED\\DEREGULATED\tIS_PHENOTYPE");
 
 	for (list<ExplainedGeneDetail>::iterator it = explainedGenesList.begin();
 			it != explainedGenesList.end(); it++) {

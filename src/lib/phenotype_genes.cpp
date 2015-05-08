@@ -58,7 +58,7 @@ void countGeneFrequencyGreaterThanRealFrequency(vector<int>* geneFrequencyGreate
 
 	for (int i = 0; i < totalGenesUpDown; ++i) {
 		//if the frequency is greater than the real frequency
-		if(frequencies[i] > genesFrequencyReal->at(i)){	//TODO check > or >=
+		if(frequencies[i] >= genesFrequencyReal->at(i)){	//TODO check > or >= (explained gene frequency)
 			geneFrequencyGreaterThanRealFrequencyCounter->at(i)++;
 		}
 	}
@@ -66,9 +66,8 @@ void countGeneFrequencyGreaterThanRealFrequency(vector<int>* geneFrequencyGreate
 }
 
 void addFrequncyForRealDataset(vector<int>* genesFrequencyRealUpDown, vector< vector<MutatedAndExplianedGenes> >* mutatedAndExplainedGenesListReal,
-		vector< vector<int> >* mutatedGeneIdsListReal, vector<bool>* isExplainedGenes) {
+		vector< vector<int> >* mutatedGeneIdsListReal, vector<bool>* isExplainedGenesUpDown) {
 	int totalGenesUpDown = genesFrequencyRealUpDown->size();
-	int totalGenes = totalGenesUpDown / 2;
 	for (int i = 0; i < totalGenesUpDown; ++i) {
 		genesFrequencyRealUpDown->at(i) = 0;
 	}
@@ -97,12 +96,7 @@ void addFrequncyForRealDataset(vector<int>* genesFrequencyRealUpDown, vector< ve
 		for (int j = 0; j < totalGenesUpDown; ++j) {
 			if (isExplainedGenesForAll[j]) {
 				genesFrequencyRealUpDown->at(j)++;
-				//CHANGED
-				if(j < totalGenes){
-					isExplainedGenes->at(j) = true;
-				}else{
-					isExplainedGenes->at(j-totalGenes) = true;
-				}
+				isExplainedGenesUpDown->at(j) = true;
 			}
 		}
 	}
@@ -155,43 +149,33 @@ void combineListOfExplainedGenes(
 //	}
 //}
 
-void findPhenotypeGenesUsingCounter(vector<bool>* isPhenotypeGenes, vector<int>* phenotypeGeneIds, vector<double>* pValues,
+void findPhenotypeGenesUsingCounter(vector<bool>* isPhenotypeGenesUpDown, vector<int>* phenotypeGeneIdsUpDown, vector<double>* pValues,
 		vector<int>* genesFrequencyRealUpDown, vector<int>* geneFrequencyGreaterThanRealFrequencyCounter,
-		vector<bool>* isExplainedGenes, int rounds, int totalSamples, vector<string>* geneIdToSymbol){
+		vector<bool>* isExplainedGenes, int numPermutationsForPhenotypeGenes, int totalSamples, vector<string>* geneIdToSymbol){
 
 	int totalGenesUpDown = genesFrequencyRealUpDown->size();
-	int totalGenes = isExplainedGenes->size();
 
-	for (int i = 0; i < totalGenes; ++i) {
-		isPhenotypeGenes->at(i) = false;
+	for (int i = 0; i < totalGenesUpDown; ++i) {
+		isPhenotypeGenesUpDown->at(i) = false;
 		pValues->at(i) = 0;
-		pValues->at(i+totalGenes) = 0;
 	}
 
 	//for each gene in the network
 	for (int i = 0; i < totalGenesUpDown; ++i) {
 		//print only the explained genes
 		if(genesFrequencyRealUpDown->at(i) > 0){
-			if (i < totalGenes) {
-				//up regulated
-				pValues->at(i) = 1.0 * geneFrequencyGreaterThanRealFrequencyCounter->at(i) / rounds;
-				cout << geneIdToSymbol->at(i) << "_UP has p-value = " << pValues->at(i) << endl;
-				if (pValues->at(i) == 0) {
-					isPhenotypeGenes->at(i) = true;
-					//do not need to check since the up regulated genes always be considered first
-					phenotypeGeneIds->push_back(i);
-				}
-			} else {
-				//down regulated
-				pValues->at(i) = 1.0 * geneFrequencyGreaterThanRealFrequencyCounter->at(i) / rounds;
-				cout << geneIdToSymbol->at(i-totalGenes) << "_DOWN has p-value = " << pValues->at(i) << endl;
-				if (pValues->at(i) == 0) {
-					isPhenotypeGenes->at(i - totalGenes) = true;
-					//check if the gene i is already added (in the up reguated part) to the vector of phenotypeGeneIds
-					if (!isPhenotypeGenes->at(i-totalGenes)) {
-						phenotypeGeneIds->push_back(i - totalGenes);
-					}
-				}
+
+//			if(i < totalGenesUpDown / 2){
+//				cout << geneIdToSymbol->at(i) << ": real freq = " << genesFrequencyRealUpDown->at(i) << " random greater " << geneFrequencyGreaterThanRealFrequencyCounter->at(i) << endl;
+//			}else{
+//				cout << geneIdToSymbol->at(i-(totalGenesUpDown/2)) <<  ": real freq = " << genesFrequencyRealUpDown->at(i) << " random greater " << geneFrequencyGreaterThanRealFrequencyCounter->at(i) << endl;
+//			}
+
+			pValues->at(i) = 1.0 * geneFrequencyGreaterThanRealFrequencyCounter->at(i) / numPermutationsForPhenotypeGenes;
+			if (pValues->at(i) == 0) {
+				isPhenotypeGenesUpDown->at(i) = true;
+				//do not need to check since the up regulated genes always be considered first
+				phenotypeGeneIdsUpDown->push_back(i);
 			}
 		}
 	}

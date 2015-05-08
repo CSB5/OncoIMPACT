@@ -74,7 +74,7 @@ bool sortByAggregatedImpactScore(const AggregatedDriver& first, const Aggregated
 void saveJSDivergences(vector<JSDivergence>* jsDivergences, string filename);
 
 void printExplinedGenesFrequencyAndPhonotype(vector<int>* explainedGenesFrequencyRealUpDown, vector<double>* pValues, vector<bool>* isPhenotypeGenes,
-		vector<string>* geneIdToSymbol, TIntAdjList* network, TDoubleMatrix* originalGeneExpressionMatrix, vector<int>* genesEx, double F, int mode);
+		vector<string>* geneIdToSymbol, TIntAdjList* network, TDoubleMatrix* originalGeneExpressionMatrix, vector<int>* genesEx, double F);
 int getNumSamplesOfDeregulatedGene(TDoubleMatrix* originalGeneExpressionMatrix, vector<int>* genesEx, double F, int geneIdUpDown, int totalGenesUpDown);
 
 #endif /* RESULTS_H_ */

@@ -78,6 +78,21 @@ void getExplainedGenesIdOnlyUpDown(vector<bool>* explainedGenesFrequency, TIntAd
 	}
 }
 
+void getExplainedGenesIdOnlyUpDownIncludingMutatedGene(vector<bool>* isExplainedGenesUpDown, TIntAdjList* network, vector<double>* sampleGeneExpression,
+		vector<int>* mutatedGeneIds, int L, int D, double F, map<string, int>* geneSymbolToId){
+	int numMutatedGenes = mutatedGeneIds->size();
+	for (int i = 0; i < numMutatedGenes; ++i) {	// for each mutated genes
+//		cout << "For mutated gene: " << mutatedGeneIds->at(i) << endl;
+
+		//BFS
+//		void BFSforExplainedGenesIdOnlyUpDownIncludingMutatedGene(TIntAdjList* network, int mutatedGeneId, int L, int D,
+//				double F, vector<bool>* isExplainedGenes, vector<double>* sampleGeneExpression, int currentSampleId, map<string, int>* geneSymbolToId);
+		BFSforExplainedGenesIdOnlyUpDownIncludingMutatedGene(network, mutatedGeneIds->at(i), L, D, F,
+				isExplainedGenesUpDown, sampleGeneExpression, -1, geneSymbolToId);
+
+	}
+}
+
 //void getMutatedAndExplainedGenes(vector<MutatedAndExplianedGenes>* mutatedAndExplainedGenes, TIntAdjList* network,
 //		vector<double>* sampleGeneExpression, vector<int>* mutatedGeneIds, int L, int D, double F){
 //	int numMutatedGenes = mutatedGeneIds->size();
@@ -387,4 +402,4 @@ void BFSforExplainedGenesIdOnlyUpDownIncludingMutatedGene(TIntAdjList* network, 
 
 }
 
-//TODO use only one BFS for all L's values
+//TODO (next version) use only one BFS for all L's values

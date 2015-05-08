@@ -56,7 +56,7 @@ void mergeModules(int currentModuleId, int moduleId, list<Module>* modulesList){
 }
 
 void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedAndExplainedGenesListReal, vector< list<Module> >* modulesListOfAllSamples,
-		vector< vector<int> >* mutatedGeneIdsListReal, vector<bool>* isPhenotypeGenesUpDown, vector<DriverGene>* driverGenes, vector<int>* phenotypeGeneIds, int mode){
+		vector< vector<int> >* mutatedGeneIdsListReal, vector<bool>* isPhenotypeGenesUpDown, vector<DriverGene>* driverGenes, vector<int>* phenotypeGeneIdsUpDown, int mode){
 	int totalSamples = mutatedAndExplainedGenesListReal->size();
 	int totalGenesUpDown = isPhenotypeGenesUpDown->size();
 	int totalGenes = totalGenesUpDown / 2;
@@ -74,7 +74,6 @@ void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedA
 		}
 
 		int numDriverGenes = driverGenes->size();
-		cout << "# driver genes = " << numDriverGenes << endl;
 		for (int i = 0; i < numDriverGenes; ++i) {
 			isDriverGenes[driverGenes->at(i).geneId] = true;
 //			cout << "\tgene " << driverGenes->at(i).geneId << " covered # samples = " << driverGenes->at(i).sampleIds.size() << endl;
@@ -90,7 +89,6 @@ void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedA
 		}
 
 		int numDriverGenes = driverGenes->size();
-		cout << "# driver genes = " << numDriverGenes << endl;
 		for (int i = 0; i < numDriverGenes; ++i) {
 			int driverGeneId = driverGenes->at(i).geneId;
 			vector<int> sampleIds = driverGenes->at(i).sampleIds;
@@ -138,17 +136,13 @@ void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedA
 				}
 			}
 		}else{
-			//TODO STRINGENT MODE
 			for (unsigned j = 0; j < mutatedGeneIdsList.size(); ++j) {
 				int currentMutatedGeneId = mutatedGeneIdsList[j];
 				if (isDriverGenesForSamples[i][currentMutatedGeneId]) { //current mutated gene is a driver of the current sample
 					driverGeneIdsForASample.push_back(currentMutatedGeneId);
-					cout << "sample " << i << " driver id " << currentMutatedGeneId << endl;
 				}
 			}
 		}
-
-
 
 
 		//create module (prepare for merging and trimming)
@@ -201,10 +195,10 @@ void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedA
 
 		//merge modules that share phenotype genes
 		//for each phenotype gene, find which modules contain it
-		int numPhenotypeGenes = phenotypeGeneIds->size();
+		int numPhenotypeGenes = phenotypeGeneIdsUpDown->size();
 		for (int j = 0; j < numPhenotypeGenes; ++j) {
 
-			int currentPhenotypeGeneId = phenotypeGeneIds->at(j);
+			int currentPhenotypeGeneId = phenotypeGeneIdsUpDown->at(j);
 			vector<int> moduleIdsToMerge;
 			bool isPhenotypeGeneInThisSample = false;
 
@@ -316,7 +310,7 @@ void trimModule(Module* module, TIntAdjList* network, int L, int D, vector<strin
 				&isDriverGeneInThisModule, &isPhenotypeGeneInThisModule, network, D, &isGeneInThisModule, geneIdToSymbol);
 	}
 
-	//TODO Fix bug
+	//TODO Fix bug (module trimming)
 
 	//for each explained gene, check if it belong to at least one path (with length =< L) between a mutated gene and a phenotype gene
 	vector<int> geneIdToBeRemoved;

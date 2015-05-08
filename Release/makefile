@@ -45,7 +45,7 @@ all: oncoIMPACT.exe
 oncoIMPACT.exe: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: MinGW C++ Linker'
-	g++  -o "oncoIMPACT.exe" $(OBJS) $(USER_OBJS) $(LIBS)
+	g++ -fopenmp -o "oncoIMPACT.exe" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 

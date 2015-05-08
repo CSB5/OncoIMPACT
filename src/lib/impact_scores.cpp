@@ -124,7 +124,7 @@ void aggregateDriversAcrossSamples(vector< vector<Driver> >* driversOfAllSamples
 		driverAggregatedScores->at(i) = 0;	//initialization
 
 		if(isDriver[i]){
-			double aggregatedScore = sumImpact[i]/totalSamples; //TODO sumImpact[i]/driversFrequency->at(i)
+			double aggregatedScore = sumImpact[i]/totalSamples;
 			driverAggregatedScores->at(i) = aggregatedScore;
 		}
 	}
