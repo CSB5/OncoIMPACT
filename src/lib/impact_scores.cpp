@@ -13,7 +13,7 @@
 
 void calculateImpactScoresForAllSamples(vector< list<Module> >* modulesListOfAllSamples,
 		vector< vector<Driver> >* driversOfAllSamples, TDoubleMatrix* originalGeneExpressionMatrix, vector<int>* GenesEx,
-		int totalGenes, double F, vector<string>* geneIdToSymbol){
+		int totalGenes, double F, vector<string>* geneIdToSymbol, int mode){
 
 	int totalSamples = modulesListOfAllSamples->size();
 
@@ -91,7 +91,12 @@ void calculateImpactScoresForAllSamples(vector< list<Module> >* modulesListOfAll
 	}
 
 	//OUTPUT: print drivers and impact scores for all samples (cont.)
-	string filename = "output/driver_all_samples.dat";
+	string filename;
+	if(mode == 0){
+		filename = "output/sensitive/driver_all_samples.dat";
+	}else{
+		filename = "output/stringent/driver_all_samples.dat";
+	}
 	writeStrVector(filename.c_str(), outputDrivers);
 	delete outputDrivers;
 }
@@ -119,8 +124,7 @@ void aggregateDriversAcrossSamples(vector< vector<Driver> >* driversOfAllSamples
 		driverAggregatedScores->at(i) = 0;	//initialization
 
 		if(isDriver[i]){
-			//TODO which one is correct?
-			double aggregatedScore = sumImpact[i]/totalSamples; //sumImpact[i]/driversFrequency->at(i)
+			double aggregatedScore = sumImpact[i]/totalSamples; //TODO sumImpact[i]/driversFrequency->at(i)
 			driverAggregatedScores->at(i) = aggregatedScore;
 		}
 	}

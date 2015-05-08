@@ -223,7 +223,7 @@ void findParameters(vector<JSDivergence>* jsDivergences, vector<int>* Ls,
 
 }
 
-//TODO the result is quite different from the original version
+//TODO the result is quite different from the original version (this might because the deregulated mutated gene is not in the explained gene list)
 double calculateJSDivergence(const vector<vector<int> >* realDistributionAll,
 		const vector<vector<int> >* randomDistributionAll, int numSamples) {
 	int round = randomDistributionAll->size();

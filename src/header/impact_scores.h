@@ -21,7 +21,7 @@ struct Driver{
 
 void calculateImpactScoresForAllSamples(vector< list<Module> >* modulesListOfAllSamples,
 		vector< vector<Driver> >* drivers, TDoubleMatrix* originalGeneExpressionMatrix, vector<int>* GenesEx,
-		int totalGenes, double F, vector<string>* geneIdToSymbol);
+		int totalGenes, double F, vector<string>* geneIdToSymbol, int mode);
 
 void aggregateDriversAcrossSamples(vector< vector<Driver> >* driversOfAllSamples, vector<double>* driverAggregatedScores,
 		vector<int>* driversFrequency, vector<string>* geneIdToSymbol, int totalGenes);

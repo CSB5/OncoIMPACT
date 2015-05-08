@@ -61,12 +61,18 @@ void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedA
 	int totalGenesUpDown = isPhenotypeGenesUpDown->size();
 	int totalGenes = totalGenesUpDown / 2;
 
+	//for sensitive mode
 	vector<bool> isDriverGenes(totalGenes);
-	for (int i = 0; i < totalGenes; ++i) {
-		isDriverGenes[i] = false;
-	}
+
+	//for stringent mode
+	vector< vector<bool> > isDriverGenesForSamples;
 
 	if(mode == 0){
+		//initialize
+		for (int i = 0; i < totalGenes; ++i) {
+			isDriverGenes[i] = false;
+		}
+
 		int numDriverGenes = driverGenes->size();
 		cout << "# driver genes = " << numDriverGenes << endl;
 		for (int i = 0; i < numDriverGenes; ++i) {
@@ -74,8 +80,29 @@ void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedA
 //			cout << "\tgene " << driverGenes->at(i).geneId << " covered # samples = " << driverGenes->at(i).sampleIds.size() << endl;
 		}
 	}else{
+		//initialize
+		for (int i = 0; i < totalSamples; ++i) {
+			vector<bool> isDriverGenesOfASample(totalGenes);
+			for (int j = 0; j < totalGenes; ++j) {
+				isDriverGenesOfASample[j] = false;
+			}
+			isDriverGenesForSamples.push_back(isDriverGenesOfASample);
+		}
 
+		int numDriverGenes = driverGenes->size();
+		cout << "# driver genes = " << numDriverGenes << endl;
+		for (int i = 0; i < numDriverGenes; ++i) {
+			int driverGeneId = driverGenes->at(i).geneId;
+			vector<int> sampleIds = driverGenes->at(i).sampleIds;
+			int numSamples = sampleIds.size();
+			for (int j = 0; j < numSamples; ++j) {
+				isDriverGenesForSamples[sampleIds[j]][driverGeneId] = true;
+//				cout << "sample " << sampleIds[j] << " driver id " << driverGeneId << endl;
+
+			}
+		}
 	}
+
 
 
 	for (int i = 0; i < totalSamples; ++i) {
@@ -102,15 +129,6 @@ void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedA
 							if(isPhenotypeGenesUpDown->at(k)){
 								isConnectedWithPhenotype = true;
 							}
-//							if(k < totalGenes){
-//								if(isPhenotypeGenes->at(k)){
-//									isConnectedWithPhenotype = true;
-//								}
-//							}else{
-//								if(isPhenotypeGenes->at(k-totalGenes)){
-//									isConnectedWithPhenotype = true;
-//								}
-//							}
 						}
 					}
 					//then the current mutated gene is a possible driver
@@ -121,7 +139,17 @@ void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedA
 			}
 		}else{
 			//TODO STRINGENT MODE
+			for (unsigned j = 0; j < mutatedGeneIdsList.size(); ++j) {
+				int currentMutatedGeneId = mutatedGeneIdsList[j];
+				if (isDriverGenesForSamples[i][currentMutatedGeneId]) { //current mutated gene is a driver of the current sample
+					driverGeneIdsForASample.push_back(currentMutatedGeneId);
+					cout << "sample " << i << " driver id " << currentMutatedGeneId << endl;
+				}
+			}
 		}
+
+
+
 
 		//create module (prepare for merging and trimming)
 		list<Module> modules;
@@ -146,23 +174,6 @@ void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedA
 						currentModule.explainedGeneIdsUpDown.push_back(k);
 					}
 				}
-//				if(k < totalGenes){	//up
-//					if(isExplainedGenesUpDown->at(k)){	//k is an explained gene
-//						if(isPhenotypeGenes->at(k)){
-//							currentModule.phenotypeGeneIds.push_back(k);
-//						}else{
-//							currentModule.explainedGeneIds.push_back(k);
-//						}
-//					}
-//				}else{				//down
-//					if(isExplainedGenesUpDown->at(k)){	//k is an explained gene
-//						if(isPhenotypeGenes->at(k - totalGenes)){
-//							currentModule.phenotypeGeneIds.push_back(k - totalGenes);
-//						}else{
-//							currentModule.explainedGeneIds.push_back(k - totalGenes);
-//						}
-//					}
-//				}
 			}
 
 			//add the module to module list
@@ -291,6 +302,9 @@ void trimModule(Module* module, TIntAdjList* network, int L, int D, vector<strin
 	//for each explained gene, find the shortest path to any driver gene and any phenotype genes
 	vector<int> shortestPathToDriverGenes;		//has the same size as explainedGeneIdsList
 	vector<int> shortestPathToPhenotypeGenes;	//has the same size as explainedGeneIdsList
+	vector<int> driverGeneIdsOfTheShortestPath;	//has the same size as explainedGeneIdsList
+	vector<int> phenotypeGeneIdsOfTheShortestPath;	//has the same size as explainedGeneIdsList
+
 	for (list<int>::iterator it = explainedGeneIdsListUpDown->begin(); it != explainedGeneIdsListUpDown->end(); it++) {
 		int currentExplainedGeneId = *it;
 		if(currentExplainedGeneId >= totalGenes){	//adjust the id for downregulated genes
@@ -298,9 +312,11 @@ void trimModule(Module* module, TIntAdjList* network, int L, int D, vector<strin
 		}
 
 		//cout << "finding the shortest paths for explained gene " << geneIdToSymbol->at(currentExplainedGeneId) << endl;
-		findShortestPath(currentExplainedGeneId, &shortestPathToDriverGenes, &shortestPathToPhenotypeGenes,
+		findShortestPath(currentExplainedGeneId, &shortestPathToDriverGenes, &shortestPathToPhenotypeGenes, &driverGeneIdsOfTheShortestPath, &phenotypeGeneIdsOfTheShortestPath,
 				&isDriverGeneInThisModule, &isPhenotypeGeneInThisModule, network, D, &isGeneInThisModule, geneIdToSymbol);
 	}
+
+	//TODO Fix bug
 
 	//for each explained gene, check if it belong to at least one path (with length =< L) between a mutated gene and a phenotype gene
 	vector<int> geneIdToBeRemoved;
@@ -312,15 +328,18 @@ void trimModule(Module* module, TIntAdjList* network, int L, int D, vector<strin
 		}
 		int disToDriver = shortestPathToDriverGenes[i];
 		int disToPhenotype = shortestPathToPhenotypeGenes[i];
-		if(disToDriver < 0 or disToPhenotype < 0){
-			geneIdToBeRemoved.push_back(currentExplainedGeneId);
-		}else if(disToDriver + disToPhenotype > L){
-			geneIdToBeRemoved.push_back(currentExplainedGeneId);
+
+		if(!isDriverGeneInThisModule[currentExplainedGeneId]){	//keep the explained driver gene in the list of explained genes
+			if(disToDriver < 0 or disToPhenotype < 0){
+				geneIdToBeRemoved.push_back(currentExplainedGeneId);
+			}else if(disToDriver + disToPhenotype >= L){
+				geneIdToBeRemoved.push_back(currentExplainedGeneId);
+			}
 		}
 	}
 
 
-	//TODO 2 BUGS: 1) not trim some gene 2) disconnected module
+	//TODO 2 BUGS: 1) not trim some genes 2) disconnected module
 	int numDelete = geneIdToBeRemoved.size();
 	for(int i = 0; i < numDelete; i++){
 		list<int>::iterator ditUp = find(explainedGeneIdsListUpDown->begin(), explainedGeneIdsListUpDown->end(), geneIdToBeRemoved[i]);
@@ -340,6 +359,7 @@ void trimModule(Module* module, TIntAdjList* network, int L, int D, vector<strin
 
 
 void findShortestPath(int geneId, vector<int>* shortestPathToDeiverGenes, vector<int>* shortestPathToPhenotypeGenes,
+		vector<int>* driverGeneIdsOfTheShortestPath, vector<int>* phenotypGeneIdsOfTheShortestPath,
 		vector<bool>* isDriverGeneInThisModule, vector<bool>* isPhenotypeGeneInThisModule, TIntAdjList* network,
 		int D, vector<bool>* isGeneInThisModule, vector<string>* geneIdToSymbol){
 	// Mark all the vertices as not visited
@@ -390,12 +410,14 @@ void findShortestPath(int geneId, vector<int>* shortestPathToDeiverGenes, vector
 				//if a driver is not found yet and the current neighbor gene is a driver
 				if(!foundDriver and isDriverGeneInThisModule->at(currentNeighborGeneId)){
 					distantToDriver = levels[currentGeneId] + 1;
+					driverGeneIdsOfTheShortestPath->push_back(currentNeighborGeneId);
 					foundDriver = true;
 				}
 
 				//if a phenotype is not found yet and the current neighbor gene is a phenotype
 				if(!foundPhenotype and isPhenotypeGeneInThisModule->at(currentNeighborGeneId)){
 					distantToPhenotype = levels[currentGeneId] + 1;
+					phenotypGeneIdsOfTheShortestPath->push_back(currentNeighborGeneId);
 					foundPhenotype = true;
 				}
 

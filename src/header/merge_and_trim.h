@@ -32,6 +32,7 @@ void trimSomeExplainedGenes(vector< list<Module> >* modulesListOfAllSamples, TIn
 
 void trimModule(Module* module, TIntAdjList* network, int L, int D, vector<string>* geneIdToSymbol);
 void findShortestPath(int geneId, vector<int>* shortestPathToDeiverGenes, vector<int>* shortestPathToPhenotypeGenes,
+		vector<int>* driverGeneIdsOfTheShortestPath, vector<int>* phenotypGeneIdsOfTheShortestPath,
 		vector<bool>* isDriverGeneInThisModule, vector<bool>* isPhenotypeGeneInThisModule, TIntAdjList* network,
 		int D, vector<bool>* isGeneInThisModule, vector<string>* geneIdToSymbol);
 

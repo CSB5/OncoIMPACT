@@ -268,8 +268,6 @@ void BFSforExplainedGenesIdOnlyUpDown(TIntAdjList* network, int geneId, int L, i
 				int geneId = (*network)[currentGeneId][j];
 				if (fabs(sampleGeneExpression->at(geneId)) >= F) {
 
-					//TODO what if this gene is a mutated gene?
-
 					// is explained gene
 					if(sampleGeneExpression->at(geneId) > 0.0){ 	// up regulated
 						isExplainedGenes->at(geneId) = true;

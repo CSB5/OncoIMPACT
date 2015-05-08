@@ -41,7 +41,7 @@ int main() {
 	 */
 
 	//0 = sensitive, 1 = stringent
-	int mode = 0;
+	int mode = -1;
 
 	map<string, string> conf;
 
@@ -240,6 +240,8 @@ int main() {
 //	cout << "DONE tunning parameters (" << (float(clock() - begin_time) / CLOCKS_PER_SEC)
 //			<< " sec)\n";
 //	begin_time = clock();	//update the clock
+
+	//TODO save the JS divergence results
 //
 //	//choose the best parameters
 //	JSDivergence maxJs;
@@ -446,40 +448,12 @@ int main() {
 	}
 
 	//OUTPUT: print gene frequency and phenotype genes of the real dataset
-	printExplinedGenesFrequencyAndPhonotype(&explainedGenesFrequencyRealUpDown, &pValues, &isPhenotypeGenesUpDown, &geneIdToSymbol, &network, &originalGeneExpressionMatrix, &genesEx, F);
+	printExplinedGenesFrequencyAndPhonotype(&explainedGenesFrequencyRealUpDown, &pValues, &isPhenotypeGenesUpDown, &geneIdToSymbol, &network, &originalGeneExpressionMatrix, &genesEx, F, mode);
 
 	/*
 	 * Find driver genes
 	 */
 
-	cout << "finding driver genes ...\n";
-
-	//1. map phenotype genes to sample level => use isPhenotypeGenes to check
-
-	//collect all mutated genes in all samples => use mutatedGeneIdsListReal (samples, mutated genes, explained genes)
-	list<int> mutatedGeneIdsList;	//mutated gene ids
-	vector<bool> isMutatedGenes(totalGenes);
-	getAllMutatedGenes(&mutatedGeneIdsListReal, &isMutatedGenes, &mutatedGeneIdsList);
-	cout << "\ttotal number of mutated genes is " << mutatedGeneIdsList.size() << endl;
-
-	cout << "\tcreating bipartite graph ...\n";
-
-	//create bipartite graph ( mutated gene --- phenotype gene ). This is done at sample level, so have to remember sample id.
-	//BipartiteEdge: each mutated gene contains a pair of (phenotype gene id, sample id)
-	vector<BipartiteEdge>* bipartiteGraph = new vector<BipartiteEdge>(totalGenes);
-	createBipartiteGraph(&mutatedAndExplainedGenesListReal, &mutatedGeneIdsListReal, &isPhenotypeGenesUpDown, bipartiteGraph, &geneIdToSymbol);
-
-	//greedy minimum set covering
-	cout << "\tperforming greedy minimum set cover algorithm ...\n";
-
-	vector<DriverGene> driverGenes;	//driver gene id with sample ids
-
-	//TODO stringent mode
-	findDriverGenes(bipartiteGraph, &mutatedGeneIdsList, &driverGenes);
-	delete bipartiteGraph;
-	cout << "DONE finding driver genes (" << (float(clock() - begin_time) / CLOCKS_PER_SEC)
-			<< " sec)\n";
-	begin_time = clock();	//update the clock
 
 
 	//[DEBUG] use driver genes list from previous version
@@ -490,173 +464,237 @@ int main() {
 //	for (int i = 0; i < numDriverGenesFromFile; ++i) {
 //		DriverGene driverGene;
 //		driverGene.geneId = driverGeneIds[i];
-//		driverGene.sampleIds.push_back(-1);
 //		driverGenes.push_back(driverGene);
 //	}
 
-	int numDriverGenes = driverGenes.size();
-	cout << "\ttotal driver genes = " << numDriverGenes << endl;
 
-	cout << "merging modules for all samples ...\n";
-
-	//merge modules and trim explained genes for each sample
-	//use mutatedAndExplainedGenesListReal (samples, mutated genes, explained genesUpDown)
-	vector< list<Module> > modulesListOfAllSamples(totalSamples);	//to save all modules in all samples
 
 	/*
 	 * SENSITIVE MODE
 	 */
+
+	cout << "SENSITIVE mode ...\n";
+
+
 	mode = 0;
 
-	findModulesInAllSamples(&mutatedAndExplainedGenesListReal, &modulesListOfAllSamples,
-			&mutatedGeneIdsListReal, &isPhenotypeGenesUpDown, &driverGenes, &phenotypeGeneIds, mode);
+	{
+		//collect all mutated genes in all samples => use mutatedGeneIdsListReal (samples, mutated genes, explained genes)
+		list<int> mutatedGeneIdsList;	//mutated gene ids
+		vector<bool> isMutatedGenes(totalGenes);
+		getAllMutatedGenes(&mutatedGeneIdsListReal, &isMutatedGenes, &mutatedGeneIdsList);
+		cout << "\ttotal number of mutated genes is " << mutatedGeneIdsList.size() << endl;
 
+		vector< list<Module> > modulesListOfAllSamples(totalSamples);	//to save all modules in all samples
 
-//	string outMergedModulesCysFilename = "output/merged_modules_cys.tsv";
-//	saveModulesCytoscape(&modulesListOfAllSamples, outMergedModulesCysFilename, &geneIdToSymbol);
+		//create bipartite graph ( mutated gene --- phenotype gene ). This is done at sample level, so have to remember sample id.
+		//BipartiteEdge: each mutated gene contains a pair of (phenotype gene id, sample id)
+		vector<BipartiteEdge>* bipartiteGraph = new vector<BipartiteEdge>(totalGenes);
+		createBipartiteGraph(&mutatedAndExplainedGenesListReal, &mutatedGeneIdsListReal,
+				&isPhenotypeGenesUpDown, bipartiteGraph, &geneIdToSymbol);
 
-	cout << "trimming explained genes for all samples ...\n";
-	trimSomeExplainedGenes(&modulesListOfAllSamples, &network, L, D, &geneIdToSymbol);
+		cout << "\tperforming greedy minimum set cover algorithm ...\n";
+		vector<DriverGene> driverGenes;	//driver gene id with sample ids
+		cout << "\tfinding driver genes ...\n";
+		findDriverGenes(bipartiteGraph, &mutatedGeneIdsList, &driverGenes);
+		cout << "\tcalculated driver genes from sensitive mode\n";
+		delete bipartiteGraph;
+		cout << "DONE finding driver genes (" << (float(clock() - begin_time) / CLOCKS_PER_SEC)
+				<< " sec)\n";
+		begin_time = clock();	//update the clock
 
-//	string outFinalModulesCysFilename = "output/merged_modules_cys.tsv";
-//	saveModulesCytoscape(&modulesListOfAllSamples, outFinalModulesCysFilename, &geneIdToSymbol);
+		int numDriverGenes = driverGenes.size();
+		cout << "\ttotal driver genes = " << numDriverGenes << endl;
 
-	cout << "writing final module to FINAL_MODULE.dat ...\n";
-	string outFinalModuleFilenameSensitive = "output/FINAL_MODULE.dat";
-	saveModules(&modulesListOfAllSamples, &mutatedAndExplainedGenesListReal, outFinalModuleFilenameSensitive, &geneIdToSymbol, &sampleIdToName);
+		cout << "generating modules for all samples ...\n";
 
-	cout << "calculating IMPACT scores for all samples ...\n";
+		//merge modules and trim explained genes for each sample
+		//use mutatedAndExplainedGenesListReal (samples, mutated genes, explained genesUpDown)
+		findModulesInAllSamples(&mutatedAndExplainedGenesListReal, &modulesListOfAllSamples,
+				&mutatedGeneIdsListReal, &isPhenotypeGenesUpDown, &driverGenes, &phenotypeGeneIds, mode);
+
+	//	string outMergedModulesCysFilename = "output/merged_modules_cys.tsv";
+	//	saveModulesCytoscape(&modulesListOfAllSamples, outMergedModulesCysFilename, &geneIdToSymbol);
+
+		cout << "trimming explained genes for all samples ...\n";
+		trimSomeExplainedGenes(&modulesListOfAllSamples, &network, L, D, &geneIdToSymbol);
+
+	//	string outFinalModulesCysFilename = "output/merged_modules_cys.tsv";
+	//	saveModulesCytoscape(&modulesListOfAllSamples, outFinalModulesCysFilename, &geneIdToSymbol);
+
+		cout << "writing final module to FINAL_MODULE.dat ...\n";
+		string outFinalModuleFilenameSensitive = "output/sensitive/FINAL_MODULE.dat";
+		saveModules(&modulesListOfAllSamples, &mutatedAndExplainedGenesListReal, outFinalModuleFilenameSensitive, &geneIdToSymbol, &sampleIdToName);
+
+		cout << "calculating IMPACT scores for all samples ...\n";
+
+		{
+		vector< vector<Driver> > driversOfAllSamples(totalSamples);
+		calculateImpactScoresForAllSamples(&modulesListOfAllSamples, &driversOfAllSamples, &originalGeneExpressionMatrix, &genesEx, totalGenes, F, &geneIdToSymbol, mode);
+
+		vector<double> driverAggregatedScores(totalGenes);
+		vector<int> driversFrequency(totalGenes);
+		vector<int> pointMutationDriversFrequency(totalGenes);
+		vector<int> deletionDriversFrequency(totalGenes);
+		vector<int> amplificationDriversFrequency(totalGenes);
+		vector<int> mutationFrequency(totalGenes);
+		vector<int> pointMutationFrequency(totalGenes);
+		vector<int> deletionFrequency(totalGenes);
+		vector<int> amplificationFrequency(totalGenes);
+		//initialization
+		for (int i = 0; i < totalGenes; ++i) {
+			driverAggregatedScores[i] = 0;
+			driversFrequency[i] = 0;
+			pointMutationDriversFrequency[i] = 0;
+			deletionDriversFrequency[i] = 0;
+			amplificationDriversFrequency[i] = 0;
+			mutationFrequency[i] = 0;
+			pointMutationFrequency[i] = 0;
+			deletionFrequency[i] = 0;
+			amplificationFrequency[i] = 0;
+		}
+
+		cout << "aggregating IMPACT scores across all samples ...\n";
+		aggregateDriversAcrossSamples(&driversOfAllSamples, &driverAggregatedScores, &driversFrequency, &geneIdToSymbol, totalGenes);
+
+		cout << "getting driver frequency ...\n";
+		getDetailDriversFreqeuncy(&driversOfAllSamples,
+				&pointMutationDriversFrequency, &deletionDriversFrequency, &amplificationDriversFrequency,
+				&originalPointMutationsMatrix, &originalCNVsMatrix,
+				&genesPointMut, &genesCNV);
+
+		cout << "getting mutation frequency ...\n";
+		getMutationFrequency(&originalMutationMatrix, &mutationFrequency, &genesMut);
+		getDetailMutationFrequency(&originalPointMutationsMatrix, &originalCNVsMatrix, &genesPointMut, &genesCNV,
+				&pointMutationFrequency, &deletionFrequency, &amplificationFrequency);
+
+		string outSampleResultDirName = "output/sensitive/samples/";
+		cout << "printing impact scores for all samples ...\n";
+		printSampleDriverList(&driversOfAllSamples, outSampleResultDirName, &geneIdToSymbol, &sampleIdToName,
+				&originalPointMutationsMatrix, &originalCNVsMatrix, &genesPointMut, &genesCNV,
+				&driverAggregatedScores, &driversFrequency, &mutationFrequency);
+
+		cout << "printing aggregated impact scores ...\n";
+		string outDriverListfilename = "output/sensitive/driver_list.txt";
+		printAggregatedDriverList(&driverGenes, outDriverListfilename, &geneIdToSymbol, &sampleIdToName,
+				&driverAggregatedScores, &driversFrequency, &mutationFrequency,
+				&pointMutationDriversFrequency, &deletionDriversFrequency, &amplificationDriversFrequency,
+				&pointMutationFrequency, &deletionFrequency, &amplificationFrequency);
+
+		}
+
+	}
+
+	/*
+	 * TODO STRINGENT MODE
+	 */
+
+	cout << "STRINGENT mode ...\n";
+	mode = 1;
 
 	{
-	vector< vector<Driver> > driversOfAllSamples(totalSamples);
-	calculateImpactScoresForAllSamples(&modulesListOfAllSamples, &driversOfAllSamples, &originalGeneExpressionMatrix, &genesEx, totalGenes, F, &geneIdToSymbol);
+		//collect all mutated genes in all samples => use mutatedGeneIdsListReal (samples, mutated genes, explained genes)
+		list<int> mutatedGeneIdsList;	//mutated gene ids
+		vector<bool> isMutatedGenes(totalGenes);
+		getAllMutatedGenes(&mutatedGeneIdsListReal, &isMutatedGenes, &mutatedGeneIdsList);
+		cout << "\ttotal number of mutated genes is " << mutatedGeneIdsList.size() << endl;
 
-	vector<double> driverAggregatedScores(totalGenes);
-	vector<int> driversFrequency(totalGenes);
-	vector<int> pointMutationDriversFrequency(totalGenes);
-	vector<int> deletionDriversFrequency(totalGenes);
-	vector<int> amplificationDriversFrequency(totalGenes);
-	vector<int> mutationFrequency(totalGenes);
-	vector<int> pointMutationFrequency(totalGenes);
-	vector<int> deletionFrequency(totalGenes);
-	vector<int> amplificationFrequency(totalGenes);
-	//initialization
-	for (int i = 0; i < totalGenes; ++i) {
-		driverAggregatedScores[i] = 0;
-		driversFrequency[i] = 0;
-		pointMutationDriversFrequency[i] = 0;
-		deletionDriversFrequency[i] = 0;
-		amplificationDriversFrequency[i] = 0;
-		mutationFrequency[i] = 0;
-		pointMutationFrequency[i] = 0;
-		deletionFrequency[i] = 0;
-		amplificationFrequency[i] = 0;
+		vector< list<Module> > modulesListOfAllSamples(totalSamples);	//to save all modules in all samples
+
+		//create bipartite graph ( mutated gene --- phenotype gene ). This is done at sample level, so have to remember sample id.
+		//BipartiteEdge: each mutated gene contains a pair of (phenotype gene id, sample id)
+		vector<BipartiteEdge>* bipartiteGraph = new vector<BipartiteEdge>(totalGenes);
+		createBipartiteGraph(&mutatedAndExplainedGenesListReal, &mutatedGeneIdsListReal,
+				&isPhenotypeGenesUpDown, bipartiteGraph, &geneIdToSymbol);
+
+		cout << "\tperforming greedy minimum set cover algorithm ...\n";
+		vector<DriverGene> driverGenes;	//driver gene id with sample ids
+		cout << "\tfinding driver genes ...\n";
+		findDriverGenes(bipartiteGraph, &mutatedGeneIdsList, &driverGenes);
+		cout << "\tcalculated driver genes from stringent mode\n";
+		delete bipartiteGraph;
+		cout << "DONE finding driver genes (" << (float(clock() - begin_time) / CLOCKS_PER_SEC)
+				<< " sec)\n";
+		begin_time = clock();	//update the clock
+
+		int numDriverGenes = driverGenes.size();
+		cout << "\ttotal driver genes = " << numDriverGenes << endl;
+
+		cout << "generating modules for all samples ...\n";
+
+		//merge modules and trim explained genes for each sample
+		//use mutatedAndExplainedGenesListReal (samples, mutated genes, explained genesUpDown)
+		findModulesInAllSamples(&mutatedAndExplainedGenesListReal, &modulesListOfAllSamples,
+				&mutatedGeneIdsListReal, &isPhenotypeGenesUpDown, &driverGenes, &phenotypeGeneIds, mode);
+
+	//	string outMergedModulesCysFilename = "output/merged_modules_cys.tsv";
+	//	saveModulesCytoscape(&modulesListOfAllSamples, outMergedModulesCysFilename, &geneIdToSymbol);
+
+		cout << "trimming explained genes for all samples ...\n";
+		trimSomeExplainedGenes(&modulesListOfAllSamples, &network, L, D, &geneIdToSymbol);
+
+	//	string outFinalModulesCysFilename = "output/merged_modules_cys.tsv";
+	//	saveModulesCytoscape(&modulesListOfAllSamples, outFinalModulesCysFilename, &geneIdToSymbol);
+
+		cout << "writing final module to FINAL_MODULE.dat ...\n";
+		string outFinalModuleFilenameSensitive = "output/stringent/FINAL_MODULE.dat";
+		saveModules(&modulesListOfAllSamples, &mutatedAndExplainedGenesListReal, outFinalModuleFilenameSensitive, &geneIdToSymbol, &sampleIdToName);
+
+		cout << "calculating IMPACT scores for all samples ...\n";
+
+		vector< vector<Driver> > driversOfAllSamples(totalSamples);
+		calculateImpactScoresForAllSamples(&modulesListOfAllSamples, &driversOfAllSamples, &originalGeneExpressionMatrix, &genesEx, totalGenes, F, &geneIdToSymbol, mode);
+
+		vector<double> driverAggregatedScores(totalGenes);
+		vector<int> driversFrequency(totalGenes);
+		vector<int> pointMutationDriversFrequency(totalGenes);
+		vector<int> deletionDriversFrequency(totalGenes);
+		vector<int> amplificationDriversFrequency(totalGenes);
+		vector<int> mutationFrequency(totalGenes);
+		vector<int> pointMutationFrequency(totalGenes);
+		vector<int> deletionFrequency(totalGenes);
+		vector<int> amplificationFrequency(totalGenes);
+		//initialization
+		for (int i = 0; i < totalGenes; ++i) {
+			driverAggregatedScores[i] = 0;
+			driversFrequency[i] = 0;
+			pointMutationDriversFrequency[i] = 0;
+			deletionDriversFrequency[i] = 0;
+			amplificationDriversFrequency[i] = 0;
+			mutationFrequency[i] = 0;
+			pointMutationFrequency[i] = 0;
+			deletionFrequency[i] = 0;
+			amplificationFrequency[i] = 0;
+		}
+
+		cout << "aggregating IMPACT scores across all samples ...\n";
+		aggregateDriversAcrossSamples(&driversOfAllSamples, &driverAggregatedScores, &driversFrequency, &geneIdToSymbol, totalGenes);
+
+		cout << "getting driver frequency ...\n";
+		getDetailDriversFreqeuncy(&driversOfAllSamples,
+				&pointMutationDriversFrequency, &deletionDriversFrequency, &amplificationDriversFrequency,
+				&originalPointMutationsMatrix, &originalCNVsMatrix,
+				&genesPointMut, &genesCNV);
+
+		cout << "getting mutation frequency ...\n";
+		getMutationFrequency(&originalMutationMatrix, &mutationFrequency, &genesMut);
+		getDetailMutationFrequency(&originalPointMutationsMatrix, &originalCNVsMatrix, &genesPointMut, &genesCNV,
+				&pointMutationFrequency, &deletionFrequency, &amplificationFrequency);
+
+		string outSampleResultDirName = "output/stringent/samples/";
+		cout << "printing impact scores for all samples ...\n";
+		printSampleDriverList(&driversOfAllSamples, outSampleResultDirName, &geneIdToSymbol, &sampleIdToName,
+				&originalPointMutationsMatrix, &originalCNVsMatrix, &genesPointMut, &genesCNV,
+				&driverAggregatedScores, &driversFrequency, &mutationFrequency);
+
+		cout << "printing aggregated impact scores ...\n";
+		string outDriverListfilename = "output/stringent/driver_list.txt";
+		printAggregatedDriverList(&driverGenes, outDriverListfilename, &geneIdToSymbol, &sampleIdToName,
+				&driverAggregatedScores, &driversFrequency, &mutationFrequency,
+				&pointMutationDriversFrequency, &deletionDriversFrequency, &amplificationDriversFrequency,
+				&pointMutationFrequency, &deletionFrequency, &amplificationFrequency);
+
 	}
-
-	cout << "aggregating IMPACT scores across all samples ...\n";
-	aggregateDriversAcrossSamples(&driversOfAllSamples, &driverAggregatedScores, &driversFrequency, &geneIdToSymbol, totalGenes);
-
-	cout << "getting driver frequency ...\n";
-	getDetailDriversFreqeuncy(&driversOfAllSamples,
-			&pointMutationDriversFrequency, &deletionDriversFrequency, &amplificationDriversFrequency,
-			&originalPointMutationsMatrix, &originalCNVsMatrix,
-			&genesPointMut, &genesCNV);
-
-	cout << "getting mutation frequency ...\n";
-	getMutationFrequency(&originalMutationMatrix, &mutationFrequency, &genesMut);
-	getDetailMutationFrequency(&originalPointMutationsMatrix, &originalCNVsMatrix, &genesPointMut, &genesCNV,
-			&pointMutationFrequency, &deletionFrequency, &amplificationFrequency);
-
-	string outSampleResultDirName = "output/samples/";
-	cout << "printing impact scores for all samples ...\n";
-	printSampleDriverList(&driversOfAllSamples, outSampleResultDirName, &geneIdToSymbol, &sampleIdToName,
-			&originalPointMutationsMatrix, &originalCNVsMatrix, &genesPointMut, &genesCNV,
-			&driverAggregatedScores, &driversFrequency, &mutationFrequency);
-
-	cout << "printing aggregated impact scores ...\n";
-	string outDriverListfilename = "output/driver_list.txt";
-	printAggregatedDriverList(&driverGenes, outDriverListfilename, &geneIdToSymbol, &sampleIdToName,
-			&driverAggregatedScores, &driversFrequency, &mutationFrequency,
-			&pointMutationDriversFrequency, &deletionDriversFrequency, &amplificationDriversFrequency,
-			&pointMutationFrequency, &deletionFrequency, &amplificationFrequency);
-
-	}
-
-//	/*
-//	 * SENSITIVE MODE
-//	 */
-//	mode = 0;
-//
-//	findModulesInAllSamples(&mutatedAndExplainedGenesListReal, &modulesListOfAllSamples,
-//			&mutatedGeneIdsListReal, &isPhenotypeGenes, &driverGenes, &phenotypeGeneIds, mode);
-//
-////	string outMergedModulesCysFilename = "output/merged_modules_cys.tsv";
-////	saveModulesCytoscape(&modulesListOfAllSamples, outMergedModulesCysFilename, &geneIdToSymbol);
-//
-//	cout << "trimming explained genes for all samples ...\n";
-//	trimSomeExplainedGenes(&modulesListOfAllSamples, &network, L, D, &geneIdToSymbol);
-//
-////	string outFinalModulesCysFilename = "output/merged_modules_cys.tsv";
-////	saveModulesCytoscape(&modulesListOfAllSamples, outFinalModulesCysFilename, &geneIdToSymbol);
-//
-//	cout << "writing final module to FINAL_MODULE.dat ...\n";
-//	string outFinalModuleFilename = "output/FINAL_MODULE.dat";
-//	saveModules(&modulesListOfAllSamples, &mutatedAndExplainedGenesListReal, outFinalModuleFilename, &geneIdToSymbol, &sampleIdToName);
-//
-//	cout << "calculating IMPACT scores for all samples ...\n";
-//
-//	vector< vector<Driver> > driversOfAllSamples(totalSamples);
-//	calculateImpactScoresForAllSamples(&modulesListOfAllSamples, &driversOfAllSamples, &originalGeneExpressionMatrix, &genesEx, totalGenes, F, &geneIdToSymbol);
-//
-//	vector<double> driverAggregatedScores(totalGenes);
-//	vector<int> driversFrequency(totalGenes);
-//	vector<int> pointMutationDriversFrequency(totalGenes);
-//	vector<int> deletionDriversFrequency(totalGenes);
-//	vector<int> amplificationDriversFrequency(totalGenes);
-//	vector<int> mutationFrequency(totalGenes);
-//	vector<int> pointMutationFrequency(totalGenes);
-//	vector<int> deletionFrequency(totalGenes);
-//	vector<int> amplificationFrequency(totalGenes);
-//	//initialization
-//	for (int i = 0; i < totalGenes; ++i) {
-//		driverAggregatedScores[i] = 0;
-//		driversFrequency[i] = 0;
-//		pointMutationDriversFrequency[i] = 0;
-//		deletionDriversFrequency[i] = 0;
-//		amplificationDriversFrequency[i] = 0;
-//		mutationFrequency[i] = 0;
-//		pointMutationFrequency[i] = 0;
-//		deletionFrequency[i] = 0;
-//		amplificationFrequency[i] = 0;
-//	}
-//
-//	cout << "aggregating IMPACT scores across all samples ...\n";
-//	aggregateDriversAcrossSamples(&driversOfAllSamples, &driverAggregatedScores, &driversFrequency, &geneIdToSymbol, totalGenes);
-//
-//	cout << "getting driver frequency ...\n";
-//	getDetailDriversFreqeuncy(&driversOfAllSamples,
-//			&pointMutationDriversFrequency, &deletionDriversFrequency, &amplificationDriversFrequency,
-//			&originalPointMutationsMatrix, &originalCNVsMatrix,
-//			&genesPointMut, &genesCNV);
-//
-//	cout << "getting mutation frequency ...\n";
-//	getMutationFrequency(&originalMutationMatrix, &mutationFrequency, &genesMut);
-//	getDetailMutationFrequency(&originalPointMutationsMatrix, &originalCNVsMatrix, &genesPointMut, &genesCNV,
-//			&pointMutationFrequency, &deletionFrequency, &amplificationFrequency);
-//
-//	string outSampleResultDirName = "output/samples/";
-//	cout << "printing impact scores for all samples ...\n";
-//	printSampleDriverList(&driversOfAllSamples, outSampleResultDirName, &geneIdToSymbol, &sampleIdToName,
-//			&originalPointMutationsMatrix, &originalCNVsMatrix, &genesPointMut, &genesCNV,
-//			&driverAggregatedScores, &driversFrequency, &mutationFrequency);
-//
-//	cout << "printing aggregated impact scores ...\n";
-//	string outDriverListfilename = "output/driver_list.txt";
-//	printAggregatedDriverList(&driverGenes, outDriverListfilename, &geneIdToSymbol, &sampleIdToName,
-//			&driverAggregatedScores, &driversFrequency, &mutationFrequency,
-//			&pointMutationDriversFrequency, &deletionDriversFrequency, &amplificationDriversFrequency,
-//			&pointMutationFrequency, &deletionFrequency, &amplificationFrequency);
-//
 
 	//delete the vector<int>* explainedGenesFreqency
 	for (int i = 0; i < totalSamples; ++i) {
