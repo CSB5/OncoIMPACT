@@ -50,6 +50,7 @@ int getNodeDegree(TIntAdjList* network, int nodeId);
 void writeStrVector(const char* filename, vector<string>* output);
 void saveGeneSymbols(const char* filename, vector<int>* geneIds, vector<string>* geneIdToSymbol);
 void printGeneSymbols(vector<int>* geneIds, vector<string>* geneIdToSymbol);
+void writeToLogFile(ofstream* outLogStream, string outStr);
 
 /*
  * Permutation
@@ -75,5 +76,9 @@ void mapGeneIdToSymbol(vector<int>* ids, vector<string>* symbols, vector<string>
 string intToStr(int i);
 string doubleToStr(double i, int prec);
 bool trimStr(std::string& str, const std::string& from);
+
+string getCurrentDate();
+string getCurrentDateAndTime();
+string getCurrentTimestamp();
 
 #endif /* UTILITIES_H_ */

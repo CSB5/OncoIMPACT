@@ -187,7 +187,9 @@ void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedA
 			}
 		}
 
-		//cout << "sample #" << i << " has " << modules.size() << " modules before merging\n";
+		if(i == 323){
+			cout << "sample #" << i << " has " << modules.size() << " modules before merging\n";
+		}
 
 		//add modules data to the modulesListOfAllSamples
 		list<Module>* modulesList = &modulesListOfAllSamples->at(i);
@@ -196,7 +198,16 @@ void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedA
 		//merge modules that share phenotype genes
 		//for each phenotype gene, find which modules contain it
 		int numPhenotypeGenes = phenotypeGeneIdsUpDown->size();
+
+		if(i == 323){
+			cout << "there are " << numPhenotypeGenes << " phenotype genes\n";
+		}
+
 		for (int j = 0; j < numPhenotypeGenes; ++j) {
+
+			if(i == 323){
+				cout << "phenotype gene " << phenotypeGeneIdsUpDown->at(j) << endl;
+			}
 
 			int currentPhenotypeGeneId = phenotypeGeneIdsUpDown->at(j);
 			vector<int> moduleIdsToMerge;
@@ -208,6 +219,9 @@ void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedA
 				bool found = (find(phenotypeGeneIdsOfAModule.begin(), phenotypeGeneIdsOfAModule.end(), currentPhenotypeGeneId)
 						!= phenotypeGeneIdsOfAModule.end());
 				if(found){ // phenotypeGeneIds is a phenotype genes in this module of sample i
+					if(i == 323){
+						cout << "found in module id = " << it->moduleId << endl;
+					}
 					moduleIdsToMerge.push_back(it->moduleId);
 					isPhenotypeGeneInThisSample = true;
 				}

@@ -14,6 +14,9 @@
 #include <queue>
 #include <algorithm>
 #include <cstdlib>
+#include <ctime>
+#include <chrono>
+#include <iomanip>
 #include "../header/utilities.h"
 
 /*
@@ -382,3 +385,46 @@ bool trimStr(std::string& str, const std::string& from) {
 	return true;
 }
 
+string getCurrentDate(){
+	string dateStr;
+	time_t t = time(0);   // get time now
+	struct tm * now = localtime( & t );
+	dateStr += intToStr(now->tm_year + 1900) + '-' + intToStr(now->tm_mon + 1) + '-' + intToStr(now->tm_mday);
+	return dateStr;
+}
+
+string getCurrentTimestamp(){
+	time_t rawtime;
+	struct tm * timeinfo;
+	char buffer [80];
+
+	time (&rawtime);
+	timeinfo = localtime (&rawtime);
+
+	strftime (buffer,80,"%Y-%m-%d-%H-%M-%S",timeinfo);
+
+	string str(buffer);
+	return str;
+//	return asctime(localtime(&currentTimestamp));
+}
+
+string getCurrentDateAndTime(){
+	  time_t rawtime;
+	  struct tm * timeinfo;
+	  char buffer [80];
+
+	  time (&rawtime);
+	  timeinfo = localtime (&rawtime);
+
+	  strftime (buffer,80,"%Y-%m-%d %H:%M:%S",timeinfo);
+//	  puts (buffer);
+
+	  string str(buffer);
+	  return str;
+}
+
+void writeToLogFile(ofstream* outLogStream, string outStr){
+	*outLogStream << getCurrentDateAndTime() + "\t" + outStr;
+	*outLogStream << endl;
+	*outLogStream << flush;
+}

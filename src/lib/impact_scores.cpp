@@ -13,7 +13,7 @@
 
 void calculateImpactScoresForAllSamples(vector< list<Module> >* modulesListOfAllSamples,
 		vector< vector<Driver> >* driversOfAllSamples, TDoubleMatrix* originalGeneExpressionMatrix, vector<int>* GenesEx,
-		int totalGenes, double F, vector<string>* geneIdToSymbol, int mode){
+		int totalGenes, double F, vector<string>* geneIdToSymbol, string filename){
 
 	int totalSamples = modulesListOfAllSamples->size();
 
@@ -91,12 +91,6 @@ void calculateImpactScoresForAllSamples(vector< list<Module> >* modulesListOfAll
 	}
 
 	//OUTPUT: print drivers and impact scores for all samples (cont.)
-	string filename;
-	if(mode == 0){
-		filename = "output/sensitive/driver_all_samples.dat";
-	}else{
-		filename = "output/stringent/driver_all_samples.dat";
-	}
 	writeStrVector(filename.c_str(), outputDrivers);
 	delete outputDrivers;
 }

@@ -1,0 +1,12 @@
+2015-05-09 12:48:03	Start Running oncoIMPACT 1.0 (using 10 threads)
+2015-05-09 12:48:04	Read network from network_FIsInGene_041709.txt
+2015-05-09 12:48:09	Read gene expression matrix from GBM/EXPR.txt
+2015-05-09 12:48:10	Read SNP from GBM/SNP.txt
+2015-05-09 12:48:13	Read CNV from GBM/CNV.txt
+2015-05-09 12:48:13	SNP and CNV matrix are combined
+2015-05-09 12:48:20	Save calculated gene modules to output/MODULE.dat
+2015-05-09 12:48:24	Save explained and phenotype gene statistics to output/exp_gene_freq.dat
+2015-05-09 12:48:24	Start sensitive mode
+2015-05-09 12:48:26	Save final module of sensitive mode to output/sensitive/FINAL_MODULE.dat
+2015-05-09 12:48:26	calculate IMPACT scores for all samples
+2015-05-09 12:48:28	Save final driver gene list to output/sensitive/driver_list.txt

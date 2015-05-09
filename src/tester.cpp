@@ -7,11 +7,14 @@
 //============================================================================
 
 #include <iostream>
+#include <fstream>
 #include <ctime>
 #include <algorithm>
 #include <sstream>
 #include <set>
 #include <omp.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "header/utilities.h"
 #include "header/input.h"
 #include "header/sampling.h"
@@ -23,16 +26,19 @@
 #include "header/parameters.h"
 #include "header/impact_scores.h"
 
-//#include <windows.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <direct.h>
+
+#ifdef _WIN32
+	#include <windows.h>
+	#include <direct.h>
+#endif
 
 using namespace std;
 
 int main() {
 
 	/*
-	 * Start timer
+	 * System configuration and timer
 	 */
 
 	clock_t begin_time = clock();
@@ -41,27 +47,65 @@ int main() {
 	/*
 	 * TODO Read configuration from a file
 	 */
+	string outDir = "output";
+	//string scriptDir = "";
 
-	//0 = sensitive, 1 = stringent
-	int mode = -1;
+	string networkFilename = "network_FIsInGene_041709.txt";
+	string expFilename = "GBM/EXPR.txt";
+	string snpFilename = "GBM/SNP.txt";
+	string cnvFilename = "GBM/CNV.txt";
+
+	string dbPath = "";
+	string dbPathExport = "";
+
+	string datatType = "";
 	int numThreads = 10;
+	//0 = sensitive, 1 = stringent
+	int mode = 0;
 
-	map<string, string> conf;
+	//create sub-directory to store output files
+	#if defined(_WIN32)	//_WIN32 - Defined for applications for Win32 and Win64
+		_mkdir((outDir + "/sensitive").c_str());
+		_mkdir((outDir + "/stringent").c_str());
+		_mkdir((outDir + "/sensitive/samples").c_str());
+		_mkdir((outDir + "/stringent/samples").c_str());
+	#else
+		mkdir((outDir + "/sensitive").c_str(), 0777); // notice that 777 is different than 0777
+		mkdir((outDir + "/stringent").c_str(), 0777); // notice that 777 is different than 0777
+		mkdir((outDir + "/sensitive/samples").c_str(), 0777); // notice that 777 is different than 0777
+		mkdir((outDir + "/stringent/samples").c_str(), 0777); // notice that 777 is different than 0777
+	#endif
+
+	//parameters of analysis
+	int numPermutationsForJSDivergence = 100;
+	int numPermutationsForPhenotypeGene = 500;
+
+//	//parameters for implementation
+//	bool isDebuging = true;
+//	//if isDebugging = true
+//	//1. fix L, D, F
+//	//2. use original phenotype gene list
+
+	//create log file for each run
+	string logFilename;
+	logFilename = outDir + "/" + getCurrentTimestamp() + ".log";
+	ofstream outLogStream;
+
+	outLogStream.open(logFilename.c_str());
+	writeToLogFile(&outLogStream, "Start Running oncoIMPACT 1.0 (using " + intToStr(numThreads) + " threads)");
 
 	/*
 	 * Read network file into adjacency list
 	 */
 
-	cout << "reading network file and create mapping <id, geneSymbol> ..."
-			<< endl;
+	cout << "reading network file and create mapping <id, geneSymbol> ..."	<< endl;
 	map<string, int> geneSymbolToId;
 	vector<string> geneIdToSymbol;
 	TIntAdjList network;
-	string networkFilename = "network_FIsInGene_041709.txt";
-	readNetwork(networkFilename.c_str(), &network, &geneIdToSymbol, &geneSymbolToId,
-			'\t');
+	readNetwork(networkFilename.c_str(), &network, &geneIdToSymbol, &geneSymbolToId, '\t');
 	int totalGenes = network.size();
 	int totalGenesUpDown = totalGenes * 2;
+	writeToLogFile(&outLogStream, "Read network from " + networkFilename);
 
 	/*
 	 * Read gene expression matrix from file
@@ -74,7 +118,6 @@ int main() {
 
 	TDoubleMatrix originalGeneExpressionMatrix;
 	cout << "reading gene expression matrix ..." << endl;
-	string expFilename = "GBM/EXPR.txt";
 	vector<int> genesEx; // gene ids ; size = # DE genes (consider only genes that are in the network)
 	vector<string> geneSymbols;
 	GeneExpression geneExpression;	//all info of gene expression
@@ -89,6 +132,7 @@ int main() {
 	cout << "\ttotal genes in gene expression matrix is " << numGenesEx << endl;
 	cout << "\ttotal samples in gene expression matrix is " << totalSamples
 			<< endl;
+	writeToLogFile(&outLogStream, "Read gene expression matrix from " + expFilename);
 
 	/*
 	 * Read point mutation matrix from file
@@ -97,7 +141,6 @@ int main() {
 	 */
 
 	cout << "reading point mutation matrix ..." << endl;
-	string snpFilename = "GBM/SNP.txt";
 	vector<int> genesPointMut;	// gene ids ; size = # mutated genes (consider only genes that are in the network)
 	TIntegerMatrix originalPointMutationsMatrix;
 	PointMutations pointMutations;	//all info of point mutation
@@ -111,6 +154,7 @@ int main() {
 	cout << "\ttotal genes in point mutation matrix is " << numGenesPointMut << endl;
 	cout << "\ttotal samples in point mutation matrix is " << totalSamples
 			<< endl;
+	writeToLogFile(&outLogStream, "Read SNP from " + snpFilename);
 
 	/*
 	 * Read CNV matrix from file
@@ -119,7 +163,6 @@ int main() {
 	 */
 
 	cout << "reading CNV matrix ..." << endl;
-	string cnvFilename = "GBM/CNV.txt";
 	vector<int> genesCNV;	// gene ids ; size = # mutated genes (consider only genes that are in the network)
 	TIntegerMatrix originalCNVsMatrix;
 	CopyNumberVariation CNVs;	//all info of CNV
@@ -133,6 +176,7 @@ int main() {
 	cout << "\ttotal genes in CNV matrix is " << numGenesCNV << endl;
 	cout << "\ttotal samples in CNV matrix is " << totalSamples
 			<< endl;
+	writeToLogFile(&outLogStream, "Read CNV from " + cnvFilename);
 
 	/*
 	 * Combining point mutation and CNV matrix
@@ -199,71 +243,74 @@ int main() {
 	cout << "\ttotal genes in mutation matrix is " << numGenesMut << endl;
 	cout << "\ttotal samples in mutation matrix is " << totalSamples
 			<< endl;
+	writeToLogFile(&outLogStream, "SNP and CNV matrix are combined");
 
 	/*
 	 * Calculate JS divergence for each set of parameters
 	 */
 
-//	//Note: gene expression and mutation have the same set of samples
-//	//If number of samples is < 50, use all samples to tune the parameters
-//	int numSamples = 50;
-//	if(totalSamples < 50){
-//		numSamples = totalSamples;
-//	}
-//
-//	cout << "\t\tDONE reading and preparing data (" << (float(clock() - step_time) / CLOCKS_PER_SEC) << " sec)\n";
-//
-//	step_time = clock();
-//	cout << "tuning parameters by using " << numSamples << " randomly choosing samples ..."
-//			<< endl;
-//
-//	cout << "computing JS divergence for all parameters (L,D,F) ... " << endl;
-//
-//	//TODO initialize all the parameters to be tested
-////	int LsVal[] = {2, 4, 6, 8, 10, 12, 14, 16, 18, 20};
-//	int LsVal[] = {16, 18, 20};	//fewer parameters for testing
-//	vector<int> Ls(LsVal, LsVal + sizeof LsVal / sizeof LsVal[0]);
-//	int numLs = Ls.size();
-////	int DsVal[] = {10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100};
-//	int DsVal[] = {60, 65, 70};	//fewer parameters for testing
-//	vector<int> Ds(DsVal, DsVal + sizeof DsVal / sizeof DsVal[0]);
-//	int numDs = Ds.size();	//fewer parameters for testing
-////	double FsVal[] = {1, 1.5, 2, 2.5, 3};
-//	double FsVal[] = {2, 2.5};	//fewer parameters for testing
-//	vector<double> Fs(FsVal, FsVal + sizeof FsVal / sizeof FsVal[0]);
-//	int numFs = Fs.size();
-//
-//	//TODO debug the js divegence calculation (the results are quite different from the original)
-//	int numCombinations = numLs * numDs * numFs;
-//	//initialize the vector to save the divergence of each set of parameters
-//	vector<JSDivergence> jsDivergences(numCombinations);
-//
-//	int numPermutationsForJSDivergence = 100;
-//	//TODO parameter findind: the result is quite different from the original
-//	findParameters(&jsDivergences, &Ls, &Ds, &Fs, totalGenes, &geneExpression, &mutations, &network, numSamples, numPermutationsForJSDivergence, &geneSymbolToId, numThreads);
-//
-//	//write the JS divergence result to a file
-//	string outJSFilename = "output/parameters.dat";
-//	//save the JS divergence results
-//	saveJSDivergences(&jsDivergences, outJSFilename);
-//
-//	cout << "\t\tDONE finding parameters (" << (float(clock() - step_time) / CLOCKS_PER_SEC) << " sec)\n";
-//
-//	//choose the best parameters
-//	JSDivergence maxJs;
-//	findMaximumJsDivergence(&jsDivergences, &maxJs);
-//
-//	cout << "the maximum divergence is " << maxJs.divergence << " when L, D, F = " << maxJs.L << ", " << maxJs.D << ", " << maxJs.F << endl;
-//
-//	//set the L D F to maxJs
-//	int L = maxJs.L;
-//	int D = maxJs.D;
-//	double F = maxJs.F;
+	//Note: gene expression and mutation have the same set of samples
+	//If number of samples is < 50, use all samples to tune the parameters
+	int numSamples = 50;
+	if(totalSamples < 50){
+		numSamples = totalSamples;
+	}
+
+	cout << "\t\tDONE reading and preparing data (" << (float(clock() - step_time) / CLOCKS_PER_SEC) << " sec)\n";
+
+	step_time = clock();
+	cout << "tuning parameters by using " << numSamples << " randomly choosing samples ..."
+			<< endl;
+
+	cout << "computing JS divergence for all parameters (L,D,F) ... " << endl;
+
+	//TODO initialize all the parameters to be tested
+//	int LsVal[] = {2, 4, 6, 8, 10, 12, 14, 16, 18, 20};
+	int LsVal[] = {16, 18, 20};	//fewer parameters for testing
+	vector<int> Ls(LsVal, LsVal + sizeof LsVal / sizeof LsVal[0]);
+	int numLs = Ls.size();
+//	int DsVal[] = {10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100};
+	int DsVal[] = {60, 65, 70};	//fewer parameters for testing
+	vector<int> Ds(DsVal, DsVal + sizeof DsVal / sizeof DsVal[0]);
+	int numDs = Ds.size();	//fewer parameters for testing
+//	double FsVal[] = {1, 1.5, 2, 2.5, 3};
+	double FsVal[] = {2, 2.5};	//fewer parameters for testing
+	vector<double> Fs(FsVal, FsVal + sizeof FsVal / sizeof FsVal[0]);
+	int numFs = Fs.size();
+
+	//TODO debug the js divegence calculation (the results are quite different from the original)
+	int numCombinations = numLs * numDs * numFs;
+	//initialize the vector to save the divergence of each set of parameters
+	vector<JSDivergence> jsDivergences(numCombinations);
+
+	//TODO parameter finding: the result is quite different from the original
+	findParameters(&jsDivergences, &Ls, &Ds, &Fs, totalGenes, &geneExpression, &mutations, &network, numSamples, numPermutationsForJSDivergence, &geneSymbolToId, numThreads);
+
+	//write the JS divergence result to a file
+	string outJSFilename = outDir + "/parameters.dat";
+	//save the JS divergence results
+	saveJSDivergences(&jsDivergences, outJSFilename);
+	writeToLogFile(&outLogStream, "Write parameters results in " + outJSFilename);
+
+	cout << "\t\tDONE finding parameters (" << (float(clock() - step_time) / CLOCKS_PER_SEC) << " sec)\n";
+
+	//choose the best parameters
+	JSDivergence maxJs;
+	findMaximumJsDivergence(&jsDivergences, &maxJs);
+
+	cout << "the maximum divergence is " << maxJs.divergence << " when L, D, F = " << maxJs.L << ", " << maxJs.D << ", " << maxJs.F << endl;
+	writeToLogFile(&outLogStream, "The maximum JS divergence is " + doubleToStr(maxJs.divergence, 5) +
+			" corresponding to (L,D,F) = (" + intToStr(maxJs.L) + "," + intToStr(maxJs.D) + "," + doubleToStr(maxJs.F, 1) + ")");
+
+	//set the L D F to maxJs
+	int L = maxJs.L;
+	int D = maxJs.D;
+	double F = maxJs.F;
 
 	//[DEBUG]
-	int L = 20;
-	int D = 65;
-	double F = 2.5;
+//	int L = 20;
+//	int D = 65;
+//	double F = 2.5;
 
 	/*
 	 * Find phenotype genes
@@ -277,8 +324,7 @@ int main() {
 	//Note: size of MutatedAndExplianedGenes = totalGenes, so index = mutated gene id, value = a list of explained gene ids
 	vector< vector<int> > mutatedGeneIdsListReal;	//to save a list of mutated gene ids for each sample
 
-	cout << "\tgetting explained genes frequency of the real samples ...\n";
-
+	cout << "\tgetting explained genes frequency of the REAL samples ...\n";
 	for (int i = 0; i < totalSamples; ++i) {
 
 		//get gene expression of a current sample
@@ -340,7 +386,7 @@ int main() {
 			}
 		}
 	}
-	string outModuleCysfilename = "output/original_modules_cys.tsv";
+	string outModuleCysfilename = outDir + "/original_modules_cys.tsv";
 	writeStrVector(outModuleCysfilename.c_str(), outputStr);
 	delete outputStr;
 	//OUTPUT: print all modules in all samples (as original)
@@ -371,9 +417,11 @@ int main() {
 			}
 		}
 	}
-	string outModulefilename = "output/MODULE.dat";
+
+	string outModulefilename = outDir + "/MODULE.dat";
 	writeStrVector(outModulefilename.c_str(), outputStr);
 	delete outputStr;
+	writeToLogFile(&outLogStream, "Save calculated gene modules to " + outModulefilename);
 
 	//TODO debug the finding phenotype part (the results are quite different from the original)
 	//create a vector for counting the number of times (for each gene) the random samples have greater frequency than the real samples
@@ -382,9 +430,7 @@ int main() {
 		geneFrequencyGreaterThanRealFrequencyCounter[i] = 0;
 	}
 
-	//the following have to be done 500-1000 times to generate the null distribution
-	int numPermutationsForPhenotypeGene = 500;
-
+	writeToLogFile(&outLogStream, "Start creating null distribution for finding phenotype genes");
 	cout << "\tcreating null distribution (using " << numPermutationsForPhenotypeGene << " permutations) ... ";
 
 	int progress = 1;
@@ -434,7 +480,6 @@ int main() {
 
 	cout << endl; //for print progression
 
-	//collect phenotype genes
 	vector<bool> isPhenotypeGenesUpDown(totalGenesUpDown);
 	for (int i = 0; i < totalGenesUpDown; ++i) {
 		isPhenotypeGenesUpDown[i] = false;
@@ -449,39 +494,31 @@ int main() {
 	step_time = clock();	//update the clock
 	cout << "\tthere are " << phenotypeGeneIdsUpDown.size() << " phenotype genes" << endl;
 
-
-	//[DEBUG] use phenotype genes list from previous version
-//	readGenesListUpDown("original_phenotype_genes.txt", &phenotypeGeneIds, &geneSymbolToId);
-//	int numPhenotypeGene = phenotypeGeneIds.size();
+//	//[DEBUG] use phenotype genes list from previous version
+//	readGenesListUpDown("original_phenotype_genes.txt", &phenotypeGeneIdsUpDown, &geneSymbolToId);
+//	int numPhenotypeGene = phenotypeGeneIdsUpDown.size();
 //	cout << "use phonotype genes list from previous version (" << numPhenotypeGene << " genes)" << endl;
 //	for (int i = 0; i < numPhenotypeGene; ++i) {
-//		isPhenotypeGenesUpDown[phenotypeGeneIds[i]] = true;
+//		isPhenotypeGenesUpDown[phenotypeGeneIdsUpDown[i]] = true;
 //	}
+//	//End [DEBUG]
 
 	//OUTPUT: print gene frequency and phenotype genes of the real dataset
-	printExplinedGenesFrequencyAndPhonotype(&explainedGenesFrequencyRealUpDown, &pValues, &isPhenotypeGenesUpDown, &geneIdToSymbol, &network, &originalGeneExpressionMatrix, &genesEx, F);
+	string outExplainedAndPhenotypeFilename = outDir + "/exp_gene_freq.dat";
+	printExplinedGenesFrequencyAndPhonotype(&explainedGenesFrequencyRealUpDown, &pValues, &isPhenotypeGenesUpDown, &geneIdToSymbol, &network,
+			&originalGeneExpressionMatrix, &genesEx, F, outExplainedAndPhenotypeFilename);
+	writeToLogFile(&outLogStream, "Save explained and phenotype gene statistics to " + outExplainedAndPhenotypeFilename);
 
 	/*
 	 * Find driver genes
 	 */
-
-	//[DEBUG] use driver genes list from previous version
-//	vector<int> driverGeneIds;	// to save diver gene ids
-//	readGenesList("original_driver_genes.txt", &driverGeneIds, &geneSymbolToId);
-//	int numDriverGenesFromFile = driverGeneIds.size();
-//	cout << "\ttotal driver genes = " << numDriverGenesFromFile << endl;
-//	for (int i = 0; i < numDriverGenesFromFile; ++i) {
-//		DriverGene driverGene;
-//		driverGene.geneId = driverGeneIds[i];
-//		driverGenes.push_back(driverGene);
-//	}
 
 	/*
 	 * SENSITIVE MODE
 	 */
 
 	cout << "SENSITIVE mode ...\n";
-
+	writeToLogFile(&outLogStream, "Start sensitive mode");
 
 	mode = 0;
 
@@ -500,14 +537,26 @@ int main() {
 		createBipartiteGraph(&mutatedAndExplainedGenesListReal, &mutatedGeneIdsListReal,
 				&isPhenotypeGenesUpDown, bipartiteGraph, &geneIdToSymbol);
 
-		cout << "\tperforming greedy minimum set cover algorithm ...\n";
 		vector<DriverGene> driverGenes;	//driver gene id with sample ids
+
+		cout << "\tperforming greedy minimum set cover algorithm ...\n";
 		cout << "\tfinding driver genes ...\n";
 		findDriverGenes(bipartiteGraph, &mutatedGeneIdsList, &driverGenes);
 		delete bipartiteGraph;
 		cout << "\tDONE finding driver genes (" << (float(clock() - step_time) / CLOCKS_PER_SEC)
 				<< " sec)\n";
 		step_time = clock();	//update the clock
+
+//		//[DEBUG] use driver genes list from previous version
+//		vector<int> driverGeneIds;	// to save diver gene ids
+//		readGenesList("original_driver_genes.txt", &driverGeneIds, &geneSymbolToId);
+//		int numDriverGenesFromFile = driverGeneIds.size();
+//		for (int i = 0; i < numDriverGenesFromFile; ++i) {
+//			DriverGene driverGene;
+//			driverGene.geneId = driverGeneIds[i];
+//			driverGenes.push_back(driverGene);
+//		}
+//		//End [DEBUG]
 
 		int numDriverGenes = driverGenes.size();
 		cout << "\ttotal driver genes = " << numDriverGenes << endl;
@@ -529,14 +578,21 @@ int main() {
 	//	saveModulesCytoscape(&modulesListOfAllSamples, outFinalModulesCysFilename, &geneIdToSymbol);
 
 		cout << "\twriting final module to FINAL_MODULE.dat ...\n";
-		string outFinalModuleFilenameSensitive = "output/sensitive/FINAL_MODULE.dat";
+		string outFinalModuleFilenameSensitive = outDir + "/sensitive/FINAL_MODULE.dat";
 		saveModules(&modulesListOfAllSamples, &mutatedAndExplainedGenesListReal, outFinalModuleFilenameSensitive, &geneIdToSymbol, &sampleIdToName);
+		writeToLogFile(&outLogStream, "Save final module of sensitive mode to " + outFinalModuleFilenameSensitive);
 
 		cout << "\tcalculating IMPACT scores for all samples ...\n";
+		writeToLogFile(&outLogStream, "calculate IMPACT scores for all samples");
 
-		{
 		vector< vector<Driver> > driversOfAllSamples(totalSamples);
-		calculateImpactScoresForAllSamples(&modulesListOfAllSamples, &driversOfAllSamples, &originalGeneExpressionMatrix, &genesEx, totalGenes, F, &geneIdToSymbol, mode);
+		string outDriverOfAllSamplesFilename;
+		if(mode == 0){
+			outDriverOfAllSamplesFilename = "output/sensitive/driver_all_samples.dat";
+		}else{
+			outDriverOfAllSamplesFilename = "output/stringent/driver_all_samples.dat";
+		}
+		calculateImpactScoresForAllSamples(&modulesListOfAllSamples, &driversOfAllSamples, &originalGeneExpressionMatrix, &genesEx, totalGenes, F, &geneIdToSymbol, outDriverOfAllSamplesFilename);
 
 		vector<double> driverAggregatedScores(totalGenes);
 		vector<int> driversFrequency(totalGenes);
@@ -574,20 +630,20 @@ int main() {
 		getDetailMutationFrequency(&originalPointMutationsMatrix, &originalCNVsMatrix, &genesPointMut, &genesCNV,
 				&pointMutationFrequency, &deletionFrequency, &amplificationFrequency);
 
-		string outSampleResultDirName = "output/sensitive/samples/";
+		string outSampleResultDirName = outDir + "/sensitive/samples/";
 //		cout << "printing impact scores for all samples ...\n";
 		printSampleDriverList(&driversOfAllSamples, outSampleResultDirName, &geneIdToSymbol, &sampleIdToName,
 				&originalPointMutationsMatrix, &originalCNVsMatrix, &genesPointMut, &genesCNV,
 				&driverAggregatedScores, &driversFrequency, &mutationFrequency);
 
 		cout << "\tprinting aggregated impact scores ...\n";
-		string outDriverListfilename = "output/sensitive/driver_list.txt";
+		string outDriverListfilename = outDir + "/sensitive/driver_list.txt";
 		printAggregatedDriverList(&driverGenes, outDriverListfilename, &geneIdToSymbol, &sampleIdToName,
 				&driverAggregatedScores, &driversFrequency, &mutationFrequency,
 				&pointMutationDriversFrequency, &deletionDriversFrequency, &amplificationDriversFrequency,
 				&pointMutationFrequency, &deletionFrequency, &amplificationFrequency);
 
-		}
+		writeToLogFile(&outLogStream, "Save final driver gene list to " + outDriverListfilename);
 
 	}
 
@@ -596,6 +652,7 @@ int main() {
 	 */
 
 	cout << "STRINGENT mode ...\n";
+	writeToLogFile(&outLogStream, "Start stringent mode");
 	mode = 1;
 
 	{
@@ -613,15 +670,26 @@ int main() {
 		createBipartiteGraph(&mutatedAndExplainedGenesListReal, &mutatedGeneIdsListReal,
 				&isPhenotypeGenesUpDown, bipartiteGraph, &geneIdToSymbol);
 
-		cout << "\tperforming greedy minimum set cover algorithm ...\n";
 		vector<DriverGene> driverGenes;	//driver gene id with sample ids
+
+		cout << "\tperforming greedy minimum set cover algorithm ...\n";
 		cout << "\tfinding driver genes ...\n";
 		findDriverGenes(bipartiteGraph, &mutatedGeneIdsList, &driverGenes);
-		cout << "\tcalculated driver genes from stringent mode\n";
 		delete bipartiteGraph;
 		cout << "\tDONE finding driver genes (" << (float(clock() - step_time) / CLOCKS_PER_SEC)
 				<< " sec)\n";
 		step_time = clock();	//update the clock
+
+//		//[DEBUG] use driver genes list from previous version
+//		vector<int> driverGeneIds;	// to save diver gene ids
+//		readGenesList("original_driver_genes.txt", &driverGeneIds, &geneSymbolToId);
+//		int numDriverGenesFromFile = driverGeneIds.size();
+//		for (int i = 0; i < numDriverGenesFromFile; ++i) {
+//			DriverGene driverGene;
+//			driverGene.geneId = driverGeneIds[i];
+//			driverGenes.push_back(driverGene);
+//		}
+//		End [DEBUG]
 
 		int numDriverGenes = driverGenes.size();
 		cout << "\ttotal driver genes = " << numDriverGenes << endl;
@@ -643,13 +711,21 @@ int main() {
 	//	saveModulesCytoscape(&modulesListOfAllSamples, outFinalModulesCysFilename, &geneIdToSymbol);
 
 		cout << "\twriting final module to FINAL_MODULE.dat ...\n";
-		string outFinalModuleFilenameSensitive = "output/stringent/FINAL_MODULE.dat";
+		string outFinalModuleFilenameSensitive = outDir + "/stringent/FINAL_MODULE.dat";
 		saveModules(&modulesListOfAllSamples, &mutatedAndExplainedGenesListReal, outFinalModuleFilenameSensitive, &geneIdToSymbol, &sampleIdToName);
+		writeToLogFile(&outLogStream, "Save final module of stringent mode to " + outFinalModuleFilenameSensitive);
 
 		cout << "\tcalculating IMPACT scores for all samples ...\n";
+		writeToLogFile(&outLogStream, "calculate IMPACT scores for all samples");
 
 		vector< vector<Driver> > driversOfAllSamples(totalSamples);
-		calculateImpactScoresForAllSamples(&modulesListOfAllSamples, &driversOfAllSamples, &originalGeneExpressionMatrix, &genesEx, totalGenes, F, &geneIdToSymbol, mode);
+		string outDriverOfAllSamplesFilename;
+		if(mode == 0){
+			outDriverOfAllSamplesFilename = "output/stringent/driver_all_samples.dat";
+		}else{
+			outDriverOfAllSamplesFilename = "output/stringent/driver_all_samples.dat";
+		}
+		calculateImpactScoresForAllSamples(&modulesListOfAllSamples, &driversOfAllSamples, &originalGeneExpressionMatrix, &genesEx, totalGenes, F, &geneIdToSymbol, outDriverOfAllSamplesFilename);
 
 		vector<double> driverAggregatedScores(totalGenes);
 		vector<int> driversFrequency(totalGenes);
@@ -687,20 +763,22 @@ int main() {
 		getDetailMutationFrequency(&originalPointMutationsMatrix, &originalCNVsMatrix, &genesPointMut, &genesCNV,
 				&pointMutationFrequency, &deletionFrequency, &amplificationFrequency);
 
-		string outSampleResultDirName = "output/stringent/samples/";
+		string outSampleResultDirName = outDir + "/stringent/samples/";
 //		cout << "printing impact scores for all samples ...\n";
 		printSampleDriverList(&driversOfAllSamples, outSampleResultDirName, &geneIdToSymbol, &sampleIdToName,
 				&originalPointMutationsMatrix, &originalCNVsMatrix, &genesPointMut, &genesCNV,
 				&driverAggregatedScores, &driversFrequency, &mutationFrequency);
 
 		cout << "\tprinting aggregated impact scores ...\n";
-		string outDriverListfilename = "output/stringent/driver_list.txt";
+		string outDriverListfilename = outDir + "/stringent/driver_list.txt";
 		printAggregatedDriverList(&driverGenes, outDriverListfilename, &geneIdToSymbol, &sampleIdToName,
 				&driverAggregatedScores, &driversFrequency, &mutationFrequency,
 				&pointMutationDriversFrequency, &deletionDriversFrequency, &amplificationDriversFrequency,
 				&pointMutationFrequency, &deletionFrequency, &amplificationFrequency);
 
-	}
+		writeToLogFile(&outLogStream, "Save final driver gene list to " + outDriverListfilename);
+
+	} //end STRINGENT mode
 
 	//delete the vector<int>* explainedGenesFreqency
 	for (int i = 0; i < totalSamples; ++i) {
@@ -719,6 +797,9 @@ int main() {
 
 	cout << "DONE (" << (float(clock() - begin_time) / CLOCKS_PER_SEC)
 			<< " sec)\n";
+
+	//close the log file
+	outLogStream.close();
 
 	return 0;
 }
