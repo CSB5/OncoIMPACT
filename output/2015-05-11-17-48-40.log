@@ -1,0 +1,8 @@
+2015-05-11 17:48:40	Start Running oncoIMPACT 1.0 (using 10 threads)
+2015-05-11 17:48:40	Read network from network_FIsInGene_041709.txt
+2015-05-11 17:48:41	Read gene expression matrix from GBM/EXPR.txt
+2015-05-11 17:48:41	Read SNP from GBM/SNP.txt
+2015-05-11 17:48:41	Read CNV from GBM/CNV.txt
+2015-05-11 17:48:41	SNP and CNV matrix are combined
+2015-05-11 17:48:44	Save calculated gene modules to output/MODULE.dat
+2015-05-11 17:48:44	Start creating null distribution for finding phenotype genes

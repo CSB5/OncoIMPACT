@@ -52,6 +52,7 @@ void readCopyNumberVariation(const char* filename, CopyNumberVariation* copyNumb
 		char delim, map<string, int>* geneSymbolToId);
 void readGenesList(const char* filename, vector<int>* geneIds, map<string, int>* geneSymbolToId);
 void readGenesListUpDown(const char* filename, vector<int>* geneIdsUpDown, map<string, int>* geneSymbolToId);
+void readBenchmarkGeneList(string benchmarkGeneListFilename, vector<int>* cancerBenchmarkGenes, map<string, int>* geneSymbolToId);
 
 int findIndex(vector<int>* geneIds, int currentGeneId);
 

@@ -26,11 +26,15 @@
 #include "header/parameters.h"
 #include "header/impact_scores.h"
 
-#include <direct.h>
 
 #ifdef _WIN32
+	#include <direct.h>
 	#include <windows.h>
 	#include <direct.h>
+#else
+	#include <sys/types.h>
+	#include <sys/stat.h>
+	#include <unistd.h>
 #endif
 
 using namespace std;
@@ -54,6 +58,7 @@ int main() {
 	string expFilename = "GBM/EXPR.txt";
 	string snpFilename = "GBM/SNP.txt";
 	string cnvFilename = "GBM/CNV.txt";
+	string benchmarkGeneListFilename = "cancer_gene_census.csv";
 
 	string dbPath = "";
 	string dbPathExport = "";
@@ -70,7 +75,10 @@ int main() {
 		_mkdir((outDir + "/sensitive/samples").c_str());
 		_mkdir((outDir + "/stringent/samples").c_str());
 	#else
-		mkdir((outDir + "/sensitive").c_str(), 0777); // notice that 777 is different than 0777
+//		struct stat st = {0};
+//		if (stat((outDir + "/sensitive").c_str(), &st) == -1) {
+			mkdir((outDir + "/sensitive").c_str(), 0777); // notice that 777 is different than 0777
+//		}
 		mkdir((outDir + "/stringent").c_str(), 0777); // notice that 777 is different than 0777
 		mkdir((outDir + "/sensitive/samples").c_str(), 0777); // notice that 777 is different than 0777
 		mkdir((outDir + "/stringent/samples").c_str(), 0777); // notice that 777 is different than 0777
@@ -79,12 +87,6 @@ int main() {
 	//parameters of analysis
 	int numPermutationsForJSDivergence = 100;
 	int numPermutationsForPhenotypeGene = 500;
-
-//	//parameters for implementation
-//	bool isDebuging = true;
-//	//if isDebugging = true
-//	//1. fix L, D, F
-//	//2. use original phenotype gene list
 
 	//create log file for each run
 	string logFilename;
@@ -246,6 +248,18 @@ int main() {
 	writeToLogFile(&outLogStream, "SNP and CNV matrix are combined");
 
 	/*
+	 * Read cancer benchmark gene list
+	 */
+
+	vector<int> cancerBenchmarkGenes;
+	readBenchmarkGeneList(benchmarkGeneListFilename, &cancerBenchmarkGenes, &geneSymbolToId);
+	vector<bool> isCancerBenchmarkGenes(totalGenes);
+	int numBenchmarkGenes = cancerBenchmarkGenes.size();
+	for (int i = 0; i < numBenchmarkGenes; ++i) {
+		isCancerBenchmarkGenes[cancerBenchmarkGenes[i]] = true;
+	}
+
+	/*
 	 * Calculate JS divergence for each set of parameters
 	 */
 
@@ -278,39 +292,38 @@ int main() {
 	vector<double> Fs(FsVal, FsVal + sizeof FsVal / sizeof FsVal[0]);
 	int numFs = Fs.size();
 
-	//TODO debug the js divegence calculation (the results are quite different from the original)
-	int numCombinations = numLs * numDs * numFs;
-	//initialize the vector to save the divergence of each set of parameters
-	vector<JSDivergence> jsDivergences(numCombinations);
-
-	//TODO parameter finding: the result is quite different from the original
-	findParameters(&jsDivergences, &Ls, &Ds, &Fs, totalGenes, &geneExpression, &mutations, &network, numSamples, numPermutationsForJSDivergence, &geneSymbolToId, numThreads);
-
-	//write the JS divergence result to a file
-	string outJSFilename = outDir + "/parameters.dat";
-	//save the JS divergence results
-	saveJSDivergences(&jsDivergences, outJSFilename);
-	writeToLogFile(&outLogStream, "Write parameters results in " + outJSFilename);
-
-	cout << "\t\tDONE finding parameters (" << (float(clock() - step_time) / CLOCKS_PER_SEC) << " sec)\n";
-
-	//choose the best parameters
-	JSDivergence maxJs;
-	findMaximumJsDivergence(&jsDivergences, &maxJs);
-
-	cout << "the maximum divergence is " << maxJs.divergence << " when L, D, F = " << maxJs.L << ", " << maxJs.D << ", " << maxJs.F << endl;
-	writeToLogFile(&outLogStream, "The maximum JS divergence is " + doubleToStr(maxJs.divergence, 5) +
-			" corresponding to (L,D,F) = (" + intToStr(maxJs.L) + "," + intToStr(maxJs.D) + "," + doubleToStr(maxJs.F, 1) + ")");
-
-	//set the L D F to maxJs
-	int L = maxJs.L;
-	int D = maxJs.D;
-	double F = maxJs.F;
+//	int numCombinations = numLs * numDs * numFs;
+//	//initialize the vector to save the divergence of each set of parameters
+//	vector<JSDivergence> jsDivergences(numCombinations);
+//
+//	//TODO parameter finding: for js divegence calculation the result is quite different from the original
+//	findParameters(&jsDivergences, &Ls, &Ds, &Fs, totalGenes, &geneExpression, &mutations, &network, numSamples, numPermutationsForJSDivergence, &geneSymbolToId, numThreads);
+//
+//	//write the JS divergence result to a file
+//	string outJSFilename = outDir + "/parameters.dat";
+//	//save the JS divergence results
+//	saveJSDivergences(&jsDivergences, outJSFilename);
+//	writeToLogFile(&outLogStream, "Write parameters results in " + outJSFilename);
+//
+//	cout << "\t\tDONE finding parameters (" << (float(clock() - step_time) / CLOCKS_PER_SEC) << " sec)\n";
+//
+//	//choose the best parameters
+//	JSDivergence maxJs;
+//	findMaximumJsDivergence(&jsDivergences, &maxJs);
+//
+//	cout << "the maximum divergence is " << maxJs.divergence << " when L, D, F = " << maxJs.L << ", " << maxJs.D << ", " << maxJs.F << endl;
+//	writeToLogFile(&outLogStream, "The maximum JS divergence is " + doubleToStr(maxJs.divergence, 5) +
+//			" corresponding to (L,D,F) = (" + intToStr(maxJs.L) + "," + intToStr(maxJs.D) + "," + doubleToStr(maxJs.F, 1) + ")");
+//
+//	//set the L D F to maxJs
+//	int L = maxJs.L;
+//	int D = maxJs.D;
+//	double F = maxJs.F;
 
 	//[DEBUG]
-//	int L = 20;
-//	int D = 65;
-//	double F = 2.5;
+	int L = 20;
+	int D = 65;
+	double F = 2.5;
 
 	/*
 	 * Find phenotype genes
@@ -433,52 +446,52 @@ int main() {
 	writeToLogFile(&outLogStream, "Start creating null distribution for finding phenotype genes");
 	cout << "\tcreating null distribution (using " << numPermutationsForPhenotypeGene << " permutations) ... ";
 
-	int progress = 1;
-	int interval = numPermutationsForPhenotypeGene / 100;
-
-	for (int r = 0; r < numPermutationsForPhenotypeGene; ++r) {
-		// a list for explained genes of each sample
-		vector< vector<bool> > explainedGenesFrequencyUpDownRandom;
-		explainedGenesFrequencyUpDownRandom.resize( totalSamples , vector<bool>( totalGenesUpDown , false) );
-
-		//print progression
-		if (r % interval == 0) {
-			const string progStatus = intToStr(progress) + "%";
-			cout << progStatus << flush;
-			progress++;
-			cout << string(progStatus.length(), '\b');
-		}
-
-		//permute the gene labels of each sample independently
-		omp_set_num_threads(numThreads);
-		#pragma omp parallel for
-		for (int i = 0; i < totalSamples; ++i) {
-
-			//get gene expression of a current sample
-			vector<double> sampleGeneExpression(totalGenes); // to save expression of of all genes in the network
-			getGeneExpressionFromSampleId(&originalGeneExpressionMatrix,
-					&genesEx, &sampleGeneExpression, i);
-
-			//permute labels
-			vector<int> permutedGeneLabelsMut;
-			permuteGeneLabels(&genesMut, &permutedGeneLabelsMut);
-			//find mutated genes of a current sample
-			vector<int> mutatedGeneIds; // to store gene id of mutated genes
-			getMutatedGeneIdsFromSampleId(&mutations, &mutatedGeneIds, i,
-					&permutedGeneLabelsMut);
-
-			//find explained genes of a current sample
-			getExplainedGenesIdOnlyUpDownIncludingMutatedGene(&explainedGenesFrequencyUpDownRandom[i], &network,
-					&sampleGeneExpression, &mutatedGeneIds, L, D, F, &geneSymbolToId);
-
-		}
-
-		//for each gene, count the frequency that exceed the real frequency
-		countGeneFrequencyGreaterThanRealFrequency(&geneFrequencyGreaterThanRealFrequencyCounter,
-				&explainedGenesFrequencyUpDownRandom, &explainedGenesFrequencyRealUpDown);
-	}
-
-	cout << endl; //for print progression
+//	int progress = 1;
+//	int interval = numPermutationsForPhenotypeGene / 100;
+//
+//	for (int r = 0; r < numPermutationsForPhenotypeGene; ++r) {
+//		// a list for explained genes of each sample
+//		vector< vector<bool> > explainedGenesFrequencyUpDownRandom;
+//		explainedGenesFrequencyUpDownRandom.resize( totalSamples , vector<bool>( totalGenesUpDown , false) );
+//
+//		//print progression
+//		if (r % interval == 0) {
+//			const string progStatus = intToStr(progress) + "%";
+//			cout << progStatus << flush;
+//			progress++;
+//			cout << string(progStatus.length(), '\b');
+//		}
+//
+//		//permute the gene labels of each sample independently
+//		omp_set_num_threads(numThreads);
+//		#pragma omp parallel for
+//		for (int i = 0; i < totalSamples; ++i) {
+//
+//			//get gene expression of a current sample
+//			vector<double> sampleGeneExpression(totalGenes); // to save expression of of all genes in the network
+//			getGeneExpressionFromSampleId(&originalGeneExpressionMatrix,
+//					&genesEx, &sampleGeneExpression, i);
+//
+//			//permute labels
+//			vector<int> permutedGeneLabelsMut;
+//			permuteGeneLabels(&genesMut, &permutedGeneLabelsMut);
+//			//find mutated genes of a current sample
+//			vector<int> mutatedGeneIds; // to store gene id of mutated genes
+//			getMutatedGeneIdsFromSampleId(&mutations, &mutatedGeneIds, i,
+//					&permutedGeneLabelsMut);
+//
+//			//find explained genes of a current sample
+//			getExplainedGenesIdOnlyUpDownIncludingMutatedGene(&explainedGenesFrequencyUpDownRandom[i], &network,
+//					&sampleGeneExpression, &mutatedGeneIds, L, D, F, &geneSymbolToId);
+//
+//		}
+//
+//		//for each gene, count the frequency that exceed the real frequency
+//		countGeneFrequencyGreaterThanRealFrequency(&geneFrequencyGreaterThanRealFrequencyCounter,
+//				&explainedGenesFrequencyUpDownRandom, &explainedGenesFrequencyRealUpDown);
+//	}
+//
+//	cout << endl; //for print progression
 
 	vector<bool> isPhenotypeGenesUpDown(totalGenesUpDown);
 	for (int i = 0; i < totalGenesUpDown; ++i) {
@@ -487,21 +500,21 @@ int main() {
 	vector<int> phenotypeGeneIdsUpDown;	// phenotype gene ids
 	vector<double> pValues(totalGenesUpDown);
 
-	findPhenotypeGenesUsingCounter(&isPhenotypeGenesUpDown, &phenotypeGeneIdsUpDown, &pValues, &explainedGenesFrequencyRealUpDown,
-			&geneFrequencyGreaterThanRealFrequencyCounter, &isExplainedGenesUpDown, numPermutationsForPhenotypeGene, totalSamples, &geneIdToSymbol);
+//	findPhenotypeGenesUsingCounter(&isPhenotypeGenesUpDown, &phenotypeGeneIdsUpDown, &pValues, &explainedGenesFrequencyRealUpDown,
+//			&geneFrequencyGreaterThanRealFrequencyCounter, &isExplainedGenesUpDown, numPermutationsForPhenotypeGene, totalSamples, &geneIdToSymbol);
+//
+//	cout << "\tDONE finding phenotype genes (" << (float(clock() - step_time) / CLOCKS_PER_SEC) << " sec)\n";
+//	step_time = clock();	//update the clock
+//	cout << "\tthere are " << phenotypeGeneIdsUpDown.size() << " phenotype genes" << endl;
 
-	cout << "\tDONE finding phenotype genes (" << (float(clock() - step_time) / CLOCKS_PER_SEC) << " sec)\n";
-	step_time = clock();	//update the clock
-	cout << "\tthere are " << phenotypeGeneIdsUpDown.size() << " phenotype genes" << endl;
-
-//	//[DEBUG] use phenotype genes list from previous version
-//	readGenesListUpDown("original_phenotype_genes.txt", &phenotypeGeneIdsUpDown, &geneSymbolToId);
-//	int numPhenotypeGene = phenotypeGeneIdsUpDown.size();
-//	cout << "use phonotype genes list from previous version (" << numPhenotypeGene << " genes)" << endl;
-//	for (int i = 0; i < numPhenotypeGene; ++i) {
-//		isPhenotypeGenesUpDown[phenotypeGeneIdsUpDown[i]] = true;
-//	}
-//	//End [DEBUG]
+	//[DEBUG] use phenotype genes list from previous version
+	readGenesListUpDown("original_phenotype_genes.txt", &phenotypeGeneIdsUpDown, &geneSymbolToId);
+	int numPhenotypeGene = phenotypeGeneIdsUpDown.size();
+	cout << "use phonotype genes list from previous version (" << numPhenotypeGene << " genes)" << endl;
+	for (int i = 0; i < numPhenotypeGene; ++i) {
+		isPhenotypeGenesUpDown[phenotypeGeneIdsUpDown[i]] = true;
+	}
+	//End [DEBUG]
 
 	//OUTPUT: print gene frequency and phenotype genes of the real dataset
 	string outExplainedAndPhenotypeFilename = outDir + "/exp_gene_freq.dat";
@@ -634,14 +647,14 @@ int main() {
 //		cout << "printing impact scores for all samples ...\n";
 		printSampleDriverList(&driversOfAllSamples, outSampleResultDirName, &geneIdToSymbol, &sampleIdToName,
 				&originalPointMutationsMatrix, &originalCNVsMatrix, &genesPointMut, &genesCNV,
-				&driverAggregatedScores, &driversFrequency, &mutationFrequency);
+				&driverAggregatedScores, &driversFrequency, &mutationFrequency, &isCancerBenchmarkGenes);
 
 		cout << "\tprinting aggregated impact scores ...\n";
 		string outDriverListfilename = outDir + "/sensitive/driver_list.txt";
 		printAggregatedDriverList(&driverGenes, outDriverListfilename, &geneIdToSymbol, &sampleIdToName,
 				&driverAggregatedScores, &driversFrequency, &mutationFrequency,
 				&pointMutationDriversFrequency, &deletionDriversFrequency, &amplificationDriversFrequency,
-				&pointMutationFrequency, &deletionFrequency, &amplificationFrequency);
+				&pointMutationFrequency, &deletionFrequency, &amplificationFrequency, &isCancerBenchmarkGenes);
 
 		writeToLogFile(&outLogStream, "Save final driver gene list to " + outDriverListfilename);
 
@@ -767,14 +780,14 @@ int main() {
 //		cout << "printing impact scores for all samples ...\n";
 		printSampleDriverList(&driversOfAllSamples, outSampleResultDirName, &geneIdToSymbol, &sampleIdToName,
 				&originalPointMutationsMatrix, &originalCNVsMatrix, &genesPointMut, &genesCNV,
-				&driverAggregatedScores, &driversFrequency, &mutationFrequency);
+				&driverAggregatedScores, &driversFrequency, &mutationFrequency, &isCancerBenchmarkGenes);
 
 		cout << "\tprinting aggregated impact scores ...\n";
 		string outDriverListfilename = outDir + "/stringent/driver_list.txt";
 		printAggregatedDriverList(&driverGenes, outDriverListfilename, &geneIdToSymbol, &sampleIdToName,
 				&driverAggregatedScores, &driversFrequency, &mutationFrequency,
 				&pointMutationDriversFrequency, &deletionDriversFrequency, &amplificationDriversFrequency,
-				&pointMutationFrequency, &deletionFrequency, &amplificationFrequency);
+				&pointMutationFrequency, &deletionFrequency, &amplificationFrequency, &isCancerBenchmarkGenes);
 
 		writeToLogFile(&outLogStream, "Save final driver gene list to " + outDriverListfilename);
 

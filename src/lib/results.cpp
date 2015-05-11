@@ -185,8 +185,7 @@ void printSampleDriverList(vector<vector<Driver> >* driversOfAllSamples,
 		TIntegerMatrix* originaloriginalPointMutationsMatrix,
 		TIntegerMatrix* originalCNVsMatrix, vector<int>* genesPointMut,
 		vector<int>* genesCNV, vector<double>* driverAggregatedScores,
-		vector<int>* driversFrequency, vector<int>* mutationFrequency) {
-	//TODO create directory function for linux and windows
+		vector<int>* driversFrequency, vector<int>* mutationFrequency, vector<bool>* isCancerBenchmarkGenes) {
 
 	int totalSamples = driversOfAllSamples->size();
 
@@ -210,7 +209,11 @@ void printSampleDriverList(vector<vector<Driver> >* driversOfAllSamples,
 					* driversFrequency->at(drivers[j].geneId) / totalSamples;
 			driver.mutationFrequency = 1.0
 					* mutationFrequency->at(drivers[j].geneId) / totalSamples;
-			driver.cancerCensus = "NA";
+			if(isCancerBenchmarkGenes->at(drivers[j].geneId)){
+				driver.cancerCensus = "Y";
+			}else{
+				driver.cancerCensus = "N";
+			}
 			driver.panCancer = "NA";
 
 			sampleDriversList.push_back(driver);
@@ -255,7 +258,7 @@ void printAggregatedDriverList(vector<DriverGene>* driverGenes, string filename,
 		vector<int>* deletionDriversFrequency,
 		vector<int>* amplificationDriversFrequency,
 		vector<int>* pointMutationFrequency, vector<int>* deletionFrequency,
-		vector<int>* amplificationFrequency) {
+		vector<int>* amplificationFrequency, vector<bool>* isCancerBenchmarkGenes) {
 
 	vector<string> outputStr;
 	outputStr.push_back(
@@ -284,7 +287,11 @@ void printAggregatedDriverList(vector<DriverGene>* driverGenes, string filename,
 		driver.driverAmplificationFrequency = 1.0
 				* amplificationDriversFrequency->at(currentDriverGeneId)
 				/ totalSamples;
-		driver.cancerCensus = "NA";
+		if(isCancerBenchmarkGenes->at(currentDriverGeneId)){
+			driver.cancerCensus = "Y";
+		}else{
+			driver.cancerCensus = "N";
+		}
 		driver.panCancer = "NA";
 		driver.aggregatedImpactScore = driverAggregatedScores->at(
 				currentDriverGeneId);

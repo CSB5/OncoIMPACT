@@ -14,6 +14,7 @@
 #include <cmath>
 #include <map>
 #include <cstdlib>
+#include <cstring>
 #include "../header/input.h"
 
 void readGeneExpression(const char* filename, GeneExpression* geneExpression,
@@ -331,4 +332,59 @@ void readGenesListUpDown(const char* filename, vector<int>* geneIdsUpDown, map<s
 	}
 }
 
+
+void readBenchmarkGeneList(string benchmarkGeneListFilename, vector<int>* cancerBenchmarkGenes, map<string, int>* geneSymbolToId){
+	ifstream inFile;
+	inFile.open(benchmarkGeneListFilename, std::ifstream::in);
+
+	map<string, int>::iterator end = geneSymbolToId->end();
+
+	if (inFile.is_open()) {
+
+		//for each row
+		while (inFile.good()) {
+			string s;
+			if (!getline(inFile, s))
+				break;
+
+			istringstream rowStr(s);
+
+			int i = 0;
+			bool found = false;
+			while (rowStr) {	//for each column
+				string s;
+
+				if (!getline(rowStr, s, '\t'))
+					break;
+				if(i == 0){ //read gene symbols at the first column
+
+					//trim the whitespace at the end of the string
+					s.erase(s.find_last_not_of(" \n\r\t")+1);
+
+					map<string, int>::iterator it = geneSymbolToId->find(s);
+					if(it != end){	//found in the network
+						found = true;
+						cancerBenchmarkGenes->push_back(it->second);	//add the gene id to geneEx
+						cout << s << endl;
+					}else{
+						found = false;
+						cout << s << " not found" << endl;
+					}
+				}
+				else if(i == 7){	//read tumor type (somatic mutation)
+				}
+
+				if(!found)	//not found in the network, so skip this row (gene)
+					break;
+
+				i++;	//go to the next column (sample)
+			}
+
+		}
+		inFile.close();
+	} else {
+		cerr << "Error opening file\n";
+	}
+
+}
 

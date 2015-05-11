@@ -187,9 +187,9 @@ void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedA
 			}
 		}
 
-		if(i == 323){
-			cout << "sample #" << i << " has " << modules.size() << " modules before merging\n";
-		}
+//		if(i == 323){
+//			cout << "sample #" << i << " has " << modules.size() << " modules before merging\n";
+//		}
 
 		//add modules data to the modulesListOfAllSamples
 		list<Module>* modulesList = &modulesListOfAllSamples->at(i);
@@ -199,15 +199,15 @@ void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedA
 		//for each phenotype gene, find which modules contain it
 		int numPhenotypeGenes = phenotypeGeneIdsUpDown->size();
 
-		if(i == 323){
-			cout << "there are " << numPhenotypeGenes << " phenotype genes\n";
-		}
+//		if(i == 323){
+//			cout << "there are " << numPhenotypeGenes << " phenotype genes\n";
+//		}
 
 		for (int j = 0; j < numPhenotypeGenes; ++j) {
 
-			if(i == 323){
-				cout << "phenotype gene " << phenotypeGeneIdsUpDown->at(j) << endl;
-			}
+//			if(i == 323){
+//				cout << "phenotype gene " << phenotypeGeneIdsUpDown->at(j) << endl;
+//			}
 
 			int currentPhenotypeGeneId = phenotypeGeneIdsUpDown->at(j);
 			vector<int> moduleIdsToMerge;
@@ -219,9 +219,9 @@ void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedA
 				bool found = (find(phenotypeGeneIdsOfAModule.begin(), phenotypeGeneIdsOfAModule.end(), currentPhenotypeGeneId)
 						!= phenotypeGeneIdsOfAModule.end());
 				if(found){ // phenotypeGeneIds is a phenotype genes in this module of sample i
-					if(i == 323){
-						cout << "found in module id = " << it->moduleId << endl;
-					}
+//					if(i == 323){
+//						cout << "found in module id = " << it->moduleId << endl;
+//					}
 					moduleIdsToMerge.push_back(it->moduleId);
 					isPhenotypeGeneInThisSample = true;
 				}
@@ -302,6 +302,10 @@ void trimModule(Module* module, TIntAdjList* network, int L, int D, vector<strin
 			isGeneInThisModule[i] = true;
 			numGenes++;
 		}
+		//if the gene is a hub and is not a phenotype or driver gene, delete the gene from the module
+		if(getNodeDegree(network, i) > D and !isPhenotypeGeneInThisModule[i] and isDriverGeneInThisModule[i]){
+			isGeneInThisModule[i] = false;
+		}
 	}
 
 
@@ -324,8 +328,6 @@ void trimModule(Module* module, TIntAdjList* network, int L, int D, vector<strin
 				&isDriverGeneInThisModule, &isPhenotypeGeneInThisModule, network, D, &isGeneInThisModule, geneIdToSymbol);
 	}
 
-	//TODO Fix bug (module trimming)
-
 	//for each explained gene, check if it belong to at least one path (with length =< L) between a mutated gene and a phenotype gene
 	vector<int> geneIdToBeRemoved;
 	int i = 0;
@@ -347,7 +349,7 @@ void trimModule(Module* module, TIntAdjList* network, int L, int D, vector<strin
 	}
 
 
-	//TODO 2 BUGS: 1) not trim some genes 2) disconnected module
+	//TODO BUG: not trim some genes
 	int numDelete = geneIdToBeRemoved.size();
 	for(int i = 0; i < numDelete; i++){
 		list<int>::iterator ditUp = find(explainedGeneIdsListUpDown->begin(), explainedGeneIdsListUpDown->end(), geneIdToBeRemoved[i]);

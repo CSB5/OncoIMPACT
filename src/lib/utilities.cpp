@@ -385,6 +385,8 @@ bool trimStr(std::string& str, const std::string& from) {
 	return true;
 }
 
+//http://stackoverflow.com/questions/216823/whats-the-best-way-to-trim-stdstring
+
 string getCurrentDate(){
 	string dateStr;
 	time_t t = time(0);   // get time now

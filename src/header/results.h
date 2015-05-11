@@ -55,7 +55,7 @@ void saveModulesCytoscape(vector<list<Module> > * modulesListOfAllSamples,
 
 void printSampleDriverList(vector< vector<Driver> >* driversOfAllSamples, string filename, vector<string>* geneIdToSymbol, vector<string>* sampleIdToName,
 		TIntegerMatrix* originalPointMutationsMatrix, TIntegerMatrix* originalCNVsMatrix, vector<int>* genesPointMut, vector<int>* genesCNV,
-		vector<double>* driverAggregatedScores, vector<int>* driversFrequency, vector<int>* mutationFrequency);
+		vector<double>* driverAggregatedScores, vector<int>* driversFrequency, vector<int>* mutationFrequency, vector<bool>* isCancerBenchmarkGenes);
 bool sortByImpactScore(const SampleDriver& first, const SampleDriver& second);
 
 string getDriverType(int driverGeneId, int sampleId, TIntegerMatrix* originalPointMutationsMatrix, TIntegerMatrix* originalCNVsMatrix,
@@ -68,7 +68,7 @@ void getDetailMutationFrequency(TIntegerMatrix* originalPointMutationsMatrix, TI
 void printAggregatedDriverList(vector<DriverGene>* driverGenes, string filename, vector<string>* geneIdToSymbol, vector<string>* sampleIdToName,
 		vector<double>* driverAggregatedScores, vector<int>* driversFrequency, vector<int>* mutationFrequency,
 		vector<int>* pointMutationDriversFrequency, vector<int>* deletionDriversFrequency, vector<int>* amplificationDriversFrequency,
-		vector<int>* pointMutationFrequency, vector<int>* deletionFrequency, vector<int>* amplificationFrequency);
+		vector<int>* pointMutationFrequency, vector<int>* deletionFrequency, vector<int>* amplificationFrequency, vector<bool>* isCancerBenchmarkGenes);
 bool sortByAggregatedImpactScore(const AggregatedDriver& first, const AggregatedDriver& second);
 
 void saveJSDivergences(vector<JSDivergence>* jsDivergences, string filename);
