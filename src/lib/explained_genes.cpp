@@ -23,7 +23,10 @@ void getGeneExpressionFromSampleId(TDoubleMatrix* geneExpressionMatrix,
 	int totalExGenes = genesEx->size();
 
 	for (int i = 0; i < totalExGenes; ++i) {
-		sampleExpression->at(genesEx->at(i)) =
+
+		int currentGeneId = genesEx->at(i);
+
+		sampleExpression->at(currentGeneId) =
 				geneExpressionMatrix->at(i)[sampleId];
 	}
 }
@@ -38,6 +41,7 @@ void getMutatedGeneIdsFromSampleId(Mutations* mutations,
 			mutatedGeneIds->push_back(genesMut->at(i));
 		}
 	}
+
 }
 
 void getExplainedGenes(vector<ExplainedGene>* explainedGenes,
@@ -67,20 +71,38 @@ void getExplainedGenesIdOnly(vector<int>* explainedGenesFrequency, TIntAdjList* 
 //output: explained genes frequency
 //up regulated gene frequency is in the first half [0,totalGenes - 1]
 //down regulated gene frequency is in the second half [totalGenes, totalGenes * 2 - 1]
-void getExplainedGenesIdOnlyUpDown(vector<bool>* explainedGenesFrequency, TIntAdjList* network, vector<double>* sampleGeneExpression,
+void getExplainedGenesIdOnlyUpDown(vector<bool>* isExplainedGeneUpDown, TIntAdjList* network, vector<double>* sampleGeneExpression,
 		vector<int>* mutatedGeneIds, int L, int D, double F){
 	int numMutatedGenes = mutatedGeneIds->size();
+	int totalGenesUpDown = isExplainedGeneUpDown->size();
 	for (int i = 0; i < numMutatedGenes; ++i) {	// for each mutated genes
 		//BFS
 //		cout << "For mutated gene: " << mutatedGeneIds->at(i) << endl;
+		vector<bool> isExplaninedGeneUpDownForAMutatedGene(totalGenesUpDown);
 		BFSforExplainedGenesIdOnlyUpDown(network, mutatedGeneIds->at(i), L, D, F,
-				explainedGenesFrequency, sampleGeneExpression);
+				&isExplaninedGeneUpDownForAMutatedGene, sampleGeneExpression);
+
+		for (int j = 0; j < totalGenesUpDown; ++j) {
+			if(isExplaninedGeneUpDownForAMutatedGene[j]){
+				isExplainedGeneUpDown->at(j) = true;
+			}
+		}
+
+
 	}
 }
 
 void getExplainedGenesIdOnlyUpDownIncludingMutatedGene(vector<bool>* isExplainedGenesUpDown, TIntAdjList* network, vector<double>* sampleGeneExpression,
 		vector<int>* mutatedGeneIds, int L, int D, double F, map<string, int>* geneSymbolToId){
 	int numMutatedGenes = mutatedGeneIds->size();
+	int totalGenesUpDown = isExplainedGenesUpDown->size();
+
+//	for (int x = 0; x < totalGenesUpDown; ++x) {
+//		isExplainedGenesUpDown->at(x) = false;
+//	}
+
+//	vector<bool> isExplaninedGeneUpDownForAMutatedGene(totalGenesUpDown);
+
 	for (int i = 0; i < numMutatedGenes; ++i) {	// for each mutated genes
 //		cout << "For mutated gene: " << mutatedGeneIds->at(i) << endl;
 
@@ -90,6 +112,11 @@ void getExplainedGenesIdOnlyUpDownIncludingMutatedGene(vector<bool>* isExplained
 		BFSforExplainedGenesIdOnlyUpDownIncludingMutatedGene(network, mutatedGeneIds->at(i), L, D, F,
 				isExplainedGenesUpDown, sampleGeneExpression, -1, geneSymbolToId);
 
+//		for (int j = 0; j < totalGenesUpDown; ++j) {
+//			if(isExplaninedGeneUpDownForAMutatedGene[j]){
+//				isExplainedGenesUpDown->at(j) = true;
+//			}
+//		}
 	}
 }
 
@@ -315,14 +342,16 @@ void BFSforExplainedGenesIdOnlyUpDown(TIntAdjList* network, int geneId, int L, i
 //down regulated gene frequency is in the second half [totalGenes, totalGenes * 2 - 1]
 //This also consider the deregulated mutated genes as an explained gene
 void BFSforExplainedGenesIdOnlyUpDownIncludingMutatedGene(TIntAdjList* network, int mutatedGeneId, int L, int D,
-		double F, vector<bool>* isExplainedGenes, vector<double>* sampleGeneExpression, int currentSampleId, map<string, int>* geneSymbolToId) {
+		double F, vector<bool>* isExplainedGenesUpDown, vector<double>* sampleGeneExpression, int currentSampleId, map<string, int>* geneSymbolToId) {
+
+//	cout << "for mutated gene " << mutatedGeneId << endl;
 
 	int countExpalinedGenes = 0;
 
 	//initialize explainedGenesFrequency
-	int totalGenesUpDown = isExplainedGenes->size();
+	int totalGenesUpDown = isExplainedGenesUpDown->size();
 	for (int i = 0; i < totalGenesUpDown; ++i) {
-		isExplainedGenes->at(i) = false;
+		isExplainedGenesUpDown->at(i) = false;
 	}
 
 	int totalGenes = network->size();
@@ -362,14 +391,19 @@ void BFSforExplainedGenesIdOnlyUpDownIncludingMutatedGene(TIntAdjList* network, 
 				// check conditions before push to the queue
 				// |fold change| > F
 				int geneId = (*network)[currentGeneId][j];
+
+//				cout << "gene id " << geneId << " is checking\n";
+
 				if (fabs(sampleGeneExpression->at(geneId)) >= F) {
+
+//					cout << "gene id " << geneId << " is explained\n";
 
 					// is explained gene
 					if(sampleGeneExpression->at(geneId) > 0.0){ 	// up regulated
-						isExplainedGenes->at(geneId) = true;
+						isExplainedGenesUpDown->at(geneId) = true;
 						countExpalinedGenes++;
 					}else{											// down regulated
-						isExplainedGenes->at(geneId + totalGenes) = true; //+9452
+						isExplainedGenesUpDown->at(geneId + totalGenes) = true; //+9452
 						countExpalinedGenes++;
 					}
 
@@ -382,6 +416,9 @@ void BFSforExplainedGenesIdOnlyUpDownIncludingMutatedGene(TIntAdjList* network, 
 						levels[geneId] = currentLevel + 1;
 					}
 				}
+
+//				cout << "gene id " << geneId << " is ckecked\n";
+
 				// mark visited
 				visited[geneId] = true;
 
@@ -389,16 +426,23 @@ void BFSforExplainedGenesIdOnlyUpDownIncludingMutatedGene(TIntAdjList* network, 
 		}
 	}
 
+	//because the permuted mutated genes label contain all the gene in the network,
+	//it is possible that the current mutated gene is not in the gene expression matrix.. not a problem
+//	cout << "before checking if the mutated gene is also deregulated\n";
+
 	//add the mutated gene itself to the list of mutated genes
 	if (countExpalinedGenes > 0 and fabs(sampleGeneExpression->at(mutatedGeneId)) >= F) {
+
 		if(sampleGeneExpression->at(mutatedGeneId) > 0.0){ 	// up regulated
-			isExplainedGenes->at(mutatedGeneId) = true;
+			isExplainedGenesUpDown->at(mutatedGeneId) = true;
 		}else{											// down regulated
-			isExplainedGenes->at(mutatedGeneId + totalGenes) = true; //+9452
+			isExplainedGenesUpDown->at(mutatedGeneId + totalGenes) = true; //+9452
 		}
 	}
+//	cout << "after checking if the mutated gene is also deregulated\n";
 
 	delete[] visited;
+
 
 }
 

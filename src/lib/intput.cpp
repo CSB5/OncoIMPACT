@@ -365,10 +365,8 @@ void readBenchmarkGeneList(string benchmarkGeneListFilename, vector<int>* cancer
 					if(it != end){	//found in the network
 						found = true;
 						cancerBenchmarkGenes->push_back(it->second);	//add the gene id to geneEx
-						cout << s << endl;
 					}else{
 						found = false;
-						cout << s << " not found" << endl;
 					}
 				}
 				else if(i == 7){	//read tumor type (somatic mutation)

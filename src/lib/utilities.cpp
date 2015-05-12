@@ -339,6 +339,21 @@ void permuteGeneLabels(vector<int>* originalGeneLabels,
 	random_shuffle(permutedGeneLabels->begin(), permutedGeneLabels->end());
 }
 
+void permutedGeneLabelsUsingAllGeneInNetwork(vector<int>* originalGeneLabels,
+		vector<int>* permutedGeneLabels, int totalGenes){
+	int numGenes = originalGeneLabels->size();
+
+	vector<int> allGeneIs(totalGenes);
+	for (int i = 0; i < totalGenes; i++) {
+		allGeneIs[i] = i;
+	}
+	random_shuffle(allGeneIs.begin(), allGeneIs.end());
+
+	for (int i = 0; i < numGenes; ++i) {
+		permutedGeneLabels->push_back(allGeneIs[i]);
+	}
+}
+
 /*
  * For ID mapping
  */

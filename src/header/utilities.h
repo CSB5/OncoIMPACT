@@ -62,6 +62,8 @@ void createPermutation(vector<int>* rank);
 // input: originalGeneLabels (for example, a list of genes in gene expression / mutation matrix)
 // output: a permuted gene labels
 void permuteGeneLabels(vector<int>* originalGeneLabels, vector<int>* permutedGeneLabels);
+void permutedGeneLabelsUsingAllGeneInNetwork(vector<int>* originalGeneLabels,
+		vector<int>* permutedGeneLabels, int totalGenes);
 
 /*
  * ID mapping
