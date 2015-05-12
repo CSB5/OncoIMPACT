@@ -24,7 +24,7 @@ void findParameters(vector<JSDivergence>* jsDivergences, vector<int>* Ls, vector
 		GeneExpression* geneExpression, Mutations* mutations, TIntAdjList* network, int numSamples, int numPermutations, map<string, int>* geneSymbolToId, int numThreads);
 
 double calculateJSDivergence(const vector<vector<int> >* realDistributionAll,
-		const vector<vector<int> >* randomDistributionAll, int numSamples, int sumOfNumDeregulatedGenes,
+		const vector<vector<int> >* randomDistributionAll, int numSamples, //int sumOfNumDeregulatedGenes,
 		vector< vector<bool> >* isDeregulatedGensAll, int L, int D, double F);
 double getMedianNumberOfDeregulatedGenes(TDoubleMatrix* geneExpressionMatrix, double F);
 void findMaximumJsDivergence(vector<JSDivergence>* jsDivergences, JSDivergence* maxJs);

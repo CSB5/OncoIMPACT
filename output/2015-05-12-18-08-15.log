@@ -1,6 +1,0 @@
-2015-05-12 18:08:15	Start Running oncoIMPACT 1.0 (using 10 threads)
-2015-05-12 18:08:16	Read network from network_FIsInGene_041709.txt
-2015-05-12 18:08:16	Read gene expression matrix from GBM/EXPR.txt
-2015-05-12 18:08:16	Read SNP from GBM/SNP.txt
-2015-05-12 18:08:17	Read CNV from GBM/CNV.txt
-2015-05-12 18:08:17	SNP and CNV matrix are combined

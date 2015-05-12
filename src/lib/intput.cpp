@@ -335,7 +335,7 @@ void readGenesListUpDown(const char* filename, vector<int>* geneIdsUpDown, map<s
 
 void readBenchmarkGeneList(string benchmarkGeneListFilename, vector<int>* cancerBenchmarkGenes, map<string, int>* geneSymbolToId){
 	ifstream inFile;
-	inFile.open(benchmarkGeneListFilename, std::ifstream::in);
+	inFile.open(benchmarkGeneListFilename.c_str(), std::ifstream::in);
 
 	map<string, int>::iterator end = geneSymbolToId->end();
 

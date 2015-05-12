@@ -64,7 +64,7 @@ int main() {
 	string dbPathExport = "";
 
 	string datatType = "";
-	int numThreads = 10;
+	int numThreads = 4;
 	//0 = sensitive, 1 = stringent
 	int mode = 0;
 
@@ -320,8 +320,6 @@ int main() {
 	int D = maxJs.D;
 	double F = maxJs.F;
 
-	return 0;
-
 	//[DEBUG]
 //	int L = 20;
 //	int D = 65;
@@ -438,6 +436,8 @@ int main() {
 	writeStrVector(outModulefilename.c_str(), outputStr);
 	delete outputStr;
 	writeToLogFile(&outLogStream, "Save calculated gene modules to " + outModulefilename);
+
+	return 0;
 
 	//TODO debug the finding phenotype part (the results are quite different from the original)
 	//create a vector for counting the number of times (for each gene) the random samples have greater frequency than the real samples
