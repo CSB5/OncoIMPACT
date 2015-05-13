@@ -65,12 +65,10 @@ void countGeneFrequencyGreaterThanRealFrequency(vector<int>* geneFrequencyGreate
 
 }
 
+
 void addFrequncyForRealDataset(vector<int>* genesFrequencyRealUpDown, vector< vector<MutatedAndExplianedGenes> >* mutatedAndExplainedGenesListReal,
 		vector< vector<int> >* mutatedGeneIdsListReal, vector<bool>* isExplainedGenesUpDown) {
 	int totalGenesUpDown = genesFrequencyRealUpDown->size();
-	for (int i = 0; i < totalGenesUpDown; ++i) {
-		genesFrequencyRealUpDown->at(i) = 0;
-	}
 
 	int numSamples = mutatedAndExplainedGenesListReal->size();
 

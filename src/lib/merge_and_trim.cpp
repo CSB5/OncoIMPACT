@@ -349,7 +349,6 @@ void trimModule(Module* module, TIntAdjList* network, int L, int D, vector<strin
 	}
 
 
-	//TODO BUG: not trim some genes
 	int numDelete = geneIdToBeRemoved.size();
 	for(int i = 0; i < numDelete; i++){
 		list<int>::iterator ditUp = find(explainedGeneIdsListUpDown->begin(), explainedGeneIdsListUpDown->end(), geneIdToBeRemoved[i]);
