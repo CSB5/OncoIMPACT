@@ -88,6 +88,7 @@ int main() {
 	//parameters of analysis
 	int numPermutationsForJSDivergence = 100;
 	int numRandomDatasetForPhenotype = 500;
+	//srand ( unsigned ( std::time(0) ) );	TODO uncomment this if want the different result for each run
 
 	//create log file for each run
 	string logFilename;
@@ -273,58 +274,58 @@ int main() {
 
 	cout << "\tDONE reading and preparing data (" << (float(clock() - step_time) / CLOCKS_PER_SEC) << " sec)\n";
 
-//	step_time = clock();
-//	cout << "tuning parameters by using " << numSamples << " randomly choosing samples ..."
-//			<< endl;
-//
-//	cout << "computing JS divergence for all parameters (L,D,F) ... " << endl;
-//
-//	//TODO initialize all the parameters to be tested
-////	int LsVal[] = {2, 4, 6, 8, 10, 12, 14, 16, 18, 20};
-//	int LsVal[] = {16, 18, 20};	//fewer parameters for testing
-//	vector<int> Ls(LsVal, LsVal + sizeof LsVal / sizeof LsVal[0]);
-//	int numLs = Ls.size();
-////	int DsVal[] = {10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100};
-//	int DsVal[] = {60, 65, 70};	//fewer parameters for testing
-//	vector<int> Ds(DsVal, DsVal + sizeof DsVal / sizeof DsVal[0]);
-//	int numDs = Ds.size();	//fewer parameters for testing
-//	double FsVal[] = {1, 1.5, 2, 2.5, 3};
-////	double FsVal[] = {2, 2.5};	//fewer parameters for testing
-//	vector<double> Fs(FsVal, FsVal + sizeof FsVal / sizeof FsVal[0]);
-//	int numFs = Fs.size();
-//
-//	int numCombinations = numLs * numDs * numFs;
-//	//initialize the vector to save the divergence of each set of parameters
-//	vector<JSDivergence> jsDivergences(numCombinations);
-//
-//	//TODO parameter finding: for js divegence calculation the result is quite different from the original
-//	findParameters(&jsDivergences, &Ls, &Ds, &Fs, totalGenes, &geneExpression, &mutations, &network, numSamples, numPermutationsForJSDivergence, &geneSymbolToId, numThreads);
-//
-//	//write the JS divergence result to a file
-//	string outJSFilename = outDir + "/parameters.dat";
-//	//save the JS divergence results
-//	saveJSDivergences(&jsDivergences, outJSFilename);
-//	writeToLogFile(&outLogStream, "Write parameters results in " + outJSFilename);
-//
-//	cout << "\t\tDONE finding parameters (" << (float(clock() - step_time) / CLOCKS_PER_SEC) << " sec)\n";
-//
-//	//choose the best parameters
-//	JSDivergence maxJs;
-//	findMaximumJsDivergence(&jsDivergences, &maxJs);
-//
-//	cout << "the maximum divergence is " << maxJs.divergence << " when L, D, F = " << maxJs.L << ", " << maxJs.D << ", " << maxJs.F << endl;
-//	writeToLogFile(&outLogStream, "The maximum JS divergence is " + doubleToStr(maxJs.divergence, 5) +
-//			" corresponding to (L,D,F) = (" + intToStr(maxJs.L) + "," + intToStr(maxJs.D) + "," + doubleToStr(maxJs.F, 1) + ")");
-//
-//	//set the L D F to maxJs
-//	int L = maxJs.L;
-//	int D = maxJs.D;
-//	double F = maxJs.F;
+	step_time = clock();
+	cout << "tuning parameters by using " << numSamples << " randomly choosing samples ..."
+			<< endl;
+
+	cout << "computing JS divergence for all parameters (L,D,F) ... " << endl;
+
+	//TODO initialize all the parameters to be tested
+//	int LsVal[] = {2, 4, 6, 8, 10, 12, 14, 16, 18, 20};
+	int LsVal[] = {16, 18, 20};	//fewer parameters for testing
+	vector<int> Ls(LsVal, LsVal + sizeof LsVal / sizeof LsVal[0]);
+	int numLs = Ls.size();
+//	int DsVal[] = {10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100};
+	int DsVal[] = {60, 65, 70};	//fewer parameters for testing
+	vector<int> Ds(DsVal, DsVal + sizeof DsVal / sizeof DsVal[0]);
+	int numDs = Ds.size();	//fewer parameters for testing
+	double FsVal[] = {1, 1.5, 2, 2.5, 3};
+//	double FsVal[] = {2, 2.5};	//fewer parameters for testing
+	vector<double> Fs(FsVal, FsVal + sizeof FsVal / sizeof FsVal[0]);
+	int numFs = Fs.size();
+
+	int numCombinations = numLs * numDs * numFs;
+	//initialize the vector to save the divergence of each set of parameters
+	vector<JSDivergence> jsDivergences(numCombinations);
+
+	//TODO parameter finding: for js divegence calculation the result is quite different from the original
+	findParameters(&jsDivergences, &Ls, &Ds, &Fs, totalGenes, &geneExpression, &mutations, &network, numSamples, numPermutationsForJSDivergence, &geneSymbolToId, numThreads);
+
+	//write the JS divergence result to a file
+	string outJSFilename = outDir + "/parameters.dat";
+	//save the JS divergence results
+	saveJSDivergences(&jsDivergences, outJSFilename);
+	writeToLogFile(&outLogStream, "Write parameters results in " + outJSFilename);
+
+	cout << "\t\tDONE finding parameters (" << (float(clock() - step_time) / CLOCKS_PER_SEC) << " sec)\n";
+
+	//choose the best parameters
+	JSDivergence maxJs;
+	findMaximumJsDivergence(&jsDivergences, &maxJs);
+
+	cout << "the maximum divergence is " << maxJs.divergence << " when L, D, F = " << maxJs.L << ", " << maxJs.D << ", " << maxJs.F << endl;
+	writeToLogFile(&outLogStream, "The maximum JS divergence is " + doubleToStr(maxJs.divergence, 5) +
+			" corresponding to (L,D,F) = (" + intToStr(maxJs.L) + "," + intToStr(maxJs.D) + "," + doubleToStr(maxJs.F, 1) + ")");
+
+	//set the L D F to maxJs
+	int L = maxJs.L;
+	int D = maxJs.D;
+	double F = maxJs.F;
 
 	//[DEBUG]
-	int L = 20;
-	int D = 65;
-	double F = 2.5;
+//	int L = 20;
+//	int D = 65;
+//	double F = 2.5;
 
 	/*
 	 * Find PHENOTYPE GENES
@@ -383,35 +384,8 @@ int main() {
 	 * Print original modules file
 	 */
 
-	//OUTPUT: print all modules in all samples (mutatedAndExplainedGenesListReal) (for Cytoscape) => use bash instead
-	vector<string>* outputStr = new vector<string>;
-//	outputStr->push_back("sample_id\tgene_symbol\ttype");
-//	for (int i = 0; i < totalSamples; ++i) {
-//		vector<MutatedAndExplianedGenes> mutatedAndExplainedGenes = mutatedAndExplainedGenesListReal[i];
-//		vector<int> mutatedGeneIds = mutatedGeneIdsListReal[i];
-//
-//		//for each mutated genes
-//		for (unsigned int j = 0; j < mutatedGeneIds.size(); ++j) {
-//			int currentMutatedGeneId = mutatedGeneIds[j];
-//			outputStr->push_back(intToStr(i) + "\t" + geneIdToSymbol[currentMutatedGeneId] + "\t" + "MUTATED");
-//			vector<bool>* isExplainedGenesUpDownForAMutatedGene = mutatedAndExplainedGenes[currentMutatedGeneId].isExplainedGenesUpDown;
-//			for (int k = 0; k < totalGenesUpDown; ++k) {
-//				if(isExplainedGenesUpDownForAMutatedGene->at(k)){
-//					if(k < totalGenes){
-//						outputStr->push_back(sampleIdToName[i] + "\t" + geneIdToSymbol[k] + "_UP\t" + "EXPLAINED");
-//					}else{
-//						outputStr->push_back(sampleIdToName[i] + "\t" + geneIdToSymbol[k-totalGenes] + "_DOWN\t" + "EXPLAINED");
-//					}
-//				}
-//			}
-//		}
-//	}
-//	string outModuleCysfilename = outDir + "/original_modules_cys.tsv";
-//	writeStrVector(outModuleCysfilename.c_str(), outputStr);
-//	delete outputStr;
-
 	//OUTPUT: print all modules in all samples (as original)
-	outputStr = new vector<string>;
+	vector<string>* outputStr = new vector<string>;
 	for (int i = 0; i < totalSamples; ++i) {
 		vector<MutatedAndExplianedGenes> mutatedAndExplainedGenes = mutatedAndExplainedGenesListReal[i];
 		vector<int> mutatedGeneIds = mutatedGeneIdsListReal[i];
@@ -443,50 +417,19 @@ int main() {
 	delete outputStr;
 	writeToLogFile(&outLogStream, "Save calculated gene modules to " + outModulefilename);
 
-	//TODO debug the finding phenotype part (the results are quite different from the original)
-
 	cout << "\tDONE calculated real distribution (" << (float(clock() - step_time) / CLOCKS_PER_SEC) << " sec)\n";
 	step_time = clock();
 
-	writeToLogFile(&outLogStream, "Start creating null distribution for finding phenotype genes");
+	writeToLogFile(&outLogStream, "Start finding phenotype genes");
 
 	/*
 	 * Precalculation for random datasets
 	 */
 
-	cout << "\tcreating null distribution (using " << numRandomDatasetForPhenotype << " permutations) ... \n";
-
+	cout << "Start finding phenotype genes\n";
 	cout << "\tcalculating look up tables for finding phenotype genes ... ";
 
-	//SPEED UP: created 500 sets of random samples TODO if there is no problem with memory just directly create all random samples
-
-	//This matrix will be swap by row for generating 500 sets of samples for testing each explained gene
-	//matrix row = samples col = permuted mutated gene ids
-	vector< vector<int> > permutedGeneIdsForAll(totalSamples, vector<int>(numGenesMut, 0));
-	vector<int> allGeneIds(totalGenes);	//to permute all genes in the network
-	for (int si = 0; si < totalSamples; ++si) {
-
-		for (int i = 0; i < totalGenes; i++) {
-			allGeneIds[i] = i;
-		}
-		random_shuffle(allGeneIds.begin(), allGeneIds.end());
-
-		for (int mi = 0; mi < numGenesMut; ++mi) {
-			permutedGeneIdsForAll[si][mi] = allGeneIds[mi];
-		}
-	}
-
-	//matrix row = # permutations col = order of row in permutedGeneIdsForAll to be used
-	//this should be fine, because number of totalSamples! is far greather than 500 (numPermutation/random datasets)
-	vector< vector<int> > ordersOfPermutations(numRandomDatasetForPhenotype, vector<int>(totalSamples, 0));
-	for (int r = 0; r < numRandomDatasetForPhenotype; ++r) {
-		for (int si = 0; si < totalSamples; ++si) {
-			ordersOfPermutations[r][si] = si;
-		}
-		random_shuffle(ordersOfPermutations[r].begin(), ordersOfPermutations[r].end());
-	}
-
-	//SPEED UP: for each gene in the network, if it is mutated, which genes are explained for it in a given sample
+	//SPEED UP: for each gene in the network, if it is mutated, find which genes are explained for it in a given sample
 	//cannot directly construct the bool matrix because there is not enough memory
 	vector< vector< vector<int> > > explainedGeneIdsForAMutatedGeneInASample(totalGenes, vector< vector<int> >(totalSamples));
 
@@ -527,121 +470,77 @@ int main() {
 
 	cout << "\tDONE precalculated tables for SPEED UP (" << (float(clock() - step_time) / CLOCKS_PER_SEC) << " sec)\n";
 
-	//get vector of explained gene ids to be tested for phenotype genes
-	vector<int> explainedGeneIds;
-	for (int i = 0; i < totalGenesUpDown; ++i) {
-		if(isExplainedGenesUpDown[i]){
-			explainedGeneIds.push_back(i);
-		}
-	}
-	int numExplainedGenesUpDown = explainedGeneIds.size();
-	cout << "there are " << numExplainedGenesUpDown << " explained genes\n";
-
-	int numPhenotypeGenes = 0;
 
 	//create a vector for counting the number of times (for each gene) the random samples have greater frequency than the real samples
 	vector<int> geneFrequencyGreaterThanRealFrequencyCounter(totalGenesUpDown, 0);
+	//create a vector for counting the number of times the ramdom samples have greater frequency than the real samples
 
-	//for each explained gene in the real samples
-	for (int ei = 0; ei < numExplainedGenesUpDown; ++ei) {
+	step_time = clock();
 
-		int currentExplainedGeneIdUpDown = explainedGeneIds[ei];
-		//cout << "calculating for " << currentExplainedGeneIdUpDown << endl;
+	cout << "\tcreating null distribution (using " << numRandomDatasetForPhenotype << " random data sets) ... ";
 
-		step_time = clock();
+	progress = 1;
+	interval = numRandomDatasetForPhenotype / 100;
 
-		//for the current explained gene, find samples in which it is explained for all (possible mutated) gene in the network
-		vector< vector<bool> > isExplainedForAMutatedGene(totalSamples, vector<bool>(totalGenes, false));
-		//for each sample
-		#pragma omp parallel for
+	#pragma omp parallel for
+	for (int r = 0; r < numRandomDatasetForPhenotype; ++r) {
+
+		//print progression
+		if (r % interval == 0) {
+			const string progStatus = intToStr(progress) + "%";
+			cout << progStatus << flush;
+			progress++;
+			cout << string(progStatus.length(), '\b');
+		}
+
+		//construct matrix: row = samples col = permuted mutated gene ids
+		vector< vector<int> > permutedGeneIdsForAll(totalSamples, vector<int>(numGenesMut, 0));
+		vector<int> allGeneIds(totalGenes);	//to permute all genes in the network
 		for (int si = 0; si < totalSamples; ++si) {
-			//for each gene in the network
-			for (int currentMutatedGeneId = 0; currentMutatedGeneId < totalGenes; ++currentMutatedGeneId) {
-				//find if the current explained gene is explained for a given mutated gene and in a sample
-				vector<int>::iterator itToFindExplainedGene;
-				itToFindExplainedGene = find (explainedGeneIdsForAMutatedGeneInASample[currentMutatedGeneId][si].begin(),
-						explainedGeneIdsForAMutatedGeneInASample[currentMutatedGeneId][si].end(), currentExplainedGeneIdUpDown);
-				if (itToFindExplainedGene != explainedGeneIdsForAMutatedGeneInASample[currentMutatedGeneId][si].end()){
-					isExplainedForAMutatedGene[si][currentMutatedGeneId] = true;
-				}
+
+			for (int i = 0; i < totalGenes; i++) {
+				allGeneIds[i] = i;
+			}
+			random_shuffle(allGeneIds.begin(), allGeneIds.end());
+
+			for (int mi = 0; mi < numGenesMut; ++mi) {
+				permutedGeneIdsForAll[si][mi] = allGeneIds[mi];
 			}
 		}
 
-		#pragma omp parallel for
-		for (int r = 0; r < numRandomDatasetForPhenotype; ++r) {
 
-			vector< vector<int> > permutationsForAllSamplesOfEachRound(totalSamples, vector<int>(numGenesMut, 0));
-			//construct matrix (row = sample id, col = permuted mutated gene id)
-			vector<int>* orderOfPermutations = &ordersOfPermutations[r];
-			for (int si = 0; si < totalSamples; ++si) {
-				int orderId = orderOfPermutations->at(si);
-				for (int mi = 0; mi < numGenesMut; ++mi) {
-					permutationsForAllSamplesOfEachRound[si][mi] = permutedGeneIdsForAll[orderId][mi];
-				}
-			}
+		vector< vector<bool> > isExplainedGenesUpDownRandom(totalSamples, vector<bool>(totalGenesUpDown, false));
 
-			//a vector for a current explained gene
-			vector<bool> isExplainedGeneUpDownRandom(totalSamples, false);
+		//permute the gene labels of each sample independently (this have been done in precomputed part)
+		for (int si = 0; si < totalSamples; ++si) {
 
-			//permute the gene labels of each sample independently (this have been done in precomputed part)
-			for (int si = 0; si < totalSamples; ++si) {
 
-				//find if the current explained gene is an explained gene of a current sample
-				bool isExplainedInThisSample = false;
+			//for each mutated gene
+			for (int mi = 0; mi < numGenesMut; ++mi) {
+				//if a current gene is mutated in this sample
+				if (mutations.matrix->at(mi)[si] != 0) {
+					//use the precomputed permuted gene label
+					int currentMutatedGeneId = permutedGeneIdsForAll[si][mi];
+					//get the explained gene of the current mutated gene of the current sample
+					vector<int> explainedGensIds = explainedGeneIdsForAMutatedGeneInASample[currentMutatedGeneId][si];
 
-				//for each mutated gene
-				for (int mi = 0; mi < numGenesMut; ++mi) {
-					//if a current gene is mutated in this sample
-					if (mutations.matrix->at(mi)[si] != 0) {
-						//use the precomputed permuted gene label
-						int currentMutatedGeneId = permutationsForAllSamplesOfEachRound[si][mi];
-						if(isExplainedForAMutatedGene[si][currentMutatedGeneId]){
-							isExplainedInThisSample = true;
-							break;
-						}
-
+					int numExplainedGenes = explainedGensIds.size();
+					for (int ei = 0; ei < numExplainedGenes; ++ei) {
+						isExplainedGenesUpDownRandom[si][explainedGensIds[ei]] = true;
 					}
 				}
-
-				if(isExplainedInThisSample){
-					isExplainedGeneUpDownRandom[si] = true;
-				}
-
-			}	//end for each sample
-
-
-//			//count the frequency that exceed the real frequency (This is of the old version where all explained genes are not consider independently
-//			countGeneFrequencyGreaterThanRealFrequency(&geneFrequencyGreaterThanRealFrequencyCounter,
-//					&isExplainedGenesUpDownRandom, &explainedGenesFrequencyRealUpDown);
-
-			int numSamplesInWhichTheExplainedGeneIsExplained = 0;
-			for (int si = 0; si < totalSamples; ++si) {
-				if(isExplainedGeneUpDownRandom[si]){
-					numSamplesInWhichTheExplainedGeneIsExplained++;
-				}
 			}
 
-			//count the frequency of a single explained genes
-			if(numSamplesInWhichTheExplainedGeneIsExplained >= explainedGenesFrequencyRealUpDown[currentExplainedGeneIdUpDown]){
-				#pragma omp atomic
-				geneFrequencyGreaterThanRealFrequencyCounter[currentExplainedGeneIdUpDown]++;	//TODO this could cause problem in parrallel
-			}
+		}	//end for each sample
 
-		}	//end loop of 500 rounds
 
-		if(geneFrequencyGreaterThanRealFrequencyCounter[currentExplainedGeneIdUpDown] == 0){
-			numPhenotypeGenes++;
-			cout << "current # phenotype genes " << numPhenotypeGenes << endl;
-			if(currentExplainedGeneIdUpDown < totalGenes){
-				cout << geneIdToSymbol[currentExplainedGeneIdUpDown] << "_UP" << endl;
-			}else{
-				cout << geneIdToSymbol[currentExplainedGeneIdUpDown - totalGenes] << "_DOWN"  << endl;
-			}
-		}
+		//count the frequency that exceed the real frequency (This is of the old version where all explained genes are not consider independently
+		countGeneFrequencyGreaterThanRealFrequency(&geneFrequencyGreaterThanRealFrequencyCounter,
+				&isExplainedGenesUpDownRandom, &explainedGenesFrequencyRealUpDown);
 
-//		cout << "\tDONE calculated null distribution for a current gene (" << (float(clock() - step_time) / CLOCKS_PER_SEC) << " sec)\n";
+	}	//end loop of 500 rounds
 
-	} //end loop of each explained gene
+	cout << endl; //for print progression
 
 	vector<bool> isPhenotypeGenesUpDown(totalGenesUpDown, false);
 	vector<int> phenotypeGeneIdsUpDown;	// phenotype gene ids

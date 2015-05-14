@@ -1,17 +1,19 @@
-2015-05-13 13:28:11	Start Running oncoIMPACT 1.0 (using 10 threads)
-2015-05-13 13:28:14	Read network from network_FIsInGene_041709.txt
-2015-05-13 13:28:19	Read gene expression matrix from GBM/EXPR.txt
-2015-05-13 13:28:21	Read SNP from GBM/SNP.txt
-2015-05-13 13:28:25	Read CNV from GBM/CNV.txt
-2015-05-13 13:28:25	SNP and CNV matrix are combined
-2015-05-13 13:28:33	Save calculated gene modules to output/MODULE.dat
-2015-05-13 13:28:33	Start creating null distribution for finding phenotype genes
-2015-05-13 17:29:04	Save explained and phenotype gene statistics to output/exp_gene_freq.dat
-2015-05-13 17:29:04	Start sensitive mode
-2015-05-13 17:29:11	Save final module of sensitive mode to output/sensitive/FINAL_MODULE.dat
-2015-05-13 17:29:11	calculate IMPACT scores for all samples
-2015-05-13 17:29:13	Save final driver gene list to output/sensitive/driver_list.txt
-2015-05-13 17:29:13	Start stringent mode
-2015-05-13 17:29:20	Save final module of stringent mode to output/stringent/FINAL_MODULE.dat
-2015-05-13 17:29:20	calculate IMPACT scores for all samples
-2015-05-13 17:29:22	Save final driver gene list to output/stringent/driver_list.txt
+2015-05-14 17:49:29	Start Running oncoIMPACT 1.0 (using 10 threads)
+2015-05-14 17:49:29	Read network from network_FIsInGene_041709.txt
+2015-05-14 17:49:30	Read gene expression matrix from GBM/EXPR.txt
+2015-05-14 17:49:30	Read SNP from GBM/SNP.txt
+2015-05-14 17:49:30	Read CNV from GBM/CNV.txt
+2015-05-14 17:49:30	SNP and CNV matrix are combined
+2015-05-14 17:54:38	Write parameters results in output/parameters.dat
+2015-05-14 17:54:38	The maximum JS divergence is 0.18223 corresponding to (L,D,F) = (18,70,2.5)
+2015-05-14 17:54:40	Save calculated gene modules to output/MODULE.dat
+2015-05-14 17:54:40	Start finding phenotype genes
+2015-05-14 17:57:35	Save explained and phenotype gene statistics to output/exp_gene_freq.dat
+2015-05-14 17:57:35	Start sensitive mode
+2015-05-14 17:57:37	Save final module of sensitive mode to output/sensitive/FINAL_MODULE.dat
+2015-05-14 17:57:37	calculate IMPACT scores for all samples
+2015-05-14 17:57:37	Save final driver gene list to output/sensitive/driver_list.txt
+2015-05-14 17:57:37	Start stringent mode
+2015-05-14 17:57:40	Save final module of stringent mode to output/stringent/FINAL_MODULE.dat
+2015-05-14 17:57:40	calculate IMPACT scores for all samples
+2015-05-14 17:57:40	Save final driver gene list to output/stringent/driver_list.txt

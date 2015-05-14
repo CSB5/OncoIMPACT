@@ -42,12 +42,12 @@
 void countGeneFrequencyGreaterThanRealFrequency(vector<int>* geneFrequencyGreaterThanRealFrequencyCounter,
 		vector< vector<bool> >* explainedGenesFrequencyUpDownRandom, vector<int>* genesFrequencyReal){
 	int totalGenesUpDown = geneFrequencyGreaterThanRealFrequencyCounter->size(); // number of genes in the network
-	int numSamples = explainedGenesFrequencyUpDownRandom->size();
+	int totalSamples = explainedGenesFrequencyUpDownRandom->size();
 
 	vector<int> frequencies(totalGenesUpDown);	//for counting the number of samples that have the explained genes
 
 	//for each sample i
-	for (int i = 0; i < numSamples; ++i) {
+	for (int i = 0; i < totalSamples; ++i) {
 		vector<bool> explainedGenesFrequencyUpDownOfASample = explainedGenesFrequencyUpDownRandom->at(i);
 		for (int j = 0; j < totalGenesUpDown; ++j) {
 			if(explainedGenesFrequencyUpDownOfASample[j]){
@@ -58,7 +58,8 @@ void countGeneFrequencyGreaterThanRealFrequency(vector<int>* geneFrequencyGreate
 
 	for (int i = 0; i < totalGenesUpDown; ++i) {
 		//if the frequency is greater than the real frequency
-		if(frequencies[i] >= genesFrequencyReal->at(i)){	//TODO check > or >= (explained gene frequency)
+		if(frequencies[i] >= genesFrequencyReal->at(i)){
+			#pragma omp atomic
 			geneFrequencyGreaterThanRealFrequencyCounter->at(i)++;
 		}
 	}
@@ -70,10 +71,10 @@ void addFrequncyForRealDataset(vector<int>* genesFrequencyRealUpDown, vector< ve
 		vector< vector<int> >* mutatedGeneIdsListReal, vector<bool>* isExplainedGenesUpDown) {
 	int totalGenesUpDown = genesFrequencyRealUpDown->size();
 
-	int numSamples = mutatedAndExplainedGenesListReal->size();
+	int totalSamples = mutatedAndExplainedGenesListReal->size();
 
 	//for each sample i in a current round
-	for (int i = 0; i < numSamples; ++i) {
+	for (int i = 0; i < totalSamples; ++i) {
 
 		// mutated gene and its corresponding genes for each sample
 		vector<MutatedAndExplianedGenes> mutatedAndExplainedGenes =
@@ -81,10 +82,8 @@ void addFrequncyForRealDataset(vector<int>* genesFrequencyRealUpDown, vector< ve
 		vector<int> mutatedGeneIds = mutatedGeneIdsListReal->at(i);
 
 		//combine list of explained genes
-		vector<bool> isExplainedGenesForAll(totalGenesUpDown); //for all mutated genes of this sample
-		for (int i = 0; i < totalGenesUpDown; ++i) {
-			isExplainedGenesForAll[i] = false;
-		}
+		vector<bool> isExplainedGenesForAll(totalGenesUpDown, false); //for all mutated genes of this sample
+
 		//set the isExplainedGenesForAll to be true if the gene is explained in this sample i
 		combineListOfExplainedGenes(&mutatedAndExplainedGenes, &mutatedGeneIds,
 				&isExplainedGenesForAll, totalGenesUpDown);
@@ -98,7 +97,6 @@ void addFrequncyForRealDataset(vector<int>* genesFrequencyRealUpDown, vector< ve
 			}
 		}
 	}
-
 }
 
 void combineListOfExplainedGenes(
