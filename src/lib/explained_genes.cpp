@@ -93,7 +93,7 @@ void getExplainedGenesIdOnlyUpDown(vector<bool>* isExplainedGeneUpDown, TIntAdjL
 }
 
 void getExplainedGenesIdOnlyUpDownIncludingMutatedGene(vector<bool>* isExplainedGenesUpDown, TIntAdjList* network, vector<double>* sampleGeneExpression,
-		vector<int>* mutatedGeneIds, int L, int D, double F, map<string, int>* geneSymbolToId){
+		vector<int>* mutatedGeneIds, int L, int D, double F, vector<string>* geneIdToSymbol, map<string, int>* geneSymbolToId){
 	int numMutatedGenes = mutatedGeneIds->size();
 	int totalGenesUpDown = isExplainedGenesUpDown->size();
 
@@ -106,7 +106,7 @@ void getExplainedGenesIdOnlyUpDownIncludingMutatedGene(vector<bool>* isExplained
 //		void BFSforExplainedGenesIdOnlyUpDownIncludingMutatedGene(TIntAdjList* network, int mutatedGeneId, int L, int D,
 //				double F, vector<bool>* isExplainedGenes, vector<double>* sampleGeneExpression, int currentSampleId, map<string, int>* geneSymbolToId);
 		BFSforExplainedGenesIdOnlyUpDownIncludingMutatedGene(network, mutatedGeneIds->at(i), L, D, F,
-				&isExplaninedGeneUpDownForAMutatedGene, sampleGeneExpression, -1, geneSymbolToId);
+				&isExplaninedGeneUpDownForAMutatedGene, sampleGeneExpression, -1, geneIdToSymbol, geneSymbolToId);
 
 		for (int j = 0; j < totalGenesUpDown; ++j) {
 			if(isExplaninedGeneUpDownForAMutatedGene[j]){
@@ -425,7 +425,8 @@ void BFSforExplainedGenesIdOnlyUpDown(TIntAdjList* network, int geneId, int L, i
 //down regulated gene frequency is in the second half [totalGenes, totalGenes * 2 - 1]
 //This also consider the deregulated mutated genes as an explained gene
 void BFSforExplainedGenesIdOnlyUpDownIncludingMutatedGene(TIntAdjList* network, int mutatedGeneId, int L, int D,
-		double F, vector<bool>* isExplainedGenesUpDown, vector<double>* sampleGeneExpression, int currentSampleId, map<string, int>* geneSymbolToId) {
+		double F, vector<bool>* isExplainedGenesUpDown, vector<double>* sampleGeneExpression, int currentSampleId,
+		vector<string>* geneIdToSymbol, map<string, int>* geneSymbolToId) {
 
 //	cout << "for mutated gene " << mutatedGeneId << endl;
 
@@ -485,9 +486,11 @@ void BFSforExplainedGenesIdOnlyUpDownIncludingMutatedGene(TIntAdjList* network, 
 					if(sampleGeneExpression->at(geneId) > 0.0){ 	// up regulated
 						isExplainedGenesUpDown->at(geneId) = true;
 						countExpalinedGenes++;
+//						cout << geneIdToSymbol->at(geneId) << " is at level " << currentLevel << endl;
 					}else{											// down regulated
 						isExplainedGenesUpDown->at(geneId + totalGenes) = true; //+9452
 						countExpalinedGenes++;
+//						cout << geneIdToSymbol->at(geneId) << " is at level " << currentLevel << endl;
 					}
 
 					int degree = getNodeDegree(network, geneId);
@@ -527,102 +530,109 @@ void BFSforExplainedGenesIdOnlyUpDownIncludingMutatedGene(TIntAdjList* network, 
 	delete[] visited;
 }
 
-////TODO use only one BFS for all L's values
-//void BFSforExplainedGenesUpDownIncludingMutatedGeneAllLength(TIntAdjList* network, int mutatedGeneId, vector<int>* Ls, int D,
-//		double F, vector< vector<bool> >* isExplainedGenesUpDownAllL, vector<double>* sampleGeneExpression, int currentSampleId, map<string, int>* geneSymbolToId) {
-//
-////	cout << "for mutated gene " << mutatedGeneId << endl;
-//
-//	int countExpalinedGenes = 0;
-//	int Lmax = Ls->at(Ls->size()-1);
-//
-//	//TODO initialize isExplainedGenesUpDownAllL before send to function
-//
-//	int totalGenes = network->size();
-//
-//	// Mark all the vertices as not visited
-//	bool *visited = new bool[totalGenes];
-//	for (int j = 0; j < totalGenes; j++) {
-//		visited[j] = false;
-//	}
-//
-//	// Create queue
-//	queue<int> q;
-//	vector<int> levels(totalGenes); // store level of each nodes
-//	// Mark the current node as visited
-//	q.push(mutatedGeneId);
-//	visited[mutatedGeneId] = true;
-//	int currentGeneId;
-//	int currentLevel = 0;
-//
-//	//consider all nodes that are in <= Lmax distant (Note that the level value start from 0, so use < Lmax)
-//	while (!q.empty() && currentLevel < Lmax) {
-//		//read the root node
-//		currentGeneId = q.front();
-//		q.pop();
-//		currentLevel = levels[currentGeneId];
-//
-//		if (currentLevel >= Lmax) {
-//			break;
-//		}
-//
-//		//explore all the connected nodes
-//		vector<int> adj = (*network)[currentGeneId];
-//
-//		int numAdj = adj.size();
-//		for (int j = 0; j < numAdj; j++) {
-//			if (!visited[(*network)[currentGeneId][j]]) {
-//
-//				int geneId = (*network)[currentGeneId][j];
-//
-//				// check conditions before push to the queue
-//				// |fold change| > F
-//				if (fabs(sampleGeneExpression->at(geneId)) >= F) {
-//
-//					// is explained gene
-//					if(sampleGeneExpression->at(geneId) > 0.0){ 	// up regulated
-//
-//						isExplainedGenesUpDown->at(geneId) = true;
-//
-//						countExpalinedGenes++;
-//					}else{											// down regulated
-//
-//						isExplainedGenesUpDown->at(geneId + totalGenes) = true; //+9452
-//
-//						countExpalinedGenes++;
-//					}
-//
-//					int degree = getNodeDegree(network, geneId);
-//					// check the degree
-//					if (degree <= D) {
-//						// push to queue
-//						q.push(geneId);
-//						// save level
-//						levels[geneId] = currentLevel + 1;
-//					}
-//				}
-//
-////				cout << "gene id " << geneId << " is ckecked\n";
-//
-//				// mark visited
-//				visited[geneId] = true;
-//
-//			}
-//		}
-//	}
-//
-//	//add the mutated gene itself to the list of mutated genes
-//	if (countExpalinedGenes > 0 and fabs(sampleGeneExpression->at(mutatedGeneId)) >= F) {
-//
-//		if(sampleGeneExpression->at(mutatedGeneId) > 0.0){ 	// up regulated
-//
-//			isExplainedGenesUpDown->at(mutatedGeneId) = true;
-//
-//		}else{											// down regulated
-//
-//			isExplainedGenesUpDown->at(mutatedGeneId + totalGenes) = true; //+9452
-//
-//		}
-//	}
-//	delete[] visited;
-//}
+//TODO use only one BFS for all L's values
+void BFSforExplainedGenesUpDownIncludingMutatedGeneAllLengths(TIntAdjList* network, int mutatedGeneId, vector<int>* Ls, int D,
+		double F, vector< vector<bool> >* isExplainedGenesUpDownAllLs, vector<double>* sampleGeneExpression, int currentSampleId,
+		vector<string>* geneIdToSymbol, map<string, int>* geneSymbolToId) {
+
+//	cout << "for mutated gene " << mutatedGeneId << endl;
+
+	int Lmax = Ls->at(Ls->size()-1);
+	int numLs = Ls->size();
+	vector<int> countExpalinedGenesForAllLs(numLs, 0);
+
+	//TODO initialize isExplainedGenesUpDownAllL before sending to function
+	//matrix: row = L value, col = gene id up down
+
+	int totalGenes = network->size();
+
+	// Mark all the vertices as not visited
+	bool *visited = new bool[totalGenes];
+	for (int j = 0; j < totalGenes; j++) {
+		visited[j] = false;
+	}
+
+	// Create queue
+	queue<int> q;
+	vector<int> levels(totalGenes, 0); // store level of each nodes
+	// Mark the current node as visited
+	q.push(mutatedGeneId);
+	visited[mutatedGeneId] = true;
+	int currentGeneId;
+	int currentLevel = 0;
+
+	//consider all nodes that are in <= Lmax distant (Note that the level value start from 0, so use < Lmax)
+	while (!q.empty() && currentLevel < Lmax) {
+		//read the root node
+		currentGeneId = q.front();
+		q.pop();
+		currentLevel = levels[currentGeneId];
+
+		if (currentLevel >= Lmax) {
+			break;
+		}
+
+		//explore all the connected nodes
+		vector<int> adj = (*network)[currentGeneId];
+
+		int numAdj = adj.size();
+		for (int j = 0; j < numAdj; j++) {
+			if (!visited[(*network)[currentGeneId][j]]) {
+
+				int geneId = (*network)[currentGeneId][j];
+
+				// check conditions before push to the queue
+				// |fold change| >= F
+				if (fabs(sampleGeneExpression->at(geneId)) >= F) {
+
+					// is explained gene
+					if(sampleGeneExpression->at(geneId) > 0.0){ 	// up regulated
+
+						//for all L <= current level
+						for (int li = 0; li < numLs; ++li) {
+							if(currentLevel < Ls->at(li)){	//(use < L to get <= L)
+								isExplainedGenesUpDownAllLs->at(li)[geneId] = true;
+								countExpalinedGenesForAllLs[li]++;
+							}
+						}
+					}else{											// down regulated
+						//for all L <= current level
+						for (int li = 0; li < numLs; ++li) {
+							if(currentLevel < Ls->at(li)){	//(use < L to get <= L)
+								isExplainedGenesUpDownAllLs->at(li)[geneId + totalGenes] = true;
+								countExpalinedGenesForAllLs[li]++;
+							}
+						}
+					}
+
+					int degree = getNodeDegree(network, geneId);
+					// check the degree
+					if (degree <= D) {
+						// push to queue
+						q.push(geneId);
+						// save level
+						levels[geneId] = currentLevel + 1;
+					}
+				}
+
+				// mark visited
+				visited[geneId] = true;
+
+			}
+		}
+	}
+
+	//add the mutated gene itself to the list of mutated genes
+	for (int li = 0; li < numLs; ++li) {
+		if (countExpalinedGenesForAllLs[li] > 0 and fabs(sampleGeneExpression->at(mutatedGeneId)) >= F) {
+			if(sampleGeneExpression->at(mutatedGeneId) > 0.0){ 	// up regulated
+				isExplainedGenesUpDownAllLs->at(li)[mutatedGeneId] = true;
+			}else{
+				isExplainedGenesUpDownAllLs->at(li)[mutatedGeneId + totalGenes] = true;
+			}
+		}
+	}
+
+	delete[] visited;
+
+}

@@ -75,14 +75,13 @@ int main() {
 		_mkdir((outDir + "/stringent").c_str());
 		_mkdir((outDir + "/sensitive/samples").c_str());
 		_mkdir((outDir + "/stringent/samples").c_str());
+		_mkdir((outDir + "/test_param").c_str());
 	#else
-//		struct stat st = {0};
-//		if (stat((outDir + "/sensitive").c_str(), &st) == -1) {
-			mkdir((outDir + "/sensitive").c_str(), 0777); // notice that 777 is different than 0777
-//		}
+		mkdir((outDir + "/sensitive").c_str(), 0777); // notice that 777 is different than 0777
 		mkdir((outDir + "/stringent").c_str(), 0777); // notice that 777 is different than 0777
 		mkdir((outDir + "/sensitive/samples").c_str(), 0777); // notice that 777 is different than 0777
 		mkdir((outDir + "/stringent/samples").c_str(), 0777); // notice that 777 is different than 0777
+		mkdir((outDir + "/test_param").c_str(), 0777); // notice that 777 is different than 0777
 	#endif
 
 	//parameters of analysis
@@ -186,7 +185,6 @@ int main() {
 	 * Combining point mutation and CNV matrix
 	 */
 
-	//TODO (next version) refactoring the code e.g.separate the combining code to a function in input.cpp
 	//create a list of mutated genes, which contain point mutation or CNV or both
 	vector<int> genesMut; // gene ids ; size = # mutated genes
 	vector<bool>* isMutated = new vector<bool>(totalGenes);
@@ -281,16 +279,16 @@ int main() {
 	cout << "computing JS divergence for all parameters (L,D,F) ... " << endl;
 
 	//TODO initialize all the parameters to be tested
-//	int LsVal[] = {2, 4, 6, 8, 10, 12, 14, 16, 18, 20};
-	int LsVal[] = {16, 18, 20};	//fewer parameters for testing
+	int LsVal[] = {2, 4, 6, 8, 10, 12, 14, 16, 18, 20};
+//	int LsVal[] = {16, 18, 20};	//fewer parameters for testing
 	vector<int> Ls(LsVal, LsVal + sizeof LsVal / sizeof LsVal[0]);
 	int numLs = Ls.size();
 //	int DsVal[] = {10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100};
 	int DsVal[] = {60, 65, 70};	//fewer parameters for testing
 	vector<int> Ds(DsVal, DsVal + sizeof DsVal / sizeof DsVal[0]);
 	int numDs = Ds.size();	//fewer parameters for testing
-	double FsVal[] = {1, 1.5, 2, 2.5, 3};
-//	double FsVal[] = {2, 2.5};	//fewer parameters for testing
+//	double FsVal[] = {1, 1.5, 2, 2.5, 3};
+	double FsVal[] = {2, 2.5};	//fewer parameters for testing
 	vector<double> Fs(FsVal, FsVal + sizeof FsVal / sizeof FsVal[0]);
 	int numFs = Fs.size();
 
@@ -298,8 +296,29 @@ int main() {
 	//initialize the vector to save the divergence of each set of parameters
 	vector<JSDivergence> jsDivergences(numCombinations);
 
+
+//	//TEST permutation function
+//	vector<string> testOut;
+//	string testOutFilename = "permutedGenesEx.txt";
+//	vector<int> permutedGeneLabelsEx;
+//	permuteGeneLabels(&genesEx, &permutedGeneLabelsEx);
+//	for (unsigned x = 0; x < permutedGeneLabelsEx.size(); ++x) {
+//		testOut.push_back(geneIdToSymbol[genesEx[x]] + "\t" + geneIdToSymbol[permutedGeneLabelsEx[x]]);
+//	}
+//	writeStrVector(testOutFilename.c_str(), &testOut);
+//	vector<string> testOut2;
+//	string testOutFilename2 = "permutedGenesMut.txt";
+//	vector<int> permutedGeneLabelsMut;
+//	permutedGeneLabelsUsingAllGeneInNetwork(&genesMut, &permutedGeneLabelsMut, totalGenes);
+//	for (unsigned x = 0; x < permutedGeneLabelsMut.size(); ++x) {
+//		testOut2.push_back(geneIdToSymbol[genesMut[x]] + "\t" + geneIdToSymbol[permutedGeneLabelsMut[x]]);
+//	}
+//	writeStrVector(testOutFilename2.c_str(), &testOut2);
+//	return 0;
+
 	//TODO parameter finding: for js divegence calculation the result is quite different from the original
-	findParameters(&jsDivergences, &Ls, &Ds, &Fs, totalGenes, &geneExpression, &mutations, &network, numSamples, numPermutationsForJSDivergence, &geneSymbolToId, numThreads);
+	findParameters(&jsDivergences, &Ls, &Ds, &Fs, totalGenes, &geneExpression, &mutations, &network, numSamples,
+			numPermutationsForJSDivergence, &geneIdToSymbol, &geneSymbolToId, numThreads);
 
 	//write the JS divergence result to a file
 	string outJSFilename = outDir + "/parameters.dat";
@@ -307,7 +326,7 @@ int main() {
 	saveJSDivergences(&jsDivergences, outJSFilename);
 	writeToLogFile(&outLogStream, "Write parameters results in " + outJSFilename);
 
-	cout << "\t\tDONE finding parameters (" << (float(clock() - step_time) / CLOCKS_PER_SEC) << " sec)\n";
+	cout << "\tDONE finding parameters (" << (float(clock() - step_time) / CLOCKS_PER_SEC) << " sec)\n";
 
 	//choose the best parameters
 	JSDivergence maxJs;
@@ -322,7 +341,9 @@ int main() {
 	int D = maxJs.D;
 	double F = maxJs.F;
 
-	//[DEBUG]
+	return 0;
+
+//	//[DEBUG]
 //	int L = 20;
 //	int D = 65;
 //	double F = 2.5;
@@ -364,7 +385,7 @@ int main() {
 			meg->isExplainedGenesUpDown = new vector<bool>(totalGenes * 2);	//to tell whether each gene is an explained gene in this sample i
 			//BFS for explained genes of the current mutated gene
 			BFSforExplainedGenesIdOnlyUpDownIncludingMutatedGene(&network, mutatedGeneId, L, D, F,
-					meg->isExplainedGenesUpDown, &sampleGeneExpression, i, &geneSymbolToId);
+					meg->isExplainedGenesUpDown, &sampleGeneExpression, i, &geneIdToSymbol, &geneSymbolToId);
 		}
 
 		//add explained genes to the list of all samples
@@ -456,7 +477,7 @@ int main() {
 		for (int geneId = 0; geneId < totalGenes; ++geneId) {
 			vector<bool> isExplainedUpDown(totalGenesUpDown, false);
 			BFSforExplainedGenesIdOnlyUpDownIncludingMutatedGene(&network, geneId, L, D, F,
-					&isExplainedUpDown, &sampleGeneExpression, sampleId, &geneSymbolToId);
+					&isExplainedUpDown, &sampleGeneExpression, sampleId, &geneIdToSymbol, &geneSymbolToId);
 			//add explained genes
 			for (int i = 0; i < totalGenesUpDown; ++i) {
 				if(isExplainedUpDown[i]){

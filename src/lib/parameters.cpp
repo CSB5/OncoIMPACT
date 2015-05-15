@@ -16,7 +16,8 @@
 void findParameters(vector<JSDivergence>* jsDivergences, vector<int>* Ls,
 		vector<int>* Ds, vector<double>* Fs, int totalGenes,
 		GeneExpression* geneExpression, Mutations* mutations,
-		TIntAdjList* network, int numSamples, int numDatasets, map<string, int>* geneSymbolToId, int numThreads) {
+		TIntAdjList* network, int numSamples, int numDatasets,
+		vector<string>* geneIdToSymbol, map<string, int>* geneSymbolToId, int numThreads) {
 
 	vector<int>* genesEx = geneExpression->genes;
 	vector<int>* genesMut = mutations->genes;
@@ -53,10 +54,12 @@ void findParameters(vector<JSDivergence>* jsDivergences, vector<int>* Ls,
 	vector<TIntegerMatrix>* subMutationMatrix = new vector<TIntegerMatrix>(numDatasets);
 	vector<Mutations>* subMutations = new vector<Mutations>(numDatasets);
 
-	//create 100 datasets containing 50 samples
-	vector< vector<int> > sampleIdsOfDatasets(numDatasets, vector<int>(numSamples, -1));
 	//for finding deregulated genes of all permutations and all possible F
 	vector< vector< vector<bool> > > isDeregulatedGensAll(numFs, vector< vector <bool> >(numDatasets, vector<bool>(totalGenesUpDown, false)));
+
+	//SUB
+	//create 100 datasets containing 50 samples
+	vector< vector<int> > sampleIdsOfDatasets(numDatasets, vector<int>(numSamples, -1));
 	#pragma omp parallel for
 	for (int i = 0; i < numDatasets; ++i) {
 
@@ -86,82 +89,116 @@ void findParameters(vector<JSDivergence>* jsDivergences, vector<int>* Ls,
 		}
 	}
 
+//	//FULL
+//	for (int i = 0; i < numDatasets; ++i) {
+//		for (int fi = 0; fi < numFs; ++fi) {
+//			countNumberOfDeregulatedGenes(originalGeneExpressionMatrix, Fs->at(fi), &isDeregulatedGensAll[fi][i], genesEx);
+//		}
+//	}
+
 	cout << "\tDONE generating 100 datasets (" << (float(clock() - begin_time) / CLOCKS_PER_SEC)	<< " sec)\n";
 
 	int count = 0;	//count number of combinations
 	//for each combination of parameters
-	for (int li = 0; li < numLs; ++li) {
-		for (int di = 0; di < numDs; ++di) {
-			for (int fi = 0; fi < numFs; ++fi) {
+	for (int di = 0; di < numDs; ++di) {
+		for (int fi = 0; fi < numFs; ++fi) {
 
-				int L = Ls->at(li);
-				int D = Ds->at(di);
-				double F = Fs->at(fi);
+			int D = Ds->at(di);
+			double F = Fs->at(fi);
 
-				cout << "\tcurrent parameters (L, D, F) is " << L << ", " << D << ", " << F << "... \n";
-				begin_time = clock();
+			for (int li = 0; li < numLs; ++li) {
+				cout << "\tcurrent parameters (L, D, F) is " << Ls->at(li) << ", " << D << ", " << F << "... \n";
+			}
 
-				//save values
-				jsDivergences->at(count).L = L;
+			begin_time = clock();
+
+			//save values
+			//for multiple L
+			for (int li = 0; li < numLs; ++li) {
+				jsDivergences->at(count).L = Ls->at(li);
 				jsDivergences->at(count).D = D;
 				jsDivergences->at(count).F = F;
+				count++;
+			}
 
-				//Ignore the choice (of F) in which the median number of deregulated genes is more than half of the gene in the network or <300
-				if (medianNumberOfDeregulatedGenes[fi] > halfNumberOfGenesInNetwork
-						or medianNumberOfDeregulatedGenes[fi] < 300) {
+			count -= numLs;	//reset the index of js divergence vector
+
+			//Ignore the choice (of F) in which the median number of deregulated genes is more than half of the gene in the network or <300
+			if (medianNumberOfDeregulatedGenes[fi] > halfNumberOfGenesInNetwork
+					or medianNumberOfDeregulatedGenes[fi] < 300) {
+				for (int li = 0; li < numLs; ++li) {
 					jsDivergences->at(count).divergence = -1;
-					count++;
-					break;
 				}
+				count -= numLs;	//reset the index of js divergence vector
+				break;
+			}
 
-				/*
-				 * Find the explained genes for all REAL samples
-				 */
 
-				vector< vector<bool> > isExplainedGenesInRealUpDown(totalSamples, vector<bool>(totalGenesUpDown, false));
-				for (int sampleId = 0; sampleId < totalSamples; sampleId++) {
+			/*
+			 * Find the explained genes for all REAL samples
+			 */
 
-					vector<double> sampleGeneExpression(totalGenes); //expression of all genes in the network
-					getGeneExpressionFromSampleId(originalGeneExpressionMatrix,
-							genesEx, &sampleGeneExpression, sampleId);
+			//for multiple Ls
+			vector< vector< vector<bool> > > isExplainedGenesInRealUpDownAllLs(numLs, vector< vector<bool> >(totalSamples, vector<bool>(totalGenesUpDown, false)));
 
-					vector<int> mutatedGeneIds; // to store gene id of mutated genes
-					getMutatedGeneIdsFromSampleId(mutations,
-							&mutatedGeneIds, sampleId, genesMut);
+			for (int sampleId = 0; sampleId < totalSamples; sampleId++) {
 
-					vector<bool> isExplainedGenesUpDownForASample(totalGenesUpDown, false);	//collect all explained gene of this sample
+				vector<double> sampleGeneExpression(totalGenes); //expression of all genes in the network
+				getGeneExpressionFromSampleId(originalGeneExpressionMatrix,
+						genesEx, &sampleGeneExpression, sampleId);
 
-					vector<bool> isExplaninedGeneUpDownForAMutatedGene(totalGenesUpDown);
-					int numMutatedGenes = mutatedGeneIds.size();
-					for (int mi = 0; mi < numMutatedGenes; ++mi) {	// for each mutated genes
-						BFSforExplainedGenesIdOnlyUpDownIncludingMutatedGene(network, mutatedGeneIds[mi], L, D, F,
-								&isExplaninedGeneUpDownForAMutatedGene, &sampleGeneExpression, -1, geneSymbolToId);
+				vector<int> mutatedGeneIds; // to store gene id of mutated genes
+				getMutatedGeneIdsFromSampleId(mutations,
+						&mutatedGeneIds, sampleId, genesMut);
+
+
+				//For multiple L values
+				vector< vector<bool> > isExplainedGenesUpDownForASampleAllLs(numLs, vector<bool>(totalGenesUpDown, false));	//collect all explained gene of this sample
+				vector< vector<bool> > isExplaninedGeneUpDownForAMutatedGeneAllLs(numLs, vector<bool>(totalGenesUpDown, false));
+				int numMutatedGenes = mutatedGeneIds.size();
+				for (int mi = 0; mi < numMutatedGenes; ++mi) {	// for each mutated genes
+					BFSforExplainedGenesUpDownIncludingMutatedGeneAllLengths(network, mutatedGeneIds[mi], Ls, D, F,
+							&isExplaninedGeneUpDownForAMutatedGeneAllLs, &sampleGeneExpression, -1, geneIdToSymbol, geneSymbolToId);
+					for (int li = 0; li < numLs; ++li) {
 						for (int ei = 0; ei < totalGenesUpDown; ++ei) {
-							if(isExplaninedGeneUpDownForAMutatedGene[ei]){
-								isExplainedGenesUpDownForASample[ei] = true;
+							if(isExplaninedGeneUpDownForAMutatedGeneAllLs[li][ei]){
+								isExplainedGenesUpDownForASampleAllLs[li][ei] = true;
 							}
 						}
 					}
+				}
 
-					//save the explained genes
+				//save the explained genes
+				//for multiple Ls
+				for (int li = 0; li < numLs; ++li) {
 					for (int ei = 0; ei < totalGenesUpDown; ++ei) {//differentiate the up and down regulated genes
-						isExplainedGenesInRealUpDown[sampleId][ei] = isExplainedGenesUpDownForASample[ei];
+						isExplainedGenesInRealUpDownAllLs[li][sampleId][ei] = isExplainedGenesUpDownForASampleAllLs[li][ei];
 					}
-				}	//end for loop of all real samples
+				}
+			}	//end for loop of all real samples
 
-				vector< vector<int> > realDistributionAll(numDatasets, vector<int>(totalGenesUpDown, 0));
-				vector< vector<int> > randomDistributionAll(numDatasets, vector<int>(totalGenesUpDown, 0));
+			/*
+			 * Crating distribution for both REAL and RANDOM
+			 */
 
-				//100 iterations to generate the frequency distribution and compute JS divergence
-				#pragma omp parallel for
-				for (int i = 0; i < numDatasets; ++i) {
+			//for multiple Ls
+			vector< vector< vector<int> > > realDistributionAllLs(numLs, vector< vector<int> >(numDatasets, vector<int>(totalGenesUpDown, 0)));
+			vector< vector< vector<int> > > randomDistributionAllLs(numLs, vector< vector<int> >(numDatasets, vector<int>(totalGenesUpDown, 0)));
 
-					/*
-					 * find explained genes for REAL samples (without gene label permutation)
-					 */
+			//100 iterations to generate the frequency distribution and compute JS divergence
+			#pragma omp parallel for
+			for (int i = 0; i < numDatasets; ++i) {
 
-					//count the number of samples that each gene (up and down) is explained
-					vector<int> realDistribution(totalGenesUpDown, 0); //differentiate the up and down regulated genes
+				/*
+				 * find explained genes for REAL samples (without gene label permutation)
+				 */
+
+				//SUB
+				//count the number of samples that each gene (up and down) is explained
+				//for multiple Ls
+				vector< vector<int> > realDistributionLs(numLs, vector<int>(totalGenesUpDown, 0)); //differentiate the up and down regulated genes
+
+				for (int li = 0; li < numLs; ++li) {
 
 					for (int si = 0; si < numSamples; si++) {
 
@@ -169,153 +206,198 @@ void findParameters(vector<JSDivergence>* jsDivergences, vector<int>* Ls,
 
 						//update real distribution
 						for (int ei = 0; ei < totalGenesUpDown; ++ei) {//differentiate the up and down regulated genes
-							if (isExplainedGenesInRealUpDown[sampleId][ei]) {
-								realDistribution[ei] = realDistribution[ei] + 1;
+							if (isExplainedGenesInRealUpDownAllLs[li][si][ei]) {
+								realDistributionLs[li][ei] = realDistributionLs[li][ei] + 1;
 							}
 						}
 					}	//end for loop of samples
 
+					//save the real distribution of current dataset i
 					for (int ei = 0; ei < totalGenesUpDown; ++ei) {
-						realDistributionAll[i][ei] = realDistribution[ei];
+						realDistributionAllLs[li][i][ei] = realDistributionLs[li][ei];
 					}
+				}
 
-//					//FULL
-//					//count the number of samples that each gene (up and down) is explained
-//					vector<int> realDistribution(totalGenesUpDown, 0); //differentiate the up and down regulated genes
+
+//				//FULL
+//				//count the number of samples that each gene (up and down) is explained
+//				//for multiple Ls
+//				vector< vector<int> > realDistributionLs(numLs, vector<int>(totalGenesUpDown, 0)); //differentiate the up and down regulated genes
+//
+//				for (int li = 0; li < numLs; ++li) {
 //
 //					for (int si = 0; si < totalSamples; si++) {
 //
 //						//update real distribution
 //						for (int ei = 0; ei < totalGenesUpDown; ++ei) {//differentiate the up and down regulated genes
-//							if (isExplainedGenesInRealUpDown[si][ei]) {
-//								realDistribution[ei] = realDistribution[ei] + 1;
+//							if (isExplainedGenesInRealUpDownAllLs[li][si][ei]) {
+//								realDistributionLs[li][ei] = realDistributionLs[li][ei] + 1;
 //							}
 //						}
 //					}	//end for loop of samples
 //
+//					//save the real distribution
 //					for (int ei = 0; ei < totalGenesUpDown; ++ei) {
-//						realDistributionAll[i][ei] = realDistribution[ei];
+//						realDistributionAllLs[li][i][ei] = realDistributionLs[li][ei];
 //					}
+//				}
 
-					/*
-					 * find explained genes for RANDOM sub-sample (with gene label permutation)
-					 */
+				/*
+				 * find explained genes for RANDOM sub-sample (with gene label permutation)
+				 */
 
-					//repermute the gene label of random a dataset
-					//Create gene label permutation for both gene expression and mutation matrix
-					//1. gene expression
-					vector<int> permutedGeneLabelsEx;
-					permuteGeneLabels(genesEx, &permutedGeneLabelsEx);
-					//2. mutation
-					vector<int> permutedGeneLabelsMut;
-					//permuteGeneLabels(genesMut, &permutedGeneLabelsMut); [Use only gene in the mutation matrix]
-					//use all the gene is the network
-					permutedGeneLabelsUsingAllGeneInNetwork(genesMut, &permutedGeneLabelsMut, totalGenes);
+				//TODO The permutation will be the same for all Ls, but different for diferent D and F
+				//repermute the gene label of random a dataset
+				//Create gene label permutation for both gene expression and mutation matrix
+				//1. gene expression
+				vector<int> permutedGeneLabelsEx;
+				permuteGeneLabels(genesEx, &permutedGeneLabelsEx);
 
-					//count the number of samples that each gene (up and down) is explained
-					vector<int> randomDistribution(totalGenesUpDown, 0); //differentiate the up and down regulated genes
+				//2. mutation
+				vector<int> permutedGeneLabelsMut;
+				//permuteGeneLabels(genesMut, &permutedGeneLabelsMut); [Use only gene in the mutation matrix]
+				//use all the gene is the network
+				permutedGeneLabelsUsingAllGeneInNetwork(genesMut, &permutedGeneLabelsMut, totalGenes);
 
-					for (int si = 0; si < numSamples; si++) {
+				//count the number of samples that each gene (up and down) is explained
+				//for multiple Ls
+				vector< vector<int> > randomDistributionLs(numLs, vector<int>(totalGenesUpDown, 0)); //differentiate the up and down regulated genes
 
-						vector<double> sampleGeneExpression(totalGenes); // of all genes
-						getGeneExpressionFromSampleId(&subGeneExpressionMatrix->at(i),
-								&permutedGeneLabelsEx, &sampleGeneExpression,
-								si);
+				//SUB
+				//for multiple Ls
+				for (int si = 0; si < numSamples; si++) {
 
-						vector<int> mutatedGeneIds; // to store gene id of mutated genes
-						getMutatedGeneIdsFromSampleId(&subMutations->at(i),
-								&mutatedGeneIds, si,
-								&permutedGeneLabelsMut);
+					vector<double> sampleGeneExpression(totalGenes); // of all genes
+					getGeneExpressionFromSampleId(&subGeneExpressionMatrix->at(i),
+							&permutedGeneLabelsEx, &sampleGeneExpression,
+							si);
 
-						vector<bool> isExplainedGenesUpDown(totalGenesUpDown, false);
-						vector<bool> isExplaninedGeneUpDownForAMutatedGene(totalGenesUpDown, false);
+					vector<int> mutatedGeneIds; // to store gene id of mutated genes
+					getMutatedGeneIdsFromSampleId(&subMutations->at(i),
+							&mutatedGeneIds, si,
+							&permutedGeneLabelsMut);
 
-						int numMutatedGenes = mutatedGeneIds.size();
-						for (int mi = 0; mi < numMutatedGenes; ++mi) {	// for each mutated genes
-							BFSforExplainedGenesIdOnlyUpDownIncludingMutatedGene(network, mutatedGeneIds[mi], L, D, F,
-									&isExplaninedGeneUpDownForAMutatedGene, &sampleGeneExpression, -1, geneSymbolToId);
+					//for multiple L
+					vector< vector<bool> > isExplainedGenesUpDownForASampleAllLs(numLs, vector<bool>(totalGenesUpDown, false));	//collect all explained gene of this sample
+					vector< vector<bool> > isExplaninedGeneUpDownForAMutatedGeneAllLs(numLs, vector<bool>(totalGenesUpDown, false));
+					//for multiple Ls
+					int numMutatedGenes = mutatedGeneIds.size();
+					for (int mi = 0; mi < numMutatedGenes; ++mi) {// for each mutated genes
+						BFSforExplainedGenesUpDownIncludingMutatedGeneAllLengths(
+								network, mutatedGeneIds[mi], Ls, D, F,
+								&isExplaninedGeneUpDownForAMutatedGeneAllLs,
+								&sampleGeneExpression, -1, geneIdToSymbol,
+								geneSymbolToId);
 
+						for (int li = 0; li < numLs; ++li) {
 							for (int ei = 0; ei < totalGenesUpDown; ++ei) {
-								if(isExplaninedGeneUpDownForAMutatedGene[ei]){
-									isExplainedGenesUpDown[ei] = true;
+								if(isExplaninedGeneUpDownForAMutatedGeneAllLs[li][ei]){
+									isExplainedGenesUpDownForASampleAllLs[li][ei] = true;
 								}
 							}
 						}
 
-						//update random distribution
+					}
+
+					//update random distribution
+					for (int li = 0; li < numLs; ++li) {
 						for (int j = 0; j < totalGenesUpDown; ++j) {//differentiate the up and down regulated genes
-							if (isExplainedGenesUpDown[j]) {
-								randomDistribution[j]++;
+							if (isExplainedGenesUpDownForASampleAllLs[li][j]) {
+								randomDistributionLs[li][j]++;
 							}
 						}
+					}
 
-					}	//end for loop of samples
+				}	//end for loop of samples
 
-					//FULL
-//					for (int si = 0; si < totalSamples; si++) {
+//				//FULL
+//				//for multiple Ls
+//				for (int si = 0; si < totalSamples; si++) {
 //
-//						vector<double> sampleGeneExpression(totalGenes); // of all genes
-//						getGeneExpressionFromSampleId(originalGeneExpressionMatrix,
-//								&permutedGeneLabelsEx, &sampleGeneExpression,
-//								si);
+//					vector<double> sampleGeneExpression(totalGenes); // of all genes
+//					getGeneExpressionFromSampleId(originalGeneExpressionMatrix,
+//							&permutedGeneLabelsEx, &sampleGeneExpression,
+//							si);
 //
-//						vector<int> mutatedGeneIds; // to store gene id of mutated genes
-//						getMutatedGeneIdsFromSampleId(mutations,
-//								&mutatedGeneIds, si,
-//								&permutedGeneLabelsMut);
+//					vector<int> mutatedGeneIds; // to store gene id of mutated genes
+//					getMutatedGeneIdsFromSampleId(mutations,
+//							&mutatedGeneIds, si,
+//							&permutedGeneLabelsMut);
 //
-//						vector<bool> isExplainedGenesUpDown(totalGenesUpDown, false);
-//						vector<bool> isExplaninedGeneUpDownForAMutatedGene(totalGenesUpDown, false);
+//					//for multiple L
+//					vector< vector<bool> > isExplainedGenesUpDownForASampleAllLs(numLs, vector<bool>(totalGenesUpDown, false));	//collect all explained gene of this sample
+//					vector< vector<bool> > isExplaninedGeneUpDownForAMutatedGeneAllLs(numLs, vector<bool>(totalGenesUpDown, false));
+//					//for multiple Ls
+//					int numMutatedGenes = mutatedGeneIds.size();
+//					for (int mi = 0; mi < numMutatedGenes; ++mi) {// for each mutated genes
+//						BFSforExplainedGenesUpDownIncludingMutatedGeneAllLengths(
+//								network, mutatedGeneIds[mi], Ls, D, F,
+//								&isExplaninedGeneUpDownForAMutatedGeneAllLs,
+//								&sampleGeneExpression, -1, geneIdToSymbol,
+//								geneSymbolToId);
 //
-//						int numMutatedGenes = mutatedGeneIds.size();
-//						for (int mi = 0; mi < numMutatedGenes; ++mi) {	// for each mutated genes
-//							BFSforExplainedGenesIdOnlyUpDownIncludingMutatedGene(network, mutatedGeneIds[mi], L, D, F,
-//									&isExplaninedGeneUpDownForAMutatedGene, &sampleGeneExpression, -1, geneSymbolToId);
-//
+//						for (int li = 0; li < numLs; ++li) {
 //							for (int ei = 0; ei < totalGenesUpDown; ++ei) {
-//								if(isExplaninedGeneUpDownForAMutatedGene[ei]){
-//									isExplainedGenesUpDown[ei] = true;
+//								if(isExplaninedGeneUpDownForAMutatedGeneAllLs[li][ei]){
+//									isExplainedGenesUpDownForASampleAllLs[li][ei] = true;
 //								}
 //							}
 //						}
 //
-//						//update random distribution
+//					}
+//
+//					//update random distribution
+//					for (int li = 0; li < numLs; ++li) {
 //						for (int j = 0; j < totalGenesUpDown; ++j) {//differentiate the up and down regulated genes
-//							if (isExplainedGenesUpDown[j]) {
-//								randomDistribution[j]++;
+//							if (isExplainedGenesUpDownForASampleAllLs[li][j]) {
+//								randomDistributionLs[li][j]++;
 //							}
 //						}
+//					}
 //
-//					}	//end for loop of samples
+//				}	//end for loop of samples
 
 
+				//save the random distribution of current dataset i
+				for (int li = 0; li < numLs; ++li) {
 					for (int ei = 0; ei < totalGenesUpDown; ++ei) {
-						randomDistributionAll[i][ei] = randomDistribution[ei];
+						randomDistributionAllLs[li][i][ei] = randomDistributionLs[li][ei];
 					}
+				}
 
-				}	//end for loop of 100 round
+			}	//end for loop of 100 round
 
-				cout << "\t\tDONE finding explained gene for all random samples (" << (float(clock() - begin_time) / CLOCKS_PER_SEC)	<< " sec)\n";
+			cout << "\t\tDONE finding explained gene for all random samples (" << (float(clock() - begin_time) / CLOCKS_PER_SEC)	<< " sec)\n";
 
-				/*
-				 * calculated JS divergence
-				 */
+			/*
+			 * calculated JS divergence
+			 */
 
-				//Note: sometimes the divergence is not calculated because of the constraint of the number of deregulated genes
-				jsDivergences->at(count).divergence = calculateJSDivergence(&realDistributionAll, &randomDistributionAll,
-						numSamples, &isDeregulatedGensAll[fi], L, D, F);
-
-//				//FULL
-//				jsDivergences->at(count).divergence = calculateJSDivergence(&realDistributionAll, &randomDistributionAll,
-//						totalSamples, &isDeregulatedGensAll[fi], L, D, F);
+			//SUB
+			//Note: sometimes the divergence is not calculated because of the constraint of the number of deregulated genes
+			//for multiple Ls
+			for (int li = 0; li < numLs; ++li) {
+				jsDivergences->at(count).divergence = calculateJSDivergence(&realDistributionAllLs[li], &randomDistributionAllLs[li],
+						numSamples, &isDeregulatedGensAll[fi], Ls->at(li), D, F);
 
 				cout << "\t\tdivergence = " << jsDivergences->at(count).divergence << endl;
 
 				count++;
+			}
 
-			} //end for loop for Fs
-		} //end for loop for Ds
-	}  //end for loop for Ls
+//			//FULL
+//			//for multiple Ls
+//			for (int li = 0; li < numLs; ++li) {
+//				jsDivergences->at(count).divergence = calculateJSDivergence(&realDistributionAllLs[li], &randomDistributionAllLs[li],
+//						totalSamples, &isDeregulatedGensAll[fi], Ls->at(li), D, F);
+//
+//				cout << "\t\tdivergence = " << jsDivergences->at(count).divergence << endl;
+//
+//				count++;
+//			}
+
+		} //end for loop for Fs
+	} //end for loop for Ds
 
 	//gene expression submatrix
 	delete subGeneExpressionMatrix;
@@ -364,7 +446,7 @@ double calculateJSDivergence(const vector<vector<int> >* realDistributionAll,
 	//TODO remove this
 	double sumPropP = 0.0;
 	double sumPropQ = 0.0;
-	string filename = "output/" + intToStr(L) + "_" + intToStr(D) + "_" + doubleToStr(F,1) + ".dat";
+	string filename = "output/test_param/" + intToStr(L) + "_" + intToStr(D) + "_" + doubleToStr(F,1) + ".dat";
 	vector<string> outStr;
 
 	double jsDivergence = 0;
