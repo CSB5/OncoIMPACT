@@ -9,6 +9,7 @@
 #define INPUT_H_
 
 #include "utilities.h"
+#include <set>
 
 /*
  * Structure for importing data
@@ -38,6 +39,24 @@ struct CopyNumberVariation{
 	vector<int>* sample; //optional for saving sample id
 };
 
+//For discovery mode
+
+//GENE	DRIVER_FREQUENCY	DRIVER_SNV_FREQUENCY	DRIVER_DELTION_FREQUENCY	DRIVER_AMPLIFICATION_FREQUENCY	CANCER_CENSUS	PAN_CANCER	IMPACT	MUTATION_FREQUENCY	SNV_FREQUENCY	DELTION_FREQUENCY	AMPLIFICATION_FREQUENCY
+//EGFR	0.393	0.262	0.000	0.241	Y	NA	120.1447552328	0.393	0.262	0.000	0.241
+struct DriverGeneFromFile{
+	//mutated gene id is the index of the vector<DriverGene>
+	double driverFreq;
+	double driverSnpFreq;
+	double driverDelFreq;
+	double driverAmpFreq;
+	bool isInCancerCensus;
+	double impactScore;
+	double mutFreq;
+	double snpFreq;
+	double delFreq;
+	double ampFreq;
+};
+
 /*
  * Functions for importing data
  */
@@ -55,6 +74,15 @@ void readGenesListUpDown(const char* filename, vector<int>* geneIdsUpDown, map<s
 void readBenchmarkGeneList(string benchmarkGeneListFilename, vector<int>* cancerBenchmarkGenes, map<string, int>* geneSymbolToId);
 
 int findIndex(vector<int>* geneIds, int currentGeneId);
+
+//For discovery mode
+void readPhenotypeGenesFromFile(const char* filename, vector<int>* phenotypeGeneIdsUpDown, map<string, int>* geneSymbolToId);
+void readDriverGenesFromFile(const char* filename, vector<DriverGeneFromFile>* driverGenesFromFile, map<string, int>* geneSymbolToId);
+
+void readModulesFromFile(string* moduleFileName, vector<string>* moduleNames, vector< vector<string> >* moduleMembers,
+		vector< vector<string> >* moduleDrivers, set<string>* driversList, set<string>* samplesList);
+
+bool replaceStr(std::string& str, const std::string& from, const std::string& to);
 
 /*
  * Functions for calculate data statistics

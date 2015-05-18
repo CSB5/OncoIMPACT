@@ -386,3 +386,218 @@ void readBenchmarkGeneList(string benchmarkGeneListFilename, vector<int>* cancer
 
 }
 
+void readPhenotypeGenesFromFile(const char* filename, vector<int>* phenotypeGeneIdsUpDown, map<string, int>* geneSymbolToId){
+	ifstream inFile;
+	inFile.open(filename, ifstream::in);
+
+	int totalGenes = geneSymbolToId->size();
+
+	if (inFile.is_open()) {
+
+		//read the output from the
+		while (inFile.good()) {
+			string line;
+			if (!getline(inFile, line))
+				break;
+			istringstream lineStream(line);
+			int i = 0;
+			string geneSym;
+			bool isPhenotype = false;
+
+			while (lineStream) {	//for each column (parameter)
+				string token;
+				if (!getline(lineStream, token, '\t'))
+					break;
+				if(i == 0){	//gene symbol
+					geneSym = token;
+				}else if(i == 7){	//phenotype status
+					if(token.compare("Y") == 0){
+						isPhenotype = true;
+					}
+				}
+				if(isPhenotype){
+					size_t foundUp = geneSym.find("UP");
+					size_t foundDown = geneSym.find("DOWN");
+				  	trimStr(geneSym, "_");
+					map<string, int>::iterator it = geneSymbolToId->find(geneSym);
+					if (foundUp!=std::string::npos){
+						//the gene is upregulated
+						phenotypeGeneIdsUpDown->push_back(it->second);
+					}
+					if (foundDown!=std::string::npos){
+						//the gene is downregulated
+						phenotypeGeneIdsUpDown->push_back(it->second + totalGenes);
+					}
+				}
+				i++;
+			}
+		}
+		inFile.close();
+	} else {
+		cerr << "Error opening file of explained and phenotype gene list \n";
+	}
+}
+
+void readDriverGenesFromFile(const char* filename, vector<DriverGeneFromFile>* driverGenesFromFile, map<string, int>* geneSymbolToId){
+	ifstream inFile;
+	inFile.open(filename, ifstream::in);
+
+	int totalGenes = geneSymbolToId->size();
+	int countDriver = 0;
+
+	if (inFile.is_open()) {
+
+		string header;
+		if(inFile.good()){
+			getline(inFile, header); //skip the header
+		}
+
+		//read the output from the
+		while (inFile.good()) {
+			string line;
+			if (!getline(inFile, line))
+				break;
+			istringstream lineStream(line);
+			int i = 0;
+			string geneSym;
+			bool isPhenotype = false;
+
+			int currentDriverGeneId = -1;
+			while (lineStream) {	//for each column (parameter)
+				string token;
+				if (!getline(lineStream, token, '\t'))
+					break;
+
+//				GENE	DRIVER_FREQUENCY	DRIVER_SNV_FREQUENCY	DRIVER_DELTION_FREQUENCY	DRIVER_AMPLIFICATION_FREQUENCY	CANCER_CENSUS	PAN_CANCER	IMPACT	MUTATION_FREQUENCY	SNV_FREQUENCY	DELTION_FREQUENCY	AMPLIFICATION_FREQUENCY
+//				EGFR	0.393	0.262	0.000	0.241	Y	NA	120.1447552328	0.393	0.262	0.000	0.241
+				if(i == 0){	//gene symbol
+					map<string, int>::iterator it = geneSymbolToId->find(token);
+					currentDriverGeneId = it->second;
+					countDriver++;
+				}else if(i == 1){
+					driverGenesFromFile->at(currentDriverGeneId).driverFreq = atof(token.c_str());
+				}else if(i == 2){
+					driverGenesFromFile->at(currentDriverGeneId).driverSnpFreq = atof(token.c_str());
+				}else if(i == 3){
+					driverGenesFromFile->at(currentDriverGeneId).driverDelFreq = atof(token.c_str());
+				}else if(i == 4){
+					driverGenesFromFile->at(currentDriverGeneId).driverAmpFreq = atof(token.c_str());
+				}else if(i == 5){
+					if(token.compare("Y") == 0){
+						driverGenesFromFile->at(currentDriverGeneId).isInCancerCensus = true;
+					}else{
+						driverGenesFromFile->at(currentDriverGeneId).isInCancerCensus = false;
+					}
+				}else if(i == 7){
+					driverGenesFromFile->at(currentDriverGeneId).impactScore = atof(token.c_str());
+				}else if(i == 8){
+					driverGenesFromFile->at(currentDriverGeneId).mutFreq = atof(token.c_str());
+				}else if(i == 9){
+					driverGenesFromFile->at(currentDriverGeneId).snpFreq = atof(token.c_str());
+				}else if(i == 10){
+					driverGenesFromFile->at(currentDriverGeneId).delFreq = atof(token.c_str());
+				}else if(i == 11){
+					driverGenesFromFile->at(currentDriverGeneId).ampFreq = atof(token.c_str());
+				}
+				i++;
+			}
+		}
+		inFile.close();
+	} else {
+		cerr << "Error opening file of explained and phenotype gene list \n";
+	}
+
+	cout << "Read " << countDriver << " drivers from file\n";
+}
+
+void readModulesFromFile(string* moduleFileName, vector<string>* moduleNames, vector< vector<string> >* moduleMembers,
+		vector< vector<string> >* moduleDrivers, set<string>* driversList, set<string>* samplesList){
+	ifstream inFile;
+	char delim = '\t';
+
+
+	inFile.open(moduleFileName->c_str(), std::ifstream::in);
+
+	if (inFile.is_open()) {
+
+		while (inFile.good()) {
+			string rowStr;
+			if (!getline(inFile, rowStr))
+				break;
+
+//				cout << rowStr << endl;
+			vector<string> members;
+			vector<string> drivers;
+
+			istringstream rowStream(rowStr);
+
+			int i = 0;	// for read gene in the first column;
+
+			while (rowStream) {
+
+				string colStr;
+				if (!getline(rowStream, colStr, delim))
+					break;
+
+				if(i == 0){ 				//read module name
+					moduleNames->push_back(colStr);
+					trimStr(colStr, ".");
+					string sampleName = colStr;
+					samplesList->insert(sampleName);
+				}else if(i == 1){			//read driver
+
+					istringstream geneList(colStr);
+					while(geneList){
+
+						string gene;
+						if (!getline(geneList, gene, ';'))
+							break;
+
+						members.push_back(gene);
+						drivers.push_back(gene);
+						driversList->insert(gene);
+					}
+				}else if(i == 2 or i == 3){						//read phenotype or explained gene
+
+						istringstream geneList(colStr);
+
+						while(geneList){
+
+							string gene;
+							if (!getline(geneList, gene, ';'))
+								break;
+
+							if(gene.compare("-") != 0){
+
+								replaceStr( gene, "_UP", "");
+								replaceStr( gene, "_DOWN", "");
+								members.push_back(gene);
+//								cout << gene << endl;
+							}
+
+						}
+				}
+
+				i++;
+			}
+
+			moduleMembers->push_back(members);
+			moduleDrivers->push_back(drivers);
+
+		}
+		inFile.close();
+
+	} else {
+		cerr << "Error opening file\n";
+	}
+
+}
+
+bool replaceStr(std::string& str, const std::string& from, const std::string& to) {
+	size_t start_pos = str.find(from);
+	if(start_pos == std::string::npos)
+		return false;
+	str.replace(start_pos, from.length(), to);
+	return true;
+}
+

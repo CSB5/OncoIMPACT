@@ -35,7 +35,7 @@ void readIntegerMatrix(TIntegerMatrix* matrix, const char* filename, char delim)
 typedef vector< vector<int> > TIntAdjList;
 typedef vector< vector<string> > TStrEdge;
 // methods for graph
-void readNetwork(const char* filename, TIntAdjList* network,
+int readNetwork(const char* filename, TIntAdjList* network,
 		vector<string>* geneIdToSymbol, map<string, int>* geneSymbolToId, char delim);
 void printAdjacencyList(TIntAdjList* network);
 void DFS(TIntAdjList* network, int geneId);

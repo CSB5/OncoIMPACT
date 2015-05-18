@@ -259,6 +259,7 @@ void trimSomeExplainedGenes(vector< list<Module> >* modulesListOfAllSamples, TIn
 	}
 }
 
+//TODO BUG: not trim some genes
 void trimModule(Module* module, TIntAdjList* network, int L, int D, vector<string>* geneIdToSymbol){
 	int totalGenes = network->size();
 

@@ -530,7 +530,7 @@ void BFSforExplainedGenesIdOnlyUpDownIncludingMutatedGene(TIntAdjList* network, 
 	delete[] visited;
 }
 
-//TODO use only one BFS for all L's values
+//use only one BFS for all L's values
 void BFSforExplainedGenesUpDownIncludingMutatedGeneAllLengths(TIntAdjList* network, int mutatedGeneId, vector<int>* Ls, int D,
 		double F, vector< vector<bool> >* isExplainedGenesUpDownAllLs, vector<double>* sampleGeneExpression, int currentSampleId,
 		vector<string>* geneIdToSymbol, map<string, int>* geneSymbolToId) {
@@ -541,7 +541,7 @@ void BFSforExplainedGenesUpDownIncludingMutatedGeneAllLengths(TIntAdjList* netwo
 	int numLs = Ls->size();
 	vector<int> countExpalinedGenesForAllLs(numLs, 0);
 
-	//TODO initialize isExplainedGenesUpDownAllL before sending to function
+	//isExplainedGenesUpDownAllL is initialized before sending to function
 	//matrix: row = L value, col = gene id up down
 
 	int totalGenes = network->size();

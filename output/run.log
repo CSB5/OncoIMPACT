@@ -1,8 +1,6 @@
-2015-05-15 12:08:08	Start Running oncoIMPACT 1.0 (using 10 threads)
-2015-05-15 12:08:09	Read network from network_FIsInGene_041709.txt
-2015-05-15 12:08:09	Read gene expression matrix from GBM/EXPR.txt
-2015-05-15 12:08:09	Read SNP from GBM/SNP.txt
-2015-05-15 12:08:10	Read CNV from GBM/CNV.txt
-2015-05-15 12:08:10	SNP and CNV matrix are combined
-2015-05-15 12:10:03	Write parameters results in output/parameters.dat
-2015-05-15 12:10:03	The maximum JS divergence is 0.17173 corresponding to (L,D,F) = (18,70,2.5)
+2015-05-18 15:12:55	Start Running oncoIMPACT 1.0 (using 10 threads)
+2015-05-18 15:12:55	Read network from /home/nok/workspace/oncoIMPACT/network_FIsInGene_041709.txt
+2015-05-18 15:12:56	Read gene expression matrix from GBM/EXPR.txt
+2015-05-18 15:12:56	Read SNP from GBM/SNP.txt
+2015-05-18 15:12:56	Read CNV from GBM/CNV.txt
+2015-05-18 15:12:57	SNP and CNV matrix are combined

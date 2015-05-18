@@ -109,7 +109,7 @@ void readIntegerMatrix(TDoubleMatrix* matrix, const char* filename,
  * For graph
  */
 
-void readNetwork(const char* filename, TIntAdjList* network,
+int readNetwork(const char* filename, TIntAdjList* network,
 		vector<string>* geneIdToSymbol, map<string, int>* geneSymbolToId,
 		char delim) {
 	ifstream inFile;
@@ -146,7 +146,8 @@ void readNetwork(const char* filename, TIntAdjList* network,
 		}
 		inFile.close();
 	} else {
-		cerr << "Error opening file\n";
+		//cerr << "Error opening file\n";
+		return 1;
 	}
 
 	cout << "Creating gene mapping ...\n";
@@ -199,6 +200,8 @@ void readNetwork(const char* filename, TIntAdjList* network,
 		network->at(i).clear();
 		network->at(i).assign(uniqueIds.begin(), uniqueIds.end());
 	}
+
+	return 0;
 }
 
 void printAdjacencyList(TIntAdjList* network) {

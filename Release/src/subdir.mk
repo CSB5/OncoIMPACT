@@ -4,16 +4,19 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 CPP_SRCS += \
-../src/oncoIMPACT.cpp \
-../src/tester.cpp 
+../src/database.cpp \
+../src/discovery.cpp \
+../src/oncoIMPACT.cpp 
 
 OBJS += \
-./src/oncoIMPACT.o \
-./src/tester.o 
+./src/database.o \
+./src/discovery.o \
+./src/oncoIMPACT.o 
 
 CPP_DEPS += \
-./src/oncoIMPACT.d \
-./src/tester.d 
+./src/database.d \
+./src/discovery.d \
+./src/oncoIMPACT.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
