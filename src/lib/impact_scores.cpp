@@ -13,7 +13,7 @@
 
 void calculateImpactScoresForAllSamples(vector< list<Module> >* modulesListOfAllSamples,
 		vector< vector<Driver> >* driversOfAllSamples, TDoubleMatrix* originalGeneExpressionMatrix, vector<int>* GenesEx,
-		int totalGenes, double F, vector<string>* geneIdToSymbol, string filename){
+		int totalGenes, double F, vector<string>* geneIdToSymbol, string filename, vector<string>* sampleIdToName){
 
 	int totalSamples = modulesListOfAllSamples->size();
 
@@ -70,7 +70,89 @@ void calculateImpactScoresForAllSamples(vector< list<Module> >* modulesListOfAll
 				driver.impactScore = score;
 
 				//OUTPUT: print drivers and impact scores for all samples (cont.)
-				string str = intToStr(i) + "\t" + geneIdToSymbol->at(*git) + "\t" + doubleToStr(score, 3) + "\t";
+				string str = sampleIdToName->at(i) + "\t" + geneIdToSymbol->at(*git) + "\t" + doubleToStr(score, 3) + "\t";
+
+				//check if the driver gene is also a deregulated gene
+				if(rowId[*git] != -1 and fabs(originalGeneExpressionMatrix->at(rowId[*git])[i]) >= F){
+					driver.isDeregulated = true;
+					str = str + "1\t" + intToStr(moduleSize) + "\t" + intToStr(numDrivers);
+				}else{
+					driver.isDeregulated = false;
+					str = str + "0\t" + intToStr(moduleSize) + "\t" + intToStr(numDrivers);
+				}
+
+				driversOfAllSamples->at(i).push_back(driver);
+
+				outputDrivers->push_back(str);
+			}
+
+		}	//end for each module
+
+	}
+
+	//OUTPUT: print drivers and impact scores for all samples (cont.)
+	writeStrVector(filename.c_str(), outputDrivers);
+	delete outputDrivers;
+}
+
+void calculateImpactScoresForAllInputSamples(int totalInputSamples, vector< list<Module> >* modulesListOfAllSamples,
+		vector< vector<Driver> >* driversOfAllSamples, TDoubleMatrix* originalGeneExpressionMatrix, vector<int>* GenesEx,
+		int totalGenes, double F, vector<string>* geneIdToSymbol, string filename, vector<string>* sampleIdToName){
+
+	//map the gene id to the row id in the gene expression matrix
+	vector<int> rowId(totalGenes);
+	for (int i = 0; i < totalGenes; ++i) {
+		rowId[i] = findIndex(GenesEx, i);
+	}
+
+	//OUTPUT: print drivers and impact scores for all samples
+	vector<string>* outputDrivers = new vector<string>;
+	outputDrivers->push_back("SAMPLE_ID\tDRIVER\tIMPACT_SCORE\tIS_DEREGULATED\tMODULE_SIZE\tNUM_DRIVERS_IN_MODULE");
+
+	//for each sample i
+	for (int i = 0; i < totalInputSamples; ++i) {
+
+		list<Module> modules = modulesListOfAllSamples->at(i);
+
+		//for each module
+		for (list<Module>::iterator it = modules.begin(); it != modules.end(); it++) {
+			Module module = *it;
+			double score = 0;
+
+			int moduleSize = 0;
+			int numDrivers = module.driverGeneIds.size();
+
+			//sum up the fold change
+
+			for(list<int>::iterator git = module.explainedGeneIdsUpDown.begin(); git != module.explainedGeneIdsUpDown.end(); git++){
+				int currentExplainedGeneId = *git;
+				if(currentExplainedGeneId < totalGenes){	//up
+					score += fabs(originalGeneExpressionMatrix->at(rowId[currentExplainedGeneId])[i]);
+				}else{										//down
+					score += fabs(originalGeneExpressionMatrix->at(rowId[currentExplainedGeneId - totalGenes])[i]);
+				}
+				moduleSize++;
+			}
+
+			for(list<int>::iterator git = module.phenotypeGeneIdsUpDown.begin(); git != module.phenotypeGeneIdsUpDown.end(); git++){
+				int currentPhenotypeGeneId = *git;
+				if(currentPhenotypeGeneId < totalGenes){	//up
+					score += fabs(originalGeneExpressionMatrix->at(rowId[currentPhenotypeGeneId])[i]);
+				}else{										//down
+					score += fabs(originalGeneExpressionMatrix->at(rowId[currentPhenotypeGeneId - totalGenes])[i]);
+				}
+				moduleSize++;
+			}
+
+			//save the drivers and their scores
+			for(list<int>::iterator git = module.driverGeneIds.begin(); git != module.driverGeneIds.end(); git++){
+				Driver driver;
+				driver.geneId = *git;
+				driver.sampleId = i;
+				driver.impactScore = score;
+
+				//OUTPUT: print drivers and impact scores for all samples (cont.)
+				string str = sampleIdToName->at(i) + "\t" + geneIdToSymbol->at(*git) + "\t" + doubleToStr(score, 3) + "\t";
 
 				//check if the driver gene is also a deregulated gene
 				if(rowId[*git] != -1 and fabs(originalGeneExpressionMatrix->at(rowId[*git])[i]) >= F){

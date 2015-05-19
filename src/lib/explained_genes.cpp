@@ -428,8 +428,6 @@ void BFSforExplainedGenesIdOnlyUpDownIncludingMutatedGene(TIntAdjList* network, 
 		double F, vector<bool>* isExplainedGenesUpDown, vector<double>* sampleGeneExpression, int currentSampleId,
 		vector<string>* geneIdToSymbol, map<string, int>* geneSymbolToId) {
 
-//	cout << "for mutated gene " << mutatedGeneId << endl;
-
 	int countExpalinedGenes = 0;
 
 	//initialize explainedGenesFrequency

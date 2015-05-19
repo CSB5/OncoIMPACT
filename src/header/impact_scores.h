@@ -9,6 +9,7 @@
 #define IMPACT_SCORES_H_
 
 #include "../header/merge_and_trim.h"
+#include "../header/input.h"
 
 struct Driver{
 	int geneId;
@@ -21,7 +22,10 @@ struct Driver{
 
 void calculateImpactScoresForAllSamples(vector< list<Module> >* modulesListOfAllSamples,
 		vector< vector<Driver> >* drivers, TDoubleMatrix* originalGeneExpressionMatrix, vector<int>* GenesEx,
-		int totalGenes, double F, vector<string>* geneIdToSymbol, string filname);
+		int totalGenes, double F, vector<string>* geneIdToSymbol, string filname, vector<string>* sampleIdToName);
+void calculateImpactScoresForAllInputSamples(int totalInputSamples, vector< list<Module> >* modulesListOfAllSamples,
+		vector< vector<Driver> >* driversOfAllSamples, TDoubleMatrix* originalGeneExpressionMatrix, vector<int>* GenesEx,
+		int totalGenes, double F, vector<string>* geneIdToSymbol, string filename, vector<string>* sampleIdToName);
 
 void aggregateDriversAcrossSamples(vector< vector<Driver> >* driversOfAllSamples, vector<double>* driverAggregatedScores,
 		vector<int>* driversFrequency, vector<string>* geneIdToSymbol, int totalGenes);

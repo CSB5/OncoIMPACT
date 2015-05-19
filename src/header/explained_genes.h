@@ -10,6 +10,7 @@
 
 #include "utilities.h"
 #include "input.h"
+#include "data_structures.h"
 
 /*
  * Structure for explained genes
@@ -21,12 +22,6 @@ struct ExplainedGene{
 	int degree;
 	int frequency; //save frequency of this gene for each sample
 };
-
-struct MutatedAndExplianedGenes{
-	//int mutatedGeneId; this is equal to the index of the vector
-	vector<bool>* isExplainedGenesUpDown;
-};
-
 
 /*
  * Functions for finding explained genes

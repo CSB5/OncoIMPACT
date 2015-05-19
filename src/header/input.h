@@ -9,6 +9,7 @@
 #define INPUT_H_
 
 #include "utilities.h"
+#include "data_structures.h"
 #include <set>
 
 /*
@@ -79,8 +80,9 @@ int findIndex(vector<int>* geneIds, int currentGeneId);
 void readPhenotypeGenesFromFile(const char* filename, vector<int>* phenotypeGeneIdsUpDown, map<string, int>* geneSymbolToId);
 void readDriverGenesFromFile(const char* filename, vector<DriverGeneFromFile>* driverGenesFromFile, map<string, int>* geneSymbolToId);
 
-void readModulesFromFile(string* moduleFileName, vector<string>* moduleNames, vector< vector<string> >* moduleMembers,
-		vector< vector<string> >* moduleDrivers, set<string>* driversList, set<string>* samplesList);
+void readModulesFromFile(string* moduleFileName, vector<string>* sampleIdToName, map<string, int>* sampleNameToId,
+		vector<string>* geneIdToSymbol, map<string, int>* geneSymbolToId,
+		vector< vector<MutatedAndExplianedGenes> >* mutatedAndExplainedGenesListReal, vector< vector<int> >* mutatedGeneIdsListReal);
 
 bool replaceStr(std::string& str, const std::string& from, const std::string& to);
 

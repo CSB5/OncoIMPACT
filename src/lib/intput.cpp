@@ -13,6 +13,7 @@
 #include <vector>
 #include <cmath>
 #include <map>
+#include <algorithm>
 #include <cstdlib>
 #include <cstring>
 #include "../header/input.h"
@@ -416,8 +417,8 @@ void readPhenotypeGenesFromFile(const char* filename, vector<int>* phenotypeGene
 					}
 				}
 				if(isPhenotype){
-					size_t foundUp = geneSym.find("UP");
-					size_t foundDown = geneSym.find("DOWN");
+					size_t foundUp = geneSym.find("_UP");
+					size_t foundDown = geneSym.find("_DOWN");
 				  	trimStr(geneSym, "_");
 					map<string, int>::iterator it = geneSymbolToId->find(geneSym);
 					if (foundUp!=std::string::npos){
@@ -507,15 +508,18 @@ void readDriverGenesFromFile(const char* filename, vector<DriverGeneFromFile>* d
 		cerr << "Error opening file of explained and phenotype gene list \n";
 	}
 
-	cout << "Read " << countDriver << " drivers from file\n";
 }
 
-void readModulesFromFile(string* moduleFileName, vector<string>* moduleNames, vector< vector<string> >* moduleMembers,
-		vector< vector<string> >* moduleDrivers, set<string>* driversList, set<string>* samplesList){
+void readModulesFromFile(string* moduleFileName, vector<string>* sampleIdToName, map<string, int>* sampleNameToId,
+		vector<string>* geneIdToSymbol, map<string, int>* geneSymbolToId,
+		vector< vector<MutatedAndExplianedGenes> >* mutatedAndExplainedGenesListReal, vector< vector<int> >* mutatedGeneIdsListReal){
 	ifstream inFile;
 	char delim = '\t';
 
+	int numInputSamples = sampleIdToName->size();
+	int currentSampleId = numInputSamples;
 
+	//read samples and their ids
 	inFile.open(moduleFileName->c_str(), std::ifstream::in);
 
 	if (inFile.is_open()) {
@@ -525,7 +529,68 @@ void readModulesFromFile(string* moduleFileName, vector<string>* moduleNames, ve
 			if (!getline(inFile, rowStr))
 				break;
 
-//				cout << rowStr << endl;
+			istringstream rowStream(rowStr);
+
+			int i = 0;	// for read sample name in the first column;
+
+			while (rowStream) {
+
+				string colStr;
+				if (!getline(rowStream, colStr, delim))
+					break;
+
+				if(i == 0){ 				//read sample name
+
+					//check if sample's name already added to the module list
+					vector<string>::iterator it = find(sampleIdToName->begin(), sampleIdToName->end(), colStr);
+					if( it == sampleIdToName->end()){	//not found
+						//add the sample the list
+						sampleIdToName->push_back(colStr);
+						sampleNameToId->insert(pair<string, int>(colStr, currentSampleId));
+//						cout << "sample " << currentSampleId << " = " << colStr << " is added\n";
+						currentSampleId++;
+					}else{	//found in the module list, then skip
+					}
+
+					break;
+				}
+				i++;
+			}
+
+		}
+		inFile.close();
+
+	} else {
+		cerr << "Error opening file\n";
+	}
+
+	//read modules into mutatedAndExplainedGenesListReal
+
+	inFile.open(moduleFileName->c_str(), std::ifstream::in);
+
+	currentSampleId = -1;
+	int currentMutatedGeneId = -1;
+	int numDbSamples = sampleIdToName->size() - numInputSamples;
+	int totalGenes = geneIdToSymbol->size();
+	int totalGenesUpDown = totalGenes * 2;
+
+	//initialize vector for samples in database
+	for (int si = 0; si < numDbSamples; ++si) {
+		mutatedGeneIdsListReal->push_back(vector<int>());
+		vector<MutatedAndExplianedGenes> mutatedAndExplainedGenes(totalGenes);
+		for (int gi = 0; gi < totalGenes; ++gi) {
+			mutatedAndExplainedGenes[gi].isExplainedGenesUpDown = new vector<bool>(totalGenes * 2, false);
+		}
+		mutatedAndExplainedGenesListReal->push_back(mutatedAndExplainedGenes);
+	}
+
+	if (inFile.is_open()) {
+
+		while (inFile.good()) {
+			string rowStr;
+			if (!getline(inFile, rowStr))
+				break;
+
 			vector<string> members;
 			vector<string> drivers;
 
@@ -539,53 +604,60 @@ void readModulesFromFile(string* moduleFileName, vector<string>* moduleNames, ve
 				if (!getline(rowStream, colStr, delim))
 					break;
 
-				if(i == 0){ 				//read module name
-					moduleNames->push_back(colStr);
-					trimStr(colStr, ".");
-					string sampleName = colStr;
-					samplesList->insert(sampleName);
-				}else if(i == 1){			//read driver
+				if(i == 0){	//sample name
+//					cout << colStr << endl;
+					map<string, int>::iterator it = sampleNameToId->find(colStr);
+					if(it == sampleNameToId->end()){	//not found, so this sample is one of the input samples
+						currentSampleId = -1;
+						break;	//skip to the next module (line)
+					}else{
+						currentSampleId = it->second;
+					}
+				}else if(i == 1){			//read mutated gene
+
+//					cout << currentSampleId << " " << currentMutatedGeneId << endl;
+
+					map<string, int>::iterator it = geneSymbolToId->find(colStr);
+					currentMutatedGeneId = it->second;
+					mutatedGeneIdsListReal->at(currentSampleId).push_back(currentMutatedGeneId);
+				}else if(i == 2){	//read explained genes
 
 					istringstream geneList(colStr);
+
 					while(geneList){
 
 						string gene;
 						if (!getline(geneList, gene, ';'))
 							break;
 
-						members.push_back(gene);
-						drivers.push_back(gene);
-						driversList->insert(gene);
-					}
-				}else if(i == 2 or i == 3){						//read phenotype or explained gene
-
-						istringstream geneList(colStr);
-
-						while(geneList){
-
-							string gene;
-							if (!getline(geneList, gene, ';'))
-								break;
-
-							if(gene.compare("-") != 0){
-
-								replaceStr( gene, "_UP", "");
-								replaceStr( gene, "_DOWN", "");
-								members.push_back(gene);
-//								cout << gene << endl;
-							}
-
+						size_t foundUp = gene.find("_UP");
+						size_t foundDown = gene.find("_DOWN");
+					  	trimStr(gene, "_");
+						map<string, int>::iterator it = geneSymbolToId->find(gene);
+						if (foundUp!=std::string::npos){
+							//the gene is upregulated
+							int currentExplainedGeneId = it->second;
+							mutatedAndExplainedGenesListReal->at(currentSampleId)[currentMutatedGeneId].isExplainedGenesUpDown->at(currentExplainedGeneId) = true;
+//							cout << gene << "_UP" << "\t";
 						}
+						if (foundDown!=std::string::npos){
+							//the gene is downregulated
+							int currentExplainedGeneId = it->second + totalGenes;
+							mutatedAndExplainedGenesListReal->at(currentSampleId)[currentMutatedGeneId].isExplainedGenesUpDown->at(currentExplainedGeneId) = true;
+//							cout << gene << "_DOWN" << "\t";
+						}
+					}
+
+//					cout << endl;
+
+					break;
 				}
 
 				i++;
 			}
-
-			moduleMembers->push_back(members);
-			moduleDrivers->push_back(drivers);
-
 		}
 		inFile.close();
+
 
 	} else {
 		cerr << "Error opening file\n";

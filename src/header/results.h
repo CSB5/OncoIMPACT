@@ -14,6 +14,7 @@
 #include "parameters.h"
 
 struct SampleDriver{
+	int geneId;
 	string gene;
 	string type;
 	double impactScore;
@@ -56,6 +57,13 @@ void saveModulesCytoscape(vector<list<Module> > * modulesListOfAllSamples,
 void printSampleDriverList(vector< vector<Driver> >* driversOfAllSamples, string filename, vector<string>* geneIdToSymbol, vector<string>* sampleIdToName,
 		TIntegerMatrix* originalPointMutationsMatrix, TIntegerMatrix* originalCNVsMatrix, vector<int>* genesPointMut, vector<int>* genesCNV,
 		vector<double>* driverAggregatedScores, vector<int>* driversFrequency, vector<int>* mutationFrequency, vector<bool>* isCancerBenchmarkGenes);
+void printSampleDriverListForInputSamples(int totalInputSamples, vector<vector<Driver> >* driversOfAllSamples,
+		string pathname, vector<string>* geneIdToSymbol, vector<string>* sampleIdToName,
+		vector<DriverGeneFromFile>* driverGenesFromFile,
+		TIntegerMatrix* originaloriginalPointMutationsMatrix,
+		TIntegerMatrix* originalCNVsMatrix, vector<int>* genesPointMut,
+		vector<int>* genesCNV, vector<bool>* isCancerBenchmarkGenes);
+
 bool sortByImpactScore(const SampleDriver& first, const SampleDriver& second);
 
 string getDriverType(int driverGeneId, int sampleId, TIntegerMatrix* originalPointMutationsMatrix, TIntegerMatrix* originalCNVsMatrix,

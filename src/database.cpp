@@ -25,6 +25,7 @@
 #include "header/results.h"
 #include "header/parameters.h"
 #include "header/impact_scores.h"
+#include "header/data_structures.h"
 
 
 #ifdef _WIN32
@@ -340,14 +341,14 @@ int database(string outDir, string networkFilename, string expFilename, string s
 			" corresponding to (L,D,F) = (" + intToStr(maxJs.L) + "," + intToStr(maxJs.D) + "," + doubleToStr(maxJs.F, 1) + ")");
 
 	//set the L D F to maxJs
-	int L = maxJs.L;
-	int D = maxJs.D;
-	double F = maxJs.F;
+//	int L = maxJs.L;
+//	int D = maxJs.D;
+//	double F = maxJs.F;
 
-//	//[DEBUG]
-//	int L = 20;
-//	int D = 65;
-//	double F = 2.5;
+	//[DEBUG]
+	int L = 20;
+	int D = 65;
+	double F = 2.5;
 
 	/*
 	 * Find PHENOTYPE GENES
@@ -378,10 +379,16 @@ int database(string outDir, string networkFilename, string expFilename, string s
 		//find explained genes of a current sample
 		vector<MutatedAndExplianedGenes> mutatedAndExplainedGenes(totalGenes); //contains explained genes of each driver
 
+		//to tell whether each gene is an explained gene in this sample i
+		//initialize the mutatedAndExplainedGenes for all genes
+		for (int gi = 0; gi < totalGenes; ++gi) {
+			mutatedAndExplainedGenes[gi].isExplainedGenesUpDown = new vector<bool>(totalGenes * 2, false);
+		}
+
 		for (int j = 0; j < numMutatedGenes; ++j) {	// for each mutated genes
 			int mutatedGeneId = mutatedGeneIds[j];
 			MutatedAndExplianedGenes* meg = &mutatedAndExplainedGenes[mutatedGeneId];
-			meg->isExplainedGenesUpDown = new vector<bool>(totalGenes * 2);	//to tell whether each gene is an explained gene in this sample i
+//			meg->isExplainedGenesUpDown = new vector<bool>(totalGenes * 2);	//already init above
 			//BFS for explained genes of the current mutated gene
 			BFSforExplainedGenesIdOnlyUpDownIncludingMutatedGene(&network, mutatedGeneId, L, D, F,
 					meg->isExplainedGenesUpDown, &sampleGeneExpression, i, &geneIdToSymbol, &geneSymbolToId);
@@ -667,11 +674,12 @@ int database(string outDir, string networkFilename, string expFilename, string s
 		vector< vector<Driver> > driversOfAllSamples(totalSamples);
 		string outDriverOfAllSamplesFilename;
 		if(mode == 0){
-			outDriverOfAllSamplesFilename = "output/sensitive/driver_all_samples.dat";
+			outDriverOfAllSamplesFilename = outDir + "/sensitive/driver_all_samples.dat";
 		}else{
-			outDriverOfAllSamplesFilename = "output/stringent/driver_all_samples.dat";
+			outDriverOfAllSamplesFilename = outDir + "/stringent/driver_all_samples.dat";
 		}
-		calculateImpactScoresForAllSamples(&modulesListOfAllSamples, &driversOfAllSamples, &originalGeneExpressionMatrix, &genesEx, totalGenes, F, &geneIdToSymbol, outDriverOfAllSamplesFilename);
+		calculateImpactScoresForAllSamples(&modulesListOfAllSamples, &driversOfAllSamples,
+				&originalGeneExpressionMatrix, &genesEx, totalGenes, F, &geneIdToSymbol, outDriverOfAllSamplesFilename, &sampleIdToName);
 
 		vector<double> driverAggregatedScores(totalGenes);
 		vector<int> driversFrequency(totalGenes);
@@ -794,11 +802,12 @@ int database(string outDir, string networkFilename, string expFilename, string s
 		vector< vector<Driver> > driversOfAllSamples(totalSamples);
 		string outDriverOfAllSamplesFilename;
 		if(mode == 0){
-			outDriverOfAllSamplesFilename = "output/stringent/driver_all_samples.dat";
+			outDriverOfAllSamplesFilename = outDir + "/stringent/driver_all_samples.dat";
 		}else{
-			outDriverOfAllSamplesFilename = "output/stringent/driver_all_samples.dat";
+			outDriverOfAllSamplesFilename = outDir + "/stringent/driver_all_samples.dat";
 		}
-		calculateImpactScoresForAllSamples(&modulesListOfAllSamples, &driversOfAllSamples, &originalGeneExpressionMatrix, &genesEx, totalGenes, F, &geneIdToSymbol, outDriverOfAllSamplesFilename);
+		calculateImpactScoresForAllSamples(&modulesListOfAllSamples, &driversOfAllSamples,
+				&originalGeneExpressionMatrix, &genesEx, totalGenes, F, &geneIdToSymbol, outDriverOfAllSamplesFilename, &sampleIdToName);
 
 		vector<double> driverAggregatedScores(totalGenes);
 		vector<int> driversFrequency(totalGenes);
@@ -853,13 +862,17 @@ int database(string outDir, string networkFilename, string expFilename, string s
 
 	} //end STRINGENT mode
 
-	//delete the vector<int>* explainedGenesFreqency
+	//delete the vector<int>* mutatedAndExplainedGenesListReal
 	for (int i = 0; i < totalSamples; ++i) {
 		vector<MutatedAndExplianedGenes> mutatedAndExplainedGenes = mutatedAndExplainedGenesListReal[i];
-		vector<int> mutatedGeneIds = mutatedGeneIdsListReal[i];
-		for (unsigned int j = 0; j < mutatedGeneIds.size(); ++j) {
-			int currentMutatedGeneId = mutatedGeneIds[j];
-			vector<bool>* isExplainedGenesUpDown = mutatedAndExplainedGenes[currentMutatedGeneId].isExplainedGenesUpDown;
+//		vector<int> mutatedGeneIds = mutatedGeneIdsListReal[i];
+//		for (unsigned int j = 0; j < mutatedGeneIds.size(); ++j) {
+//			int currentMutatedGeneId = mutatedGeneIds[j];
+//			vector<bool>* isExplainedGenesUpDown = mutatedAndExplainedGenes[currentMutatedGeneId].isExplainedGenesUpDown;
+//			delete isExplainedGenesUpDown;
+//		}
+		for (int gi = 0; gi < totalGenes; ++gi) {
+			vector<bool>* isExplainedGenesUpDown = mutatedAndExplainedGenes[gi].isExplainedGenesUpDown;
 			delete isExplainedGenesUpDown;
 		}
 	}

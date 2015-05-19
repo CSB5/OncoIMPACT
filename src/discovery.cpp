@@ -15,6 +15,13 @@
 #include "header/utilities.h"
 #include "header/input.h"
 #include "header/explained_genes.h"
+#include "header/phenotype_genes.h"
+#include "header/driver_genes.h"
+#include "header/merge_and_trim.h"
+#include "header/results.h"
+#include "header/impact_scores.h"
+#include "header/data_structures.h"
+
 
 #ifdef _WIN32
 	#include <direct.h>
@@ -128,11 +135,7 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 
 	//create a list of mutated genes, which contain point mutation or CNV or both
 	vector<int> genesMut; // gene ids ; size = # mutated genes
-	vector<bool>* isMutated = new vector<bool>(totalGenes);
-	//initialize isMutated, pointMutationCount, CNVCount
-	for (int i = 0; i < totalGenes; ++i) {
-		isMutated->at(i) = false;
-	}
+	vector<bool>* isMutated = new vector<bool>(totalGenes, false);
 	//1. check point mutation
 	for (int i = 0; i < numGenesPointMut; ++i) {
 		isMutated->at(genesPointMut[i]) = true;
@@ -187,15 +190,13 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 	cout << "\ttotal samples in mutation matrix is " << totalInputSamples
 			<< endl;
 
-	//TODO Read parameters from file
+	//Read parameters from file
 	int L = 0;
 	int D = 0;
 	double F = 0.0;
 
 	ifstream inParameterFile;
 	string parameterFilename = dbPath + "/parameters.dat";
-
-
 
 	inParameterFile.open(parameterFilename.c_str(), ifstream::in);
 	if (inParameterFile.is_open()) {
@@ -229,6 +230,12 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 	} else {
 		cerr << "Error opening parameter file\n";
 	}
+
+	//[DEBUG]
+	L = 20;
+	D = 65;
+	F = 2.5;
+
 	cout << "Parameters (L,D,F) are set to " << L << ", " << D << ", " << F << endl;
 
 	//Read phenotype genes from file
@@ -246,10 +253,12 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 	vector<DriverGeneFromFile> driverGenesFromFileSensitive(totalGenes);
 	string driverFilenameSensitive = dbPath + "/sensitive/driver_list.txt";
 	readDriverGenesFromFile(driverFilenameSensitive.c_str(), &driverGenesFromFileSensitive, &geneSymbolToId);
+	cout << "Read drivers (sensitive) from file\n";
 
 	vector<DriverGeneFromFile> driverGenesFromFileStringent(totalGenes);
 	string driverFilenameStringent = dbPath + "/stringent/driver_list.txt";
 	readDriverGenesFromFile(driverFilenameStringent.c_str(), &driverGenesFromFileStringent, &geneSymbolToId);
+	cout << "Read drivers (stringent) from file\n";
 
 	//Read cancer benchmark gene list
 	vector<int> cancerBenchmarkGenes;
@@ -260,21 +269,11 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 		isCancerBenchmarkGenes[cancerBenchmarkGenes[i]] = true;
 	}
 
-	//TODO Read MODULE.dat
-	string moduleFilename = dbPath + "/MODULE.dat";
-
-	//TODO get id and name of samples (id of dbSamples start from totalSamples, the number of input samples);
-	map<string, int> sampleNameToId;
-
-
-	//update size of samples
-	int totalSamples = sampleIdToName.size();
-
 	//A vector for collecting mutated genes and the corresponding explained genes for all samples (sample, mutated genes, explained genes)
 	vector< vector<MutatedAndExplianedGenes> > mutatedAndExplainedGenesListReal;
 	vector< vector<int> > mutatedGeneIdsListReal;	//to save a list of mutated gene ids for each sample
 
-	//TODO add modules for input samples
+	//add modules for input samples
 	for (int si = 0; si < totalInputSamples; ++si) {
 
 		//get gene expression of a current sample
@@ -289,10 +288,16 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 
 		vector<MutatedAndExplianedGenes> mutatedAndExplainedGenes(totalGenes); //contains explained genes of each driver
 
+		//to tell whether each gene is an explained gene in this sample i
+		//initialize the mutatedAndExplainedGenes for all genes
+		for (int gi = 0; gi < totalGenes; ++gi) {
+			mutatedAndExplainedGenes[gi].isExplainedGenesUpDown = new vector<bool>(totalGenes * 2, false);
+		}
+
 		for (int mi = 0; mi < numMutatedGenes; ++mi) {	// for each mutated genes
 			int mutatedGeneId = mutatedGeneIds[mi];
 			MutatedAndExplianedGenes* meg = &mutatedAndExplainedGenes[mutatedGeneId];
-			meg->isExplainedGenesUpDown = new vector<bool>(totalGenes * 2, false);	//to tell whether each gene is an explained gene in this sample i
+//			meg->isExplainedGenesUpDown = new vector<bool>(totalGenes * 2, false);	//already init above
 			//BFS for explained genes of the current mutated gene
 			BFSforExplainedGenesIdOnlyUpDownIncludingMutatedGene(&network, mutatedGeneId, L, D, F,
 					meg->isExplainedGenesUpDown, &sampleGeneExpression, si, &geneIdToSymbol, &geneSymbolToId);
@@ -301,59 +306,201 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 		mutatedAndExplainedGenesListReal.push_back(mutatedAndExplainedGenes);
 		mutatedGeneIdsListReal.push_back(mutatedGeneIds);
 
+//		cout << sampleIdToName[si] << " has " << numMutatedGenes << endl;
+
+//		cout << "added modules of " << sampleIdToName[si] << " to a list" << endl;
+
 	}
 
-	return 0;
+	//Read MODULE.dat
+	string moduleFilename = dbPath + "/MODULE.dat";
 
-	//TODO add modules for database samples
-	for(int si = totalInputSamples; si < totalSamples; si++){
+	//get id and name of samples (id of dbSamples start from totalSamples, the number of input samples);
+	map<string, int> sampleNameToId;
+	readModulesFromFile(&moduleFilename, &sampleIdToName, &sampleNameToId, &geneIdToSymbol, &geneSymbolToId,
+			&mutatedAndExplainedGenesListReal, &mutatedGeneIdsListReal);
+	cout << "total sample = " << sampleIdToName.size() << endl;
 
-		vector<MutatedAndExplianedGenes> mutatedAndExplainedGenes(totalGenes); //contains explained genes of each driver
+	//update size of samples
+	int totalSamples = sampleIdToName.size();
 
-		vector<int> mutatedGeneIds; // to store gene id of mutated genes
-		//TODO get list of mutated gene ids of a current sample
-		int numMutatedGenes = mutatedGeneIds.size();
+	/*
+	 * Print the modules of pooled samples
+	 */
 
-		for (int mi = 0; mi < numMutatedGenes; ++mi) {	// for each mutated genes
-			int mutatedGeneId = mutatedGeneIds[mi];
-			MutatedAndExplianedGenes* meg = &mutatedAndExplainedGenes[mutatedGeneId];
-			meg->isExplainedGenesUpDown = new vector<bool>(totalGenes * 2, false);
+	//OUTPUT: print all modules in all samples (as original)
+	vector<string>* outputStr = new vector<string>;
+	for (int i = 0; i < totalSamples; ++i) {
+		vector<MutatedAndExplianedGenes> mutatedAndExplainedGenes = mutatedAndExplainedGenesListReal[i];
+		vector<int> mutatedGeneIds = mutatedGeneIdsListReal[i];
 
-			//TODO update meg->isExplainedGenesUpDown
+		if(i == 0){
+			cout << "sample 0 has " << mutatedGeneIds.size() << endl;
 		}
 
-		mutatedAndExplainedGenesListReal.push_back(mutatedAndExplainedGenes);
-		mutatedGeneIdsListReal.push_back(mutatedGeneIds);
-
+		//for each mutated genes
+		for (unsigned int j = 0; j < mutatedGeneIds.size(); ++j) {
+			int currentMutatedGeneId = mutatedGeneIds[j];
+			string str = sampleIdToName[i] + "\t" + geneIdToSymbol[currentMutatedGeneId] + "\t";
+			vector<bool>* isExplainedGenesUpDownForAMutatedGene = mutatedAndExplainedGenes[currentMutatedGeneId].isExplainedGenesUpDown;
+			int numMember = 0;
+			for (int k = 0; k < totalGenesUpDown; ++k) {
+				if(isExplainedGenesUpDownForAMutatedGene->at(k)){
+					if(k < totalGenes){
+						str += geneIdToSymbol[k] + "_UP" + ";";
+						numMember++;
+					}else{
+						str += geneIdToSymbol[k-totalGenes] + "_DOWN" + ";";
+						numMember++;
+					}
+				}
+			}
+			if(numMember > 0){
+				outputStr->push_back(str);
+			}
+		}
 	}
+	string outModulefilename = outDir + "/MODULE.dat";
+	writeStrVector(outModulefilename.c_str(), outputStr);
+	delete outputStr;
 
 	/*
 	 * SENSITIVE
 	 */
 
-	//TODO create bipartite graph
+	cout << "SENSITIVE mode ...\n";
 
-	//TODO greedy set cover algorithm
+	mode = 0;
 
-	//TODO construct modules, merge, and trim
+	{
+		//collect all mutated genes in all samples => use mutatedGeneIdsListReal (samples, mutated genes, explained genes)
+		list<int> mutatedGeneIdsList;	//mutated gene ids
+		vector<bool> isMutatedGenes(totalGenes, false);
+		getAllMutatedGenes(&mutatedGeneIdsListReal, &isMutatedGenes, &mutatedGeneIdsList);
+		cout << "\ttotal number of mutated genes is " << mutatedGeneIdsList.size() << endl;
 
-	//TODO calculate the IMPACT score for each input sample
+		vector< list<Module> > modulesListOfAllSamples(totalSamples);	//to save all modules in all samples
 
-	//TODO print out the result into outDir
+		//create bipartite graph ( mutated gene --- phenotype gene ). This is done at sample level, so have to remember sample id.
+		//BipartiteEdge: each mutated gene contains a pair of (phenotype gene id, sample id)
+		vector<BipartiteEdge>* bipartiteGraph = new vector<BipartiteEdge>(totalGenes);
+		createBipartiteGraph(&mutatedAndExplainedGenesListReal, &mutatedGeneIdsListReal,
+				&isPhenotypeGenesUpDown, bipartiteGraph, &geneIdToSymbol);
+
+		vector<DriverGene> driverGenes;	//driver gene id with sample ids
+
+		cout << "\tperforming greedy minimum set cover algorithm ...\n";
+		cout << "\tfinding driver genes ...\n";
+		findDriverGenes(bipartiteGraph, &mutatedGeneIdsList, &driverGenes);
+		delete bipartiteGraph;
+
+		int numDriverGenes = driverGenes.size();
+		cout << "\ttotal driver genes = " << numDriverGenes << endl;
+
+		cout << "\tgenerating modules for all samples ...\n";
+
+		//merge modules and trim explained genes for each sample
+		//use mutatedAndExplainedGenesListReal (samples, mutated genes, explained genesUpDown)
+		findModulesInAllSamples(&mutatedAndExplainedGenesListReal, &modulesListOfAllSamples,
+				&mutatedGeneIdsListReal, &isPhenotypeGenesUpDown, &driverGenes, &phenotypeGeneIdsUpDown, mode);
+
+		cout << "\ttrimming explained genes for all samples ...\n";
+		trimSomeExplainedGenes(&modulesListOfAllSamples, &network, L, D, &geneIdToSymbol);
+
+		cout << "\twriting final module to FINAL_MODULE.dat ...\n";
+		string outFinalModuleFilenameSensitive = outDir + "/sensitive/FINAL_MODULE.dat";
+		saveModules(&modulesListOfAllSamples, &mutatedAndExplainedGenesListReal, outFinalModuleFilenameSensitive, &geneIdToSymbol, &sampleIdToName);
+
+		cout << "\tcalculating IMPACT scores for all samples ...\n";
+
+		vector< vector<Driver> > driversOfAllSamples(totalSamples);
+		string outDriverOfAllSamplesFilename;
+		if(mode == 0){
+			outDriverOfAllSamplesFilename = outDir + "/sensitive/driver_all_samples.dat";
+		}else{
+			outDriverOfAllSamplesFilename = outDir + "/stringent/driver_all_samples.dat";
+		}
+
+		//TODO update this function, now only gene expression for input is available, so use the saved statistics
+		//TODO calculated only impact score for the input samples
+		calculateImpactScoresForAllInputSamples(totalInputSamples, &modulesListOfAllSamples, &driversOfAllSamples,
+				&originalGeneExpressionMatrix, &genesEx, totalGenes, F, &geneIdToSymbol, outDriverOfAllSamplesFilename,
+				&sampleIdToName);
+
+//		vector<double> driverAggregatedScores(totalGenes, 0);
+//		vector<int> driversFrequency(totalGenes, 0);
+//		vector<int> pointMutationDriversFrequency(totalGenes, 0);
+//		vector<int> deletionDriversFrequency(totalGenes,0);
+//		vector<int> amplificationDriversFrequency(totalGenes,0);
+//		vector<int> mutationFrequency(totalGenes,0);
+//		vector<int> pointMutationFrequency(totalGenes,0);
+//		vector<int> deletionFrequency(totalGenes,0);
+//		vector<int> amplificationFrequency(totalGenes,0);
+//
+//		//TODO updated this function to read the statistics from database
+//		cout << "\taggregating IMPACT scores across all samples ...\n";
+//		aggregateDriversAcrossSamples(&driversOfAllSamples, &driverAggregatedScores, &driversFrequency, &geneIdToSymbol, totalGenes);
+//
+//		//TODO remove this
+////		cout << "getting driver frequency ...\n";
+//		getDetailDriversFreqeuncy(&driversOfAllSamples,
+//				&pointMutationDriversFrequency, &deletionDriversFrequency, &amplificationDriversFrequency,
+//				&originalPointMutationsMatrix, &originalCNVsMatrix,
+//				&genesPointMut, &genesCNV);
+//
+//		//TODO remove this
+////		cout << "getting mutation frequency ...\n";
+//		getMutationFrequency(&originalMutationMatrix, &mutationFrequency, &genesMut);
+//		getDetailMutationFrequency(&originalPointMutationsMatrix, &originalCNVsMatrix, &genesPointMut, &genesCNV,
+//				&pointMutationFrequency, &deletionFrequency, &amplificationFrequency);
+//
+		//TODO print for only input samples
+		string outSampleResultDirName = outDir + "/sensitive/samples/";
+		cout << "\tprinting impact scores for all samples ...\n";
+		printSampleDriverListForInputSamples(totalInputSamples, &driversOfAllSamples,
+				outSampleResultDirName, &geneIdToSymbol, &sampleIdToName,
+				&driverGenesFromFileSensitive, &originalPointMutationsMatrix, &originalCNVsMatrix,
+				&genesPointMut, &genesCNV, &isCancerBenchmarkGenes);
+
+//
+//
+//		cout << "\tprinting aggregated impact scores ...\n";
+//		string outDriverListfilename = outDir + "/sensitive/driver_list.txt";
+//		printAggregatedDriverList(&driverGenes, outDriverListfilename, &geneIdToSymbol, &sampleIdToName,
+//				&driverAggregatedScores, &driversFrequency, &mutationFrequency,
+//				&pointMutationDriversFrequency, &deletionDriversFrequency, &amplificationDriversFrequency,
+//				&pointMutationFrequency, &deletionFrequency, &amplificationFrequency, &isCancerBenchmarkGenes);
+
+	}
 
 	/*
 	 * STRINGENT
 	 */
 
-	//TODO create bipartite graph
+	{
+		//TODO create bipartite graph
 
-	//TODO greedy set cover algorithm
+		//TODO greedy set cover algorithm
 
-	//TODO construct modules, merge, and trim
+		//TODO construct modules, merge, and trim
 
-	//TODO calculate the IMPACT score for each input sample
+		//TODO calculate the IMPACT score for each input sample
 
-	//TODO print out the result into outDir
+		//TODO print out the result into outDir
+	}
+
+	/*
+	 * Clean-up
+	 */
+
+	//delete the vector<int>* mutatedAndExplainedGenesListReal
+	for (int i = 0; i < totalSamples; ++i) {
+		vector<MutatedAndExplianedGenes> mutatedAndExplainedGenes = mutatedAndExplainedGenesListReal[i];
+		for (int gi = 0; gi < totalGenes; ++gi) {
+			vector<bool>* isExplainedGenesUpDown = mutatedAndExplainedGenes[gi].isExplainedGenesUpDown;
+			delete isExplainedGenesUpDown;
+		}
+	}
 
 	return 0;
 }
