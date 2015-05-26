@@ -293,275 +293,259 @@ my %all_dist = ();
 my @mut_dist = ();
 while (<FILE>) {
 
-	chop $_;
-	@line = split( /\t/, $_ );
-	$sample = $line[0];
+    chop $_;
+    @line = split( /\t/, $_ );
+    $sample = $line[0];
 
-	#print STDERR " *** $sample\n";
+    #print STDERR " *** $sample\n";
 
-	#new sample module
-	#FILETRING OF THE MODULE OF THE NEW SAMPLE
-	if ( $current_sample ne $sample ) {
-		if ( ( keys %module_list ) != 0 ) {
+    #new sample module
+    #FILETRING OF THE MODULE OF THE NEW SAMPLE
+    if ( $current_sample ne $sample ) {
+	if ( ( keys %module_list ) != 0 ) {
 
 #need to clean the module by deleting all the explained gene that do not have a path for a utated gene to an explained gene
-			foreach $m ( keys %module_list ) {
+	    foreach $m ( keys %module_list ) {
 
 #print STDERR "clean:\n".$current_sample.".".$m."\t".(join(";", @{$module_list{$m}->[0]}))."\t".(join(";", @{$module_list{$m}->[1]}))."\n";#<STDIN>;
-				%all_dist              = ();
-				%sample_freq_explained = ();
+		%all_dist              = ();
+		%sample_freq_explained = ();
 
-				#initalize freq_explained and sub_graph
-				foreach $g ( @{ $module_list{$m}->[1] } ) {
-					@name = split( /\_/, $g );
-					$sub_graph[ get_ID( $name[0], \%gene_to_index ) ] = 1;
-					$sample_freq_explained{ get_ID( $name[0], \%gene_to_index )
-					  } = 1
-					  if ( is_phenotype( $g, $current_sample ) );
-				}
+		#initalize freq_explained and sub_graph
+		foreach $g ( @{ $module_list{$m}->[1] } ) {
+		    @name = split( /\_/, $g );
+		    $sub_graph[ get_ID( $name[0], \%gene_to_index ) ] = 1;
+		    $sample_freq_explained{ get_ID( $name[0], \%gene_to_index )} = 1 if ( is_phenotype( $g, $current_sample ) );
+		}
 
-				%sample_driver = ();
-				foreach $g ( @{ $module_list{$m}->[0] } ) {
-					@name = split( /\_/, $g );
-					$sample_driver{ get_ID( $name[0], \%gene_to_index ) } = 1;
-				}
+		%sample_driver = ();
+		foreach $g ( @{ $module_list{$m}->[0] } ) {
+		    @name = split( /\_/, $g );
+		    $sample_driver{ get_ID( $name[0], \%gene_to_index ) } = 1;
+		}
 
 #compute the minimum distance of each freq_explained genes to other gene in the module
-				foreach $ID ( keys %sample_freq_explained ) {
-					my @dist;
-					for ( $i = 0 ; $i < @index_to_gene ; $i++ ) {
-						$dist[$i] = -1;
-					}
-					compute_dist_to_gene( $ID, \@dist, $path_threshold,
-						\%sample_driver );
-					$all_dist{$ID} = \@dist;
-				}
+		foreach $ID ( keys %sample_freq_explained ) {
+		    my @dist;
+		    for ( $i = 0 ; $i < @index_to_gene ; $i++ ) {
+			$dist[$i] = -1;
+		    }
+		    compute_dist_to_gene( $ID, \@dist, $path_threshold,\%sample_driver );
+		    $all_dist{$ID} = \@dist;
+		}
 
- #compute the minimum distance of each mutated genes to other gene in the module
-				foreach $g ( @{ $module_list{$m}->[0] } ) {
-					for ( $i = 0 ; $i < @index_to_gene ; $i++ ) {
-						$mut_dist[$i] = -1;
-					}
-					$mut_gene_ID = get_ID( $g, \%gene_to_index );
-					compute_dist_to_gene( $mut_gene_ID, \@mut_dist,
-						$path_threshold, \%sample_freq_explained );
-					$belong_to_one_path[$mut_gene_ID] =
-					  1;    #the mutated gene belong to the path
-					        #update belong to one path
-					for ( $i = 0 ; $i < @index_to_gene ; $i++ ) {
-						if (   $mut_dist[$i] != -1
-							&& !$sample_freq_explained{$i}
-							&& !$belong_to_one_path[$i] )
-						{
-							foreach my $phenotype ( keys %all_dist ) {
-								$phenotype_name =
-								  get_name( $phenotype, \@index_to_gene );
-								$d = $all_dist{$phenotype}->[$i];
+		#compute the minimum distance of each mutated genes to other gene in the module
+		foreach $g ( @{ $module_list{$m}->[0] } ) {
+		    for ( $i = 0 ; $i < @index_to_gene ; $i++ ) {
+			$mut_dist[$i] = -1;
+		    }
+		    $mut_gene_ID = get_ID( $g, \%gene_to_index );
+		    compute_dist_to_gene( $mut_gene_ID, \@mut_dist, $path_threshold, \%sample_freq_explained );
+		    $belong_to_one_path[$mut_gene_ID] = 1;    #the mutated gene belong to the path
+		    #update belong to one path
+		    for ( $i = 0 ; $i < @index_to_gene ; $i++ ) {
+			if (   $mut_dist[$i] != -1
+			       && !$sample_freq_explained{$i}
+			       && !$belong_to_one_path[$i] )
+			{
+			    foreach my $phenotype ( keys %all_dist ) {
+				$phenotype_name = get_name( $phenotype, \@index_to_gene );
+				$d = $all_dist{$phenotype}->[$i];
 
 #if($phenotype_name eq "TOP2A"){print STDERR " --- dist to $phenotype_name ".(get_name($i, \@index_to_gene))."->".$d."\n";}
-								if (   $phenotype != $i
-									&& $d != -1
-									&& $d + $mut_dist[$i] <= $path_threshold )
-								{
-									$belong_to_one_path[$i] = 1;
-									last;
-								}
-							}
-						}
-					}
+				if (   $phenotype != $i
+				       && $d != -1
+				       && $d + $mut_dist[$i] <= $path_threshold )
+				{
+				    $belong_to_one_path[$i] = 1;
+				    last;
 				}
+			    }
+			}
+		    }
+		}
 
 #Make the difference between the recurrently explained genes and the conserved linker genes and cmpute the modlue impact
-				$module_impact_unfiltered = 0;
-				$module_impact            = 0;
-				$nb_rec                   = 0;
-				$nb_link                  = 0;
+		$module_impact_unfiltered = 0;
+		$module_impact            = 0;
+		$nb_rec                   = 0;
+		$nb_link                  = 0;
 
-				$rec_str  = "";
-				$link_str = "";
-				foreach $g ( @{ $module_list{$m}->[1] } ) {
-					###########################################################
-					######## NEED INVESTIGATE THE NAMING ISSUES ###############
-					###########################################################
-					@tmp = split( /\t/, $g );
-					my @parts     = split( /_/, $tmp[0] );
-					my $gene_name = $parts[0];
-					my $status    = $parts[1];
-					my $c_gene_ID = get_ID( $gene_name, \%gene_to_index );
-					#########################################################
+		$rec_str  = "";
+		$link_str = "";
+		foreach $g ( @{ $module_list{$m}->[1] } ) {
+		    ###########################################################
+		    ######## NEED INVESTIGATE THE NAMING ISSUES ###############
+		    ###########################################################
+		    @tmp = split( /\t/, $g );
+		    my @parts     = split( /_/, $tmp[0] );
+		    my $gene_name = $parts[0];
+		    my $status    = $parts[1];
+		    my $c_gene_ID = get_ID( $gene_name, \%gene_to_index );
+		    #########################################################
 
-					if ( !exists $all_sample_gene_dysregulated{$current_sample}
-						->{$c_gene_ID} )
-					{
+		    if ( !exists $all_sample_gene_dysregulated{$current_sample}->{$c_gene_ID} )
+		    {
 
-						#print STDERR " --- $current_sample $g\n";<STDIN>;
-					}
-					$module_impact_unfiltered +=
-					  $all_sample_gene_dysregulated{$current_sample}
-					  ->{$c_gene_ID};
+			#print STDERR " --- $current_sample $g\n";<STDIN>;
+		    }
+		    $module_impact_unfiltered += $all_sample_gene_dysregulated{$current_sample}->{$c_gene_ID};
 
-					if ( is_phenotype( $g, $current_sample ) ) {
-						$rec_str .= $g . ";";
-						$nb_rec++;
-						$module_impact +=
-						  $all_sample_gene_dysregulated{$current_sample}
-						  ->{$c_gene_ID};
-					}
-					else {
-						@name = split( /\_/, $g );
-						if (
-							$belong_to_one_path[ get_ID( $name[0],
-								  \%gene_to_index ) ] )
-						{
+		    if ( is_phenotype( $g, $current_sample ) ) {
+			$rec_str .= $g . ";";
+			$nb_rec++;
+			$module_impact += $all_sample_gene_dysregulated{$current_sample}->{$c_gene_ID};
+		    }
+		    else {
+			@name = split( /\_/, $g );
+			if ($belong_to_one_path[ get_ID( $name[0], \%gene_to_index ) ] ){
 
-					 #print STDERR "------------------------ it is a link!!!\n";
-							$link_str .= $g . ";";
-							$nb_link++;
-							$module_impact +=
-							  $all_sample_gene_dysregulated{$current_sample}
-							  ->{$c_gene_ID};
-						}
-					}
-				}
-
-				$link_str = "-;" if ( $link_str eq "" );
-
-#print STDERR $current_sample.".".$m."\t".(join(";", @{$module_list{$m}->[0]})).";\t".$rec_str."\t".$link_str."\n";
-				print OUT $current_sample . "." 
-				  . $m . "\t"
-				  . ( join( ";", @{ $module_list{$m}->[0] } ) ) . ";\t"
-				  . $rec_str . "\t"
-				  . $link_str . "\t"
-				  . ( @{ $module_list{$m}->[0] } ) . "_"
-				  . $nb_rec . "_"
-				  . $nb_link . "\t"
-				  . $module_impact_unfiltered . "\t"
-				  . $module_impact . "\n";
-
-#print STDERR $current_sample.".".$m."\t".(join(";", @{$module_list{$m}->[0]})).";\t".$rec_str."\t".$link_str."\n";
-
-				#clean freq_explained and sub_graph
-
-				foreach $g ( @{ $module_list{$m}->[1] } ) {
-					@name = split( /\_/, $g );
-					$ID = get_ID( $name[0], \%gene_to_index );
-					$sub_graph[$ID]          = 0;
-					$belong_to_one_path[$ID] = 0;
-				}
+			    #print STDERR "------------------------ it is a link!!!\n";
+			    $link_str .= $g . ";";
+			    $nb_link++;
+			    $module_impact += $all_sample_gene_dysregulated{$current_sample}->{$c_gene_ID};
 			}
+		    }
+		}
+
+		$link_str = "-;" if ( $link_str eq "" );
+
+#print STDERR $current_sample.".".$m."\t".(join(";", @{$module_list{$m}->[0]})).";\t".$rec_str."\t".$link_str."\n";
+		print OUT $current_sample . "." 
+		    . $m . "\t"
+		    . ( join( ";", @{ $module_list{$m}->[0] } ) ) . ";\t"
+		    . $rec_str . "\t"
+		    . $link_str . "\t"
+		    . ( @{ $module_list{$m}->[0] } ) . "_"
+		    . $nb_rec . "_"
+		    . $nb_link . "\t"
+		    . $module_impact_unfiltered . "\t"
+		    . $module_impact . "\n";
+
+#print STDERR $current_sample.".".$m."\t".(join(";", @{$module_list{$m}->[0]})).";\t".$rec_str."\t".$link_str."\n";
+
+		#clean freq_explained and sub_graph
+
+		foreach $g ( @{ $module_list{$m}->[1] } ) {
+		    @name = split( /\_/, $g );
+		    $ID = get_ID( $name[0], \%gene_to_index );
+		    $sub_graph[$ID]          = 0;
+		    $belong_to_one_path[$ID] = 0;
+		}
+	    }
 
 #print the module
 #foreach $m (keys %module_list){
 #print OUT $current_sample.".".$m."\t".(join(";", @{$module_list{$m}->[0]}))."\t".(join(";", @{$module_list{$m}->[1]}))."\n";
 #}
 
-		}
-		$current_sample = $sample;
-		%exp_to_mod     = ();
-		%module_list    = ();
-		$mod_ID         = 1;
 	}
-	next if ( $_ eq "LAST_SAMPLE" );
-	###########################
-	#next if($sample ne "JHOC5_OVARY");
-	##########################
+	$current_sample = $sample;
+	%exp_to_mod     = ();
+	%module_list    = ();
+	$mod_ID         = 1;
+    }
+    next if ( $_ eq "LAST_SAMPLE" );
+    ###########################
+    #next if($sample ne "JHOC5_OVARY");
+    ##########################
 
-	#save the new module
-	#The mutated gene should be a driver for this sample
-	if ( exists $driver_list{$current_sample}->{ $line[1] } ) {
-		my @exp_gene_list = split( /\;/, $line[2] );
-		my %exp_map = ();
+    #save the new module
+    #The mutated gene should be a driver for this sample
+    if ( exists $driver_list{$current_sample}->{ $line[1] } ) {
+	my @exp_gene_list = split( /\;/, $line[2] );
+	my %exp_map = ();
 
-		#check if it least 1 explained gene is recurrently explained
-		$flag_rec = 0;
-		foreach $exp (@exp_gene_list) {
-			if ( is_phenotype( $exp, $current_sample ) ) {
-				$flag_rec = 1;
+	#check if it least 1 explained gene is recurrently explained
+	$flag_rec = 0;
+	foreach $exp (@exp_gene_list) {
+	    if ( is_phenotype( $exp, $current_sample ) ) {
+		$flag_rec = 1;
 
-				#last;
-			}
-			$exp_map{$exp} = 1;
+		#last;
+	    }
+	    $exp_map{$exp} = 1;
+	}
+
+	if ( $flag_rec == 0 ) {
+
+	    #print STDERR "************ MODULE with no recurrently explained gene:\n";
+	    #print STDERR "$_\n";
+	}
+	else {
+	    my @mut_gene_list = ( $line[1] );
+	    my @tab = ( \@mut_gene_list, \@exp_gene_list );
+	    $module_list{$mod_ID} = \@tab;
+
+	    #associte all the explained gene to the module
+	    foreach $exp (@exp_gene_list) {
+		if ( !exists $exp_to_mod{$exp} ) {
+		    my %map = ( $mod_ID, 1 );
+		    $exp_to_mod{$exp} = \%map;
 		}
 
-		if ( $flag_rec == 0 ) {
-
-	  #print STDERR "************ MODULE with no recurrently explained gene:\n";
-	  #print STDERR "$_\n";
-		}
 		else {
-			my @mut_gene_list = ( $line[1] );
-			my @tab = ( \@mut_gene_list, \@exp_gene_list );
-			$module_list{$mod_ID} = \@tab;
+		    ############# Could be better ????
+		    @all_mod      = ( keys %{ $exp_to_mod{$exp} } );
+		    $other_mod_ID = $all_mod[0];
+		    ##################
 
-			#associte all the explained gene to the module
-			foreach $exp (@exp_gene_list) {
-				if ( !exists $exp_to_mod{$exp} ) {
-					my %map = ( $mod_ID, 1 );
-					$exp_to_mod{$exp} = \%map;
+		    #2 different modules have an explained gene in common
+		    if ( $other_mod_ID != $mod_ID )
+		    { #possible to assign a gene with the current ID during a previous merge
+			#merge if a gene is rec_explained (PHENOTYPE) or a HUB
+			#print STDERR " --- $exp\n";<STDIN>;
+			#if(exists $rec_explained{$exp} || exists $hub_gene{$exp} # merge using hub
+			if (
+			    is_phenotype( $exp, $current_sample )
+
+			    #&& !exists $hub_gene{$exp} # do not allows hub to merge
+			    )
+			{
+
+			    #merge the 2 arrays
+			    my @tab_m = (
+				@{ $module_list{$mod_ID}->[0] },
+				@{ $module_list{$other_mod_ID}->[0] }
+				);
+
+			    #to remove the genes that belong to the 2 modules
+			    my @tab_e = @{ $module_list{$mod_ID}->[1] };
+			    foreach $g ( @{ $module_list{$other_mod_ID}->[1] } )
+			    {
+				if ( !exists $exp_map{$g} ) {
+				    push( @tab_e, $g );
 				}
+			    }
+			    my @tab = ( \@tab_m, \@tab_e );
+			    $module_list{$mod_ID} = \@tab;
+			    delete $module_list{$other_mod_ID};
 
-				else {
-					############# Could be better ????
-					@all_mod      = ( keys %{ $exp_to_mod{$exp} } );
-					$other_mod_ID = $all_mod[0];
-					##################
-
-					#2 different modules have an explained gene in common
-					if ( $other_mod_ID != $mod_ID )
-					{ #possible to assign a gene with the current ID during a previous merge
-						  #merge if a gene is rec_explained (PHENOTYPE) or a HUB
-						  #print STDERR " --- $exp\n";<STDIN>;
-						 #if(exists $rec_explained{$exp} || exists $hub_gene{$exp} # merge using hub
-						if (
-							is_phenotype( $exp, $current_sample )
-
-						#&& !exists $hub_gene{$exp} # do not allows hub to merge
-						  )
-						{
-
-							#merge the 2 arrays
-							my @tab_m = (
-								@{ $module_list{$mod_ID}->[0] },
-								@{ $module_list{$other_mod_ID}->[0] }
-							);
-
-							#to remove the genes that belong to the 2 modules
-							my @tab_e = @{ $module_list{$mod_ID}->[1] };
-							foreach $g ( @{ $module_list{$other_mod_ID}->[1] } )
-							{
-								if ( !exists $exp_map{$g} ) {
-									push( @tab_e, $g );
-								}
-							}
-							my @tab = ( \@tab_m, \@tab_e );
-							$module_list{$mod_ID} = \@tab;
-							delete $module_list{$other_mod_ID};
-
-							#change the mod_ID of all the explained gene
-							foreach $g ( keys %exp_to_mod ) {
-								if ( exists $exp_to_mod{$g}->{$other_mod_ID} ) {
-									delete $exp_to_mod{$g}->{$other_mod_ID};
-									$exp_to_mod{$g}->{$mod_ID} = 1;
-								}
-							}
-						}
-
-#share explainend gene that is not recurrent to other sample
-#the gene will belong to more than 1 module as a link => need to allow HUB genes to merge modules
-#after the cleaning process the gene should belong to only 1 module as:
-#  - it belong to multiple path of a phenotype => the phenotype gene belong to the same module
-#  - it is removed from the module from which it do belong to a path to a phenotype
-						else {
-							$exp_to_mod{$exp}->{$mod_ID} = 1;
-						}
-					}
+			    #change the mod_ID of all the explained gene
+			    foreach $g ( keys %exp_to_mod ) {
+				if ( exists $exp_to_mod{$g}->{$other_mod_ID} ) {
+				    delete $exp_to_mod{$g}->{$other_mod_ID};
+				    $exp_to_mod{$g}->{$mod_ID} = 1;
 				}
+			    }
 			}
 
-			#new module ID
-			$mod_ID++;
+			#share explainend gene that is not recurrent to other sample
+			#the gene will belong to more than 1 module as a link => need to allow HUB genes to merge modules
+			#after the cleaning process the gene should belong to only 1 module as:
+			#  - it belong to multiple path of a phenotype => the phenotype gene belong to the same module
+			#  - it is removed from the module from which it do belong to a path to a phenotype
+			else {
+			    $exp_to_mod{$exp}->{$mod_ID} = 1;
+			}
+		    }
 		}
+	    }
+
+	    #new module ID
+	    $mod_ID++;
 	}
+    }
 }
 close(FILE);
 close(OUT);
@@ -754,13 +738,10 @@ sub compute_dist_to_gene {
 #print STDERR "\t".$neigh."\t".@{$sample_gene_dysregulated}."\t".$sample_gene_dysregulated->[$neigh]->[0]."\t".$sample_gene_dysregulated->[$neigh]->[1]."\t".$sample_gene_mutated->[$neigh]."\t".@{$connections[$neigh]}."\n";
 				$neigh_connection = @{ $connections[$neigh] };
 				if (
-					$dist_to_mutated_gene->[$neigh] == -1
-					&&    #not already explored
-					$sub_graph[$neigh] == 1
-					&& $neigh_connection <= $hub_threshold
-					&&    # to avoid going threw a path that contain a hub
-					!exists $filtered_node->{$neigh
-					} #to avoid going threw a path after a phenotype gene if a studied_gene is a mutated gene (and reversly)
+					$dist_to_mutated_gene->[$neigh] == -1 #not already explored
+					&& $sub_graph[$neigh] == 1 
+					&& $neigh_connection <= $hub_threshold # to avoid going threw a path that contain a hub
+					&& !exists $filtered_node->{$neigh} #to avoid going threw a path after a phenotype gene if a studied_gene is a mutated gene (and reversly)
 				  )
 				{
 					$dist_to_mutated_gene->[$neigh] = $gene_dist + 1;

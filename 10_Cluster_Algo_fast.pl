@@ -130,10 +130,8 @@ foreach my $dir_sample (@the_DATA_DIR) {
 		    {
 			$status_ID = 0;
 			$status_ID = 1 if ( $status eq "UP" );
-			$sample_gene_dysregulated[$gene_ID]->[$status_ID] =
-			    $fold_change;
-			$dysregulated_gene_frequency[$gene_ID]->[$status_ID]
-			    ->{$dir_sample} = $gene_name;
+			$sample_gene_dysregulated[$gene_ID]->[$status_ID] = $fold_change;
+			$dysregulated_gene_frequency[$gene_ID]->[$status_ID] ->{$dir_sample} = $gene_name;
 			
 #print STDERR "|".$_."|\t".$sample_gene_dysregulated[$gene_ID]->[$status_ID]."\t".$status_ID."\n";
 		    }
@@ -263,14 +261,8 @@ else {
 			foreach my $s ( keys %the_real_sample_map ) {
 
 			    #print STDERR " *** sss $s\n";<STDIN>;
-			    $res_exp++
-				if (
-				    $explained_gene_frequency_all_depth{$depth_th}
-				    ->[$i]->[$dys_status]->{$s} );
-			    $res_dys++
-				if (
-				    $dysregulated_gene_frequency[$i]->[$dys_status]
-				    ->{$s} );
+			    $res_exp++ if ( $explained_gene_frequency_all_depth{$depth_th} ->[$i]->[$dys_status]->{$s} );
+			    $res_dys++ if ( $dysregulated_gene_frequency[$i]->[$dys_status] ->{$s} );
 			}
 
 			next if($res_dys == 0);

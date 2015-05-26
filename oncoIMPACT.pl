@@ -120,6 +120,8 @@ unless ( -s $config{'outDir'} . "/COMPLETE_SAMPLES" ) {
 	print "done.\n";
 }
 
+print STDERR "*** Prep data completed\n";<STDIN>;
+
 
 # Run oncoIMPACT
 if(exists $config{'dataBase'}){
@@ -404,9 +406,10 @@ sub run_oncoIMPACT_discovery {
 
 sub output_final_result{
     
-    $result_dir = "GENE_LIST";
-    $result_dir = "GENE_LIST_SAMPLE" if($config{'dataType'} eq "RNA_SEQ");
-    
+    #$result_dir = "GENE_LIST";
+    #$result_dir = "GENE_LIST_SAMPLE" if($config{'dataType'} eq "RNA_SEQ");
+    $result_dir = "GENE_LIST_SAMPLE";
+	
     #The data set driver gene prediction file
     $final_res_file = "$config{'outDir'}/driver_list.txt";
     print STDERR "Output final driver list in $final_res_file\n\n";

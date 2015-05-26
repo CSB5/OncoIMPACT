@@ -252,13 +252,9 @@ for (
 				#print $ID."\n";<STDIN>;
 
 #$random_sample_gene_dysregulated[$ID] = $all_sample_gene_dysregulated{$sample}->[$random_ID_dys->[$ID]];
-				$random_sample_gene_dysregulated[$ID] =
-				  $all_sample_gene_dysregulated{$sample}->[$ID]
-				  ;    #maintain the dysregulated genes
+				$random_sample_gene_dysregulated[$ID] =  $all_sample_gene_dysregulated{$sample}->[$ID];    #maintain the dysregulated genes
 
-				$random_sample_gene_mutated_list[$ID] =
-				  $all_sample_gene_mutated_list{$sample}
-				  ->[ $random_ID_mut->[$ID] ];
+				$random_sample_gene_mutated_list[$ID] = $all_sample_gene_mutated_list{$sample}->[ $random_ID_mut->[$ID] ];
 
 #print STDERR $random_sample_gene_mutated_list[$ID]."\t".$all_sample_gene_mutated_list{$sample}->[$random_ID->[$ID]]."\t".$all_sample_gene_mutated_list{$sample}->[$ID]."\n";<STDIN>;
 #if(exists $all_sample_gene_mutated{$sample}->{$random_ID_mut->[$ID]}){
