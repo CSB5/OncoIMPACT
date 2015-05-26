@@ -444,17 +444,17 @@ double calculateJSDivergence(const vector<vector<int> >* realDistributionAll,
 	double log2 = log(2);
 
 	//TODO remove this
-	double sumPropP = 0.0;
-	double sumPropQ = 0.0;
-	string filename = "output/test_param/" + intToStr(L) + "_" + intToStr(D) + "_" + doubleToStr(F,1) + ".dat";
-	vector<string> outStr;
+//	double sumPropP = 0.0;
+//	double sumPropQ = 0.0;
+//	string filename = "output/test_param/" + intToStr(L) + "_" + intToStr(D) + "_" + doubleToStr(F,1) + ".dat";
+//	vector<string> outStr;
 
 	double jsDivergence = 0;
 	for (int i = 0; i < numSamples + 1; ++i) {	//+ 1 for count genes that are explained in all samples
 		double pi = 1.0 * realFrequencyDistribution[i] / sumOfNumDeregulatedGenes;	// *2 because now we are considering up and down
-		sumPropP += pi;
+//		sumPropP += pi;
 		double qi = 1.0 * randomFrequencyDistribution[i] / sumOfNumDeregulatedGenes;
-		sumPropQ += qi;
+//		sumPropQ += qi;
 		if (qi > 0 or pi > 0) {
 			if (pi != 0) {	//real frequency is zero
 				jsDivergence += pi * log(2 * pi / (pi + qi) ) / log2;
@@ -463,16 +463,16 @@ double calculateJSDivergence(const vector<vector<int> >* realDistributionAll,
 				jsDivergence += qi * log(2 * qi / (pi + qi) ) / log2;
 			}
 		}
-		outStr.push_back(intToStr(realFrequencyDistribution[i]) + "\t" + intToStr(randomFrequencyDistribution[i]));
+//		outStr.push_back(intToStr(realFrequencyDistribution[i]) + "\t" + intToStr(randomFrequencyDistribution[i]));
 	}
 
 	//TODO remove this
-	outStr.push_back(intToStr(sumOfNumDeregulatedGenes));	//add the sum of number of deregulated genes to the end of the file
-	writeStrVector(filename.c_str(), &outStr);
+//	outStr.push_back(intToStr(sumOfNumDeregulatedGenes));	//add the sum of number of deregulated genes to the end of the file
+//	writeStrVector(filename.c_str(), &outStr);
 
 	//TODO remove this
-	cout << "\t\tsum pi = " << sumPropP << " qi = " << sumPropQ << endl;
-	cout << "\t\t# deregulated genes for 100 rounds " << sumOfNumDeregulatedGenes << endl;
+//	cout << "\t\tsum pi = " << sumPropP << " qi = " << sumPropQ << endl;
+//	cout << "\t\t# deregulated genes for 100 rounds " << sumOfNumDeregulatedGenes << endl;
 
 	return jsDivergence / 2;
 }

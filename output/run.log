@@ -1,19 +1,6 @@
-2015-05-19 10:54:08	Start Running oncoIMPACT 1.0 (using 10 threads)
-2015-05-19 10:54:08	Read network from /home/nok/workspace/oncoIMPACT/network_FIsInGene_041709.txt
-2015-05-19 10:54:09	Read gene expression matrix from GBM/EXPR.txt
-2015-05-19 10:54:09	Read SNP from GBM/SNP.txt
-2015-05-19 10:54:09	Read CNV from GBM/CNV.txt
-2015-05-19 10:54:09	SNP and CNV matrix are combined
-2015-05-19 10:56:10	Write parameters results in output/parameters.dat
-2015-05-19 10:56:10	The maximum JS divergence is 0.17164 corresponding to (L,D,F) = (18,70,2.5)
-2015-05-19 10:56:14	Save calculated gene modules to output/MODULE.dat
-2015-05-19 10:56:14	Start finding phenotype genes
-2015-05-19 10:59:09	Save explained and phenotype gene statistics to output/exp_gene_freq.dat
-2015-05-19 10:59:09	Start sensitive mode
-2015-05-19 10:59:11	Save final module of sensitive mode to output/sensitive/FINAL_MODULE.dat
-2015-05-19 10:59:11	calculate IMPACT scores for all samples
-2015-05-19 10:59:12	Save final driver gene list to output/sensitive/driver_list.txt
-2015-05-19 10:59:12	Start stringent mode
-2015-05-19 10:59:14	Save final module of stringent mode to output/stringent/FINAL_MODULE.dat
-2015-05-19 10:59:14	calculate IMPACT scores for all samples
-2015-05-19 10:59:14	Save final driver gene list to output/stringent/driver_list.txt
+2015-05-26 08:54:00	Start Running oncoIMPACT 1.0 (using 10 threads)
+2015-05-26 08:54:01	Read network from /home/nok/workspace/oncoIMPACT/network_FIsInGene_041709.txt
+2015-05-26 08:54:01	Read gene expression matrix from GBM/EXPR.txt
+2015-05-26 08:54:01	Read SNP from GBM/SNP.txt
+2015-05-26 08:54:02	Read CNV from GBM/CNV.txt
+2015-05-26 08:54:02	SNP and CNV matrix are combined
