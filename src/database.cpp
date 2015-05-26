@@ -281,18 +281,22 @@ int database(string outDir, string networkFilename, string expFilename, string s
 
 	cout << "computing JS divergence for all parameters (L,D,F) ... " << endl;
 
+//	int LsVal[] = {16, 18, 20};	//fewer parameters for testing
+//	int DsVal[] = {60, 65, 70};	//fewer parameters for testing
+//	double FsVal[] = {2, 2.5};	//fewer parameters for testing
+
 	//TODO initialize all the parameters to be tested
 	int LsVal[] = {2, 4, 6, 8, 10, 12, 14, 16, 18, 20};
-//	int LsVal[] = {16, 18, 20};	//fewer parameters for testing
 	vector<int> Ls(LsVal, LsVal + sizeof LsVal / sizeof LsVal[0]);
 	int numLs = Ls.size();
-//	int DsVal[] = {10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100};
-	int DsVal[] = {60, 65, 70};	//fewer parameters for testing
+	int DsVal[] = {10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100};
 	vector<int> Ds(DsVal, DsVal + sizeof DsVal / sizeof DsVal[0]);
 	int numDs = Ds.size();	//fewer parameters for testing
-//	double FsVal[] = {1, 1.5, 2, 2.5, 3};
-	double FsVal[] = {2, 2.5};	//fewer parameters for testing
+	double FsVal[] = {1, 1.5, 2, 2.5, 3};
 	vector<double> Fs(FsVal, FsVal + sizeof FsVal / sizeof FsVal[0]);
+	if(mode == 1){	//if RNA_SEQ, fix fold-change to 1
+		Fs.resize(1, 1.0);
+	}
 	int numFs = Fs.size();
 
 	int numCombinations = numLs * numDs * numFs;
@@ -857,6 +861,12 @@ int database(string outDir, string networkFilename, string expFilename, string s
 				&driverAggregatedScores, &driversFrequency, &mutationFrequency,
 				&pointMutationDriversFrequency, &deletionDriversFrequency, &amplificationDriversFrequency,
 				&pointMutationFrequency, &deletionFrequency, &amplificationFrequency, &isCancerBenchmarkGenes);
+		//print in the outDir
+		outDriverListfilename = outDir + "/driver_list.txt";
+		printAggregatedDriverList(&driverGenes, outDriverListfilename, &geneIdToSymbol, &sampleIdToName,
+				&driverAggregatedScores, &driversFrequency, &mutationFrequency,
+				&pointMutationDriversFrequency, &deletionDriversFrequency, &amplificationDriversFrequency,
+				&pointMutationFrequency, &deletionFrequency, &amplificationFrequency, &isCancerBenchmarkGenes);
 
 		writeToLogFile(&outLogStream, "Save final driver gene list to " + outDriverListfilename);
 
@@ -865,12 +875,6 @@ int database(string outDir, string networkFilename, string expFilename, string s
 	//delete the vector<int>* mutatedAndExplainedGenesListReal
 	for (int i = 0; i < totalSamples; ++i) {
 		vector<MutatedAndExplianedGenes> mutatedAndExplainedGenes = mutatedAndExplainedGenesListReal[i];
-//		vector<int> mutatedGeneIds = mutatedGeneIdsListReal[i];
-//		for (unsigned int j = 0; j < mutatedGeneIds.size(); ++j) {
-//			int currentMutatedGeneId = mutatedGeneIds[j];
-//			vector<bool>* isExplainedGenesUpDown = mutatedAndExplainedGenes[currentMutatedGeneId].isExplainedGenesUpDown;
-//			delete isExplainedGenesUpDown;
-//		}
 		for (int gi = 0; gi < totalGenes; ++gi) {
 			vector<bool>* isExplainedGenesUpDown = mutatedAndExplainedGenes[gi].isExplainedGenesUpDown;
 			delete isExplainedGenesUpDown;
