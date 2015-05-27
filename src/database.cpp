@@ -345,14 +345,14 @@ int database(string outDir, string networkFilename, string expFilename, string s
 			" corresponding to (L,D,F) = (" + intToStr(maxJs.L) + "," + intToStr(maxJs.D) + "," + doubleToStr(maxJs.F, 1) + ")");
 
 	//set the L D F to maxJs
-//	int L = maxJs.L;
-//	int D = maxJs.D;
-//	double F = maxJs.F;
+	int L = maxJs.L;
+	int D = maxJs.D;
+	double F = maxJs.F;
 
 	//[DEBUG]
-	int L = 20;
-	int D = 65;
-	double F = 2.5;
+//	int L = 20;
+//	int D = 65;
+//	double F = 2.5;
 
 	/*
 	 * Find PHENOTYPE GENES
