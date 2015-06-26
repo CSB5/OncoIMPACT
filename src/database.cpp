@@ -88,6 +88,7 @@ int database(string outDir, string networkFilename, string expFilename, string s
 	int numPermutationsForJSDivergence = 100;
 	int numRandomDatasetForPhenotype = 500;
 	//srand ( unsigned ( std::time(0) ) );	TODO uncomment this if want the different result for each run
+	//srand (8);	//TODO uncomment this if want the fixed seed
 
 	//create log file for each run
 	string logFilename;
@@ -350,7 +351,7 @@ int database(string outDir, string networkFilename, string expFilename, string s
 	double F = maxJs.F;
 
 	//[DEBUG]
-//	int L = 20;
+//	int L = 12; //old 20
 //	int D = 65;
 //	double F = 2.5;
 

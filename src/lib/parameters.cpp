@@ -143,7 +143,7 @@ void findParameters(vector<JSDivergence>* jsDivergences, vector<int>* Ls,
 
 			for (int sampleId = 0; sampleId < totalSamples; sampleId++) {
 
-				vector<double> sampleGeneExpression(totalGenes); //expression of all genes in the network
+				vector<double> sampleGeneExpression(totalGenes, 0.0); //expression of all genes in the network
 				getGeneExpressionFromSampleId(originalGeneExpressionMatrix,
 						genesEx, &sampleGeneExpression, sampleId);
 
@@ -443,10 +443,10 @@ double calculateJSDivergence(const vector<vector<int> >* realDistributionAll,
 	//$js += $Q_v * log( 2 * $Q_v / ( $P_v + $Q_v ) ) / $log_2 if($Q_v != 0);   # Q Log ( Q /(P+Q)/2 )
 	double log2 = log(2);
 
-	//TODO remove this
+//	//TESTING
 //	double sumPropP = 0.0;
 //	double sumPropQ = 0.0;
-//	string filename = "output/test_param/" + intToStr(L) + "_" + intToStr(D) + "_" + doubleToStr(F,1) + ".dat";
+//	string filename = "output/test_param/full_" + intToStr(L) + "_" + intToStr(D) + "_" + doubleToStr(F,1) + ".dat";
 //	vector<string> outStr;
 
 	double jsDivergence = 0;
@@ -466,11 +466,11 @@ double calculateJSDivergence(const vector<vector<int> >* realDistributionAll,
 //		outStr.push_back(intToStr(realFrequencyDistribution[i]) + "\t" + intToStr(randomFrequencyDistribution[i]));
 	}
 
-	//TODO remove this
+//	//TESTING
 //	outStr.push_back(intToStr(sumOfNumDeregulatedGenes));	//add the sum of number of deregulated genes to the end of the file
 //	writeStrVector(filename.c_str(), &outStr);
-
-	//TODO remove this
+//
+//	//TESTING
 //	cout << "\t\tsum pi = " << sumPropP << " qi = " << sumPropQ << endl;
 //	cout << "\t\t# deregulated genes for 100 rounds " << sumOfNumDeregulatedGenes << endl;
 
