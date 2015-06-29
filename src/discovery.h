@@ -13,7 +13,7 @@
 #include "database.h"
 
 int discovery(string outDir, string networkFilename, string expFilename, string snpFilename, string cnvFilename,
-		string benchmarkGeneListFilename, string dbPath, int numThreads, int mode);
+		string benchmarkGeneListFilename, string dbPath, int numThreads, string cancerType);
 
 
 #endif /* DISCOVERY_H_ */

@@ -168,6 +168,8 @@ int main( int argc, char *argv[] ) {
 
 		string dbPath = "";
 
+		string cancerType;
+
 		int numThreads = 1;
 		//0 = sensitive, 1 = stringent
 		int mode = 1; //default mode = stringent
@@ -206,10 +208,10 @@ int main( int argc, char *argv[] ) {
 							outDir = token;
 							countArvInConfigFile++;
 							cout << configName << " = " << outDir << endl;
-						}else if(configName.compare("network") == 0){
-							countArvInConfigFile++;
-							networkFilename = token;
-							cout << configName << " = " << networkFilename << endl;
+//						}else if(configName.compare("network") == 0){
+//							countArvInConfigFile++;
+//							networkFilename = token;
+//							cout << configName << " = " << networkFilename << endl;
 						}else if(configName.compare("numThreads") == 0){
 							countArvInConfigFile++;
 							numThreads = atoi(token.c_str());
@@ -226,14 +228,18 @@ int main( int argc, char *argv[] ) {
 							countArvInConfigFile++;
 							cnvFilename = token;
 							cout << configName << " = " << cnvFilename << endl;
-						}else if(configName.compare("benchmarkGeneList") == 0){
-							countArvInConfigFile++;
-							benchmarkGeneListFilename = token;
-							cout << configName << " = " << benchmarkGeneListFilename << endl;
+//						}else if(configName.compare("benchmarkGeneList") == 0){
+//							countArvInConfigFile++;
+//							benchmarkGeneListFilename = token;
+//							cout << configName << " = " << benchmarkGeneListFilename << endl;
 						}else if(configName.compare("dbPath") == 0){
 							countArvInConfigFile++;
 							dbPath = token;
 							cout << configName << " = " << dbPath << endl;
+						}else if(configName.compare("cancerType") == 0){
+							countArvInConfigFile++;
+							cancerType = token;
+							cout << configName << " = " << cancerType << endl;
 						}else if(configName.compare("dataType") == 0){
 							if(token.compare("ARRAY") == 0){	//use sensitive mode
 								mode = 0;
@@ -253,12 +259,16 @@ int main( int argc, char *argv[] ) {
 			cerr << "Error opening configuration file\n";
 		}
 
-		if(countArvInConfigFile != 8){
+		if(countArvInConfigFile != 7){
 			cout << "Incorrect configuration file\n";
 		}else{
+
+			networkFilename = dbPath + "/network_FIsInGene_041709.txt";
+			benchmarkGeneListFilename = dbPath + "/Census_all_04_06_2015.tsv";
+
 			cout << "Start constructing oncoIMPACT database ..." << endl;
 			discovery(outDir, networkFilename, expFilename, snpFilename, cnvFilename,
-					benchmarkGeneListFilename, dbPath, numThreads, mode);
+					benchmarkGeneListFilename, dbPath, numThreads, cancerType);
 		}
 
 

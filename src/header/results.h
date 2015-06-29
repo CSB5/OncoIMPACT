@@ -18,11 +18,10 @@ struct SampleDriver{
 	string gene;
 	string type;
 	double impactScore;
-	double aggregatedImpactScore;
-	double driverFrequency;
-	double mutationFrequency;
-	string cancerCensus;
-	string panCancer;
+	double databaseImpactScore;
+	double databaseDriverFrequency;
+	double databaseMutationFrequency;
+	bool isCancerCensus;
 };
 
 struct AggregatedDriver{
@@ -40,6 +39,22 @@ struct AggregatedDriver{
 	double amplificationFrequency;
 };
 
+struct AggregatedDriverForInputSample{
+	int geneId;
+	string gene;
+	double aggregatedImpactScore;
+	double dbImpactScore;
+	double dbDriverFrequency;
+	double dbDriverPointMutationFrequency;
+	double dbDriverDeletionFrequency;
+	double dbDriverAmplificationFrequency;
+	double dbMutationFrequency;
+	double dbPointMutationFrequency;
+	double dbDeletionFrequency;
+	double dbAmplificationFrequency;
+	string cancerCensus;
+};
+
 struct ExplainedGeneDetail{
 	string gene;
 	int degree;
@@ -51,6 +66,8 @@ struct ExplainedGeneDetail{
 
 void saveModules(vector<list<Module> > * modulesListOfAllSamples, vector<vector<MutatedAndExplianedGenes> >* mutatedAndExplainedGenesListReal,
 		string filename, vector<string>* geneIdToSymbol, vector<string>* sampleIdToName);
+void saveModulesOfInputSamples(vector<list<Module> > * modulesListOfAllSamples, vector<vector<MutatedAndExplianedGenes> >* mutatedAndExplainedGenesListReal,
+		string filename, vector<string>* geneIdToSymbol, vector<string>* sampleIdToName, int numInputSamples);
 void saveModulesCytoscape(vector<list<Module> > * modulesListOfAllSamples,
 		string filename, vector<string>* geneIdToSymbol);
 
@@ -59,10 +76,9 @@ void printSampleDriverList(vector< vector<Driver> >* driversOfAllSamples, string
 		vector<double>* driverAggregatedScores, vector<int>* driversFrequency, vector<int>* mutationFrequency, vector<bool>* isCancerBenchmarkGenes);
 void printSampleDriverListForInputSamples(int totalInputSamples, vector<vector<Driver> >* driversOfAllSamples,
 		string pathname, vector<string>* geneIdToSymbol, vector<string>* sampleIdToName,
-		vector<DriverGeneFromFile>* driverGenesFromFile,
-		TIntegerMatrix* originaloriginalPointMutationsMatrix,
-		TIntegerMatrix* originalCNVsMatrix, vector<int>* genesPointMut,
-		vector<int>* genesCNV, vector<bool>* isCancerBenchmarkGenes);
+		vector<MutatedGeneFromFile>* mutatedGeneFromFile, vector<string>* cancerBenchmarkGeneNames,
+		TIntegerMatrix* originalPointMutationsMatrix, TIntegerMatrix* originalCNVsMatrix, vector<int>* genesPointMut, vector<int>* genesCNV,
+		map<int, string>* drugIdToName, vector< vector<int> >* geneDrugsAssocList);
 
 bool sortByImpactScore(const SampleDriver& first, const SampleDriver& second);
 
@@ -77,7 +93,12 @@ void printAggregatedDriverList(vector<DriverGene>* driverGenes, string filename,
 		vector<double>* driverAggregatedScores, vector<int>* driversFrequency, vector<int>* mutationFrequency,
 		vector<int>* pointMutationDriversFrequency, vector<int>* deletionDriversFrequency, vector<int>* amplificationDriversFrequency,
 		vector<int>* pointMutationFrequency, vector<int>* deletionFrequency, vector<int>* amplificationFrequency, vector<bool>* isCancerBenchmarkGenes);
-bool sortByAggregatedImpactScore(const AggregatedDriver& first, const AggregatedDriver& second);
+void printAggregatedDriverListForInputSamples(vector<DriverGene>* driverGenes, string filename,
+		vector<string>* geneIdToSymbol, vector<string>* sampleIdToName,
+		vector<double>* driverAggregatedScores, vector<MutatedGeneFromFile>* mutatedGeneFromFile,
+		vector<string>* cancerBenchmarkGeneNames, map<int, string>* drugIdToName, vector< vector<int> >* geneDrugsAssocList);
+bool sortByAggregatedImpactScore(const AggregatedDriverForInputSample& first,
+		const AggregatedDriverForInputSample& second);
 
 void saveJSDivergences(vector<JSDivergence>* jsDivergences, string filename);
 

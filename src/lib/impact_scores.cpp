@@ -97,7 +97,7 @@ void calculateImpactScoresForAllSamples(vector< list<Module> >* modulesListOfAll
 
 void calculateImpactScoresForAllInputSamples(int totalInputSamples, vector< list<Module> >* modulesListOfAllSamples,
 		vector< vector<Driver> >* driversOfAllSamples, TDoubleMatrix* originalGeneExpressionMatrix, vector<int>* GenesEx,
-		int totalGenes, double F, vector<string>* geneIdToSymbol, string filename, vector<string>* sampleIdToName){
+		int totalGenes, double F, vector<string>* geneIdToSymbol, vector<string>* sampleIdToName){
 
 	//map the gene id to the row id in the gene expression matrix
 	vector<int> rowId(totalGenes);
@@ -105,12 +105,12 @@ void calculateImpactScoresForAllInputSamples(int totalInputSamples, vector< list
 		rowId[i] = findIndex(GenesEx, i);
 	}
 
-	//OUTPUT: print drivers and impact scores for all samples
-	vector<string>* outputDrivers = new vector<string>;
-	outputDrivers->push_back("SAMPLE_ID\tDRIVER\tIMPACT_SCORE\tIS_DEREGULATED\tMODULE_SIZE\tNUM_DRIVERS_IN_MODULE");
-
 	//for each sample i
 	for (int i = 0; i < totalInputSamples; ++i) {
+
+//		//OUTPUT: print drivers and impact scores for all samples
+//		vector<string>* outputDrivers = new vector<string>;
+//		outputDrivers->push_back("SAMPLE_ID\tDRIVER\tIMPACT_SCORE\tIS_DEREGULATED\tMODULE_SIZE\tNUM_DRIVERS_IN_MODULE");
 
 		list<Module> modules = modulesListOfAllSamples->at(i);
 
@@ -165,20 +165,23 @@ void calculateImpactScoresForAllInputSamples(int totalInputSamples, vector< list
 
 				driversOfAllSamples->at(i).push_back(driver);
 
-				outputDrivers->push_back(str);
+//				outputDrivers->push_back(str);
 			}
 
 		}	//end for each module
 
+		//OUTPUT: print drivers and impact scores for all samples (cont.)
+//		string filename = dirName + "/" + sampleIdToName->at(i) + ".txt";
+//		writeStrVector(filename.c_str(), outputDrivers);
+//		delete outputDrivers;
+
 	}
 
-	//OUTPUT: print drivers and impact scores for all samples (cont.)
-	writeStrVector(filename.c_str(), outputDrivers);
-	delete outputDrivers;
 }
 
 void aggregateDriversAcrossSamples(vector< vector<Driver> >* driversOfAllSamples, vector<double>* driverAggregatedScores,
-		vector<int>* driversFrequency, vector<string>* geneIdToSymbol, int totalGenes){
+		vector<int>* driversFrequency, vector<string>* geneIdToSymbol){
+	int totalGenes = geneIdToSymbol->size();
 	vector<double> sumImpact(totalGenes);
 	vector<bool> isDriver(totalGenes);
 
@@ -202,6 +205,7 @@ void aggregateDriversAcrossSamples(vector< vector<Driver> >* driversOfAllSamples
 		if(isDriver[i]){
 			double aggregatedScore = sumImpact[i]/totalSamples;
 			driverAggregatedScores->at(i) = aggregatedScore;
+//			cout << geneIdToSymbol->at(i) << "\t" << aggregatedScore << "\t" << totalSamples << endl;
 		}
 	}
 }

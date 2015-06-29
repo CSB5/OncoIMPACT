@@ -45,7 +45,7 @@ struct CopyNumberVariation{
 //GENE	DRIVER_FREQUENCY	DRIVER_SNV_FREQUENCY	DRIVER_DELTION_FREQUENCY	DRIVER_AMPLIFICATION_FREQUENCY	CANCER_CENSUS	PAN_CANCER	IMPACT	MUTATION_FREQUENCY	SNV_FREQUENCY	DELTION_FREQUENCY	AMPLIFICATION_FREQUENCY
 //EGFR	0.393	0.262	0.000	0.241	Y	NA	120.1447552328	0.393	0.262	0.000	0.241
 struct DriverGeneFromFile{
-	//mutated gene id is the index of the vector<DriverGene>
+	//mutated gene id is the index of the vector<DriverGeneFromFile>
 	double driverFreq;
 	double driverSnpFreq;
 	double driverDelFreq;
@@ -57,6 +57,26 @@ struct DriverGeneFromFile{
 	double delFreq;
 	double ampFreq;
 };
+
+struct MutatedGeneFromFile{
+	//mutated gene id is the index of the vector<MutatedGeneFromFile>
+	double mutationFreq = 0.0;
+	double snpFreq = 0.0;
+	double delFreq = 0.0;
+	double ampFreq = 0.0;
+	double snpAndCnvFreq = 0.0;
+	double driverFreq = 0.0;
+	double driverSnpFreq = 0.0;
+	double driverDelFreq = 0.0;
+	double driverAmpFreq = 0.0;
+	double driverSnpAndCnvFreq = 0.0;
+	double impactScore = 0.0;
+};
+
+//struct DrugsForGene{
+//	int geneId;
+//	vector<int>* drugIds;
+//};
 
 /*
  * Functions for importing data
@@ -72,13 +92,17 @@ void readCopyNumberVariation(const char* filename, CopyNumberVariation* copyNumb
 		char delim, map<string, int>* geneSymbolToId);
 void readGenesList(const char* filename, vector<int>* geneIds, map<string, int>* geneSymbolToId);
 void readGenesListUpDown(const char* filename, vector<int>* geneIdsUpDown, map<string, int>* geneSymbolToId);
-void readBenchmarkGeneList(string benchmarkGeneListFilename, vector<int>* cancerBenchmarkGenes, map<string, int>* geneSymbolToId);
+void readBenchmarkGeneList(string benchmarkGeneListFilename, vector<int>* cancerBenchmarkGenes, map<string, int>* geneSymbolToId, vector<string>* cancerBenchmarkGeneNames);
 
 int findIndex(vector<int>* geneIds, int currentGeneId);
 
 //For discovery mode
 void readPhenotypeGenesFromFile(const char* filename, vector<int>* phenotypeGeneIdsUpDown, map<string, int>* geneSymbolToId);
 void readDriverGenesFromFile(const char* filename, vector<DriverGeneFromFile>* driverGenesFromFile, map<string, int>* geneSymbolToId);
+void readMutatedGenesFromFile(const char* filename, vector<MutatedGeneFromFile>* mutatedGenesFromFile, map<string, int>* geneSymbolToId);
+
+void readDrugsListFromFile(const char* filename, map<int, string>* drugIdToName, map<string, int>* drugNameToId);
+void readGenesDrugsAssocFromFile(const char* filename, vector< vector<int> >* geneDrugsAssocList, map<string, int>* geneSymbolToId);
 
 void readModulesFromFile(string* moduleFileName, vector<string>* sampleIdToName, map<string, int>* sampleNameToId,
 		vector<string>* geneIdToSymbol, map<string, int>* geneSymbolToId,

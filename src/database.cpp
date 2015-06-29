@@ -256,7 +256,8 @@ int database(string outDir, string networkFilename, string expFilename, string s
 	 */
 
 	vector<int> cancerBenchmarkGenes;
-	readBenchmarkGeneList(benchmarkGeneListFilename, &cancerBenchmarkGenes, &geneSymbolToId);
+	vector<string> cancerBenchmarkGeneNames;
+	readBenchmarkGeneList(benchmarkGeneListFilename, &cancerBenchmarkGenes, &geneSymbolToId, &cancerBenchmarkGeneNames);
 	vector<bool> isCancerBenchmarkGenes(totalGenes);
 	int numBenchmarkGenes = cancerBenchmarkGenes.size();
 	for (int i = 0; i < numBenchmarkGenes; ++i) {
@@ -709,7 +710,7 @@ int database(string outDir, string networkFilename, string expFilename, string s
 		}
 
 		cout << "\taggregating IMPACT scores across all samples ...\n";
-		aggregateDriversAcrossSamples(&driversOfAllSamples, &driverAggregatedScores, &driversFrequency, &geneIdToSymbol, totalGenes);
+		aggregateDriversAcrossSamples(&driversOfAllSamples, &driverAggregatedScores, &driversFrequency, &geneIdToSymbol);
 
 //		cout << "getting driver frequency ...\n";
 		getDetailDriversFreqeuncy(&driversOfAllSamples,
@@ -837,7 +838,7 @@ int database(string outDir, string networkFilename, string expFilename, string s
 		}
 
 		cout << "\taggregating IMPACT scores across all samples ...\n";
-		aggregateDriversAcrossSamples(&driversOfAllSamples, &driverAggregatedScores, &driversFrequency, &geneIdToSymbol, totalGenes);
+		aggregateDriversAcrossSamples(&driversOfAllSamples, &driverAggregatedScores, &driversFrequency, &geneIdToSymbol);
 
 //		cout << "getting driver frequency ...\n";
 		getDetailDriversFreqeuncy(&driversOfAllSamples,

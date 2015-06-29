@@ -1,0 +1,7 @@
+GENE	TYPE	SAMPLE_IMPACT	DB_IMPACT	DB_DRIVER_FREQUENCY	DB_MUTATION_FREQUENCY	CANCER_CENSUS	GDSC_DRUGS
+CDKN1B	MUT	237.231	9.812	0.013	0.017	Y	
+PIK3CA	MUT	237.231	75.343	0.122	0.122	Y	AZD6482[http://www.cancerrxgene.org/translation/Drug/156];AKT inhibitor VIII[http://www.cancerrxgene.org/translation/Drug/171];PAC-1[http://www.cancerrxgene.org/translation/Drug/175];Pazopanib[http://www.cancerrxgene.org/translation/Drug/199];GW 441756[http://www.cancerrxgene.org/translation/Drug/1023];SB 216763[http://www.cancerrxgene.org/translation/Drug/1025];
+RB1	MUT	237.231	56.303	0.100	0.100	Y	PD-0332991[http://www.cancerrxgene.org/translation/Drug/1054];Nutlin-3a[http://www.cancerrxgene.org/translation/Drug/1047];
+TP53	MUT	237.231	162.535	0.306	0.306	Y	Nutlin-3a[http://www.cancerrxgene.org/translation/Drug/1047];Thapsigargin[http://www.cancerrxgene.org/translation/Drug/180];Obatoclax Mesylate[http://www.cancerrxgene.org/translation/Drug/182];AZD-2281[http://www.cancerrxgene.org/translation/Drug/1017];AKT inhibitor VIII[http://www.cancerrxgene.org/translation/Drug/171];
+FGFR2	MUT	237.231	12.825	0.017	0.017	Y	PD-173074[http://www.cancerrxgene.org/translation/Drug/1049];A-443654[http://www.cancerrxgene.org/translation/Drug/86];
+ITGA7	MUT	5.682	3.922	0.017	0.017	N	

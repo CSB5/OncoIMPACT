@@ -25,10 +25,10 @@ void calculateImpactScoresForAllSamples(vector< list<Module> >* modulesListOfAll
 		int totalGenes, double F, vector<string>* geneIdToSymbol, string filname, vector<string>* sampleIdToName);
 void calculateImpactScoresForAllInputSamples(int totalInputSamples, vector< list<Module> >* modulesListOfAllSamples,
 		vector< vector<Driver> >* driversOfAllSamples, TDoubleMatrix* originalGeneExpressionMatrix, vector<int>* GenesEx,
-		int totalGenes, double F, vector<string>* geneIdToSymbol, string filename, vector<string>* sampleIdToName);
+		int totalGenes, double F, vector<string>* geneIdToSymbol, vector<string>* sampleIdToName);
 
 void aggregateDriversAcrossSamples(vector< vector<Driver> >* driversOfAllSamples, vector<double>* driverAggregatedScores,
-		vector<int>* driversFrequency, vector<string>* geneIdToSymbol, int totalGenes);
+		vector<int>* driversFrequency, vector<string>* geneIdToSymbol);
 
 void getDetailDriversFreqeuncy(vector< vector<Driver> >* driversOfAllSamples,
 		vector<int>* pointMutationDriversFrequency, vector<int>* deletionDriversFrequency, vector<int>* amplificationDriversFrequency,

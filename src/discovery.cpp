@@ -36,23 +36,25 @@
 using namespace std;
 
 int discovery(string outDir, string networkFilename, string expFilename, string snpFilename, string cnvFilename,
-		string benchmarkGeneListFilename, string dbPath, int numThreads, int mode){
+		string benchmarkGeneListFilename, string dbPath, int numThreads, string cancerType){
 
-	//create sub-directory to store output files
+//	//create sub-directory to store output files
 	#if defined(_WIN32)	//_WIN32 - Defined for applications for Win32 and Win64
-		_mkdir((outDir + "/sensitive").c_str());
-		_mkdir((outDir + "/stringent").c_str());
-		_mkdir((outDir + "/sensitive/samples").c_str());
-		_mkdir((outDir + "/stringent/samples").c_str());
+//		_mkdir((outDir + "/sensitive").c_str());
+//		_mkdir((outDir + "/stringent").c_str());
+//		_mkdir((outDir + "/sensitive/samples").c_str());
+//		_mkdir((outDir + "/stringent/samples").c_str());
+		_mkdir((outDir + "/samples").c_str());
 	#else
-		mkdir((outDir + "/sensitive").c_str(), 0777); // notice that 777 is different than 0777
-		mkdir((outDir + "/stringent").c_str(), 0777); // notice that 777 is different than 0777
-		mkdir((outDir + "/sensitive/samples").c_str(), 0777); // notice that 777 is different than 0777
-		mkdir((outDir + "/stringent/samples").c_str(), 0777); // notice that 777 is different than 0777
+//		mkdir((outDir + "/sensitive").c_str(), 0777); // notice that 777 is different than 0777
+//		mkdir((outDir + "/stringent").c_str(), 0777); // notice that 777 is different than 0777
+//		mkdir((outDir + "/sensitive/samples").c_str(), 0777); // notice that 777 is different than 0777
+//		mkdir((outDir + "/stringent/samples").c_str(), 0777); // notice that 777 is different than 0777
+		mkdir((outDir + "/samples").c_str(), 0777);
 	#endif
 
 	/*
-	 * Read all input file
+	 * Read all input files of input samples
 	 */
 
 	//Read Network File
@@ -179,84 +181,149 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 	cout << "\ttotal samples in mutation matrix is " << totalInputSamples
 			<< endl;
 
-	//Read parameters from file
+	/*
+	 * Rename input samples to avoid using the same name as samples in the database
+	 */
+
+	for (int si = 0; si < totalInputSamples; ++si) {
+		sampleIdToName[si] = sampleIdToName[si] + "_INPUT";
+		//cout << sampleIdToName[si] << endl;
+	}
+
+	cout << "read files from database ..." << endl;
+
+	/*
+	 * Read parameters from file
+	 */
+
 	int L = 0;
 	int D = 0;
 	double F = 0.0;
 
 	ifstream inParameterFile;
-	string parameterFilename = dbPath + "/parameters.dat";
+	string parameterFilename = dbPath + "/" + cancerType + "/JS.dat";	//F D L
 
+	//read only the first line of the file
 	inParameterFile.open(parameterFilename.c_str(), ifstream::in);
 	if (inParameterFile.is_open()) {
 		if (inParameterFile.good()) {
 			string line;
 			if (!getline(inParameterFile, line)){
-				cerr << "Error reading parameter file\n";
+				cerr << "Error reading parameter file (JS.dat)\n";
 				return 0;
 			}
-			getline(inParameterFile, line);	//skip the header
-			cout << line << endl;
+
+			//getline(inParameterFile, line);	//skip the header
+			//cout << line << endl;
 			istringstream lineStream(line);
 
-			int i = 0;
+			int ci = 0;
 			while (lineStream) {	//for each column (parameter)
 				string param;
 				if (!getline(lineStream, param, '\t'))
 					break;
-				if(i == 0){	//L
-					L = atoi(param.c_str());
-				}else if(i == 1){	//D
-					D = atoi(param.c_str());
-				}else if(i == 2){	//F
+				if(ci == 0){	//F
 					F = atof(param.c_str());
+				}else if(ci == 1){	//D
+					D = atoi(param.c_str());
+				}else if(ci == 2){	//L
+					L = atoi(param.c_str());
 				}
-				i++;
+				ci++;
 			}
 
 		}
 		inParameterFile.close();
 	} else {
-		cerr << "Error opening parameter file\n";
+		cerr << "Error opening parameter file (JS.dat)\n";
 	}
 
-	//[DEBUG]
-	L = 20;
-	D = 65;
-	F = 2.5;
+	cout << "\tParameters (L,D,F) are set to " << L << ", " << D << ", " << F << endl;
 
-	cout << "Parameters (L,D,F) are set to " << L << ", " << D << ", " << F << endl;
+	/*
+	 * Read phenotype genes from file
+	 */
 
-	//Read phenotype genes from file
-	string phenotypeFileName = dbPath + "/exp_gene_freq.dat";
+	string phenotypeFileName = dbPath + "/" + cancerType + "/PHENO.dat";
 	vector<bool> isPhenotypeGenesUpDown(totalGenesUpDown, false);
 	vector<int> phenotypeGeneIdsUpDown;	// phenotype gene ids
+	//call function in input.h
 	readPhenotypeGenesFromFile(phenotypeFileName.c_str(), &phenotypeGeneIdsUpDown, &geneSymbolToId);
 	int numPhenotypeGene = phenotypeGeneIdsUpDown.size();
-	cout << "There are " << numPhenotypeGene << " phenotype genes" << endl;
+	cout << "\tThere are " << numPhenotypeGene << " phenotype genes" << endl;
 	for (int i = 0; i < numPhenotypeGene; ++i) {
 		isPhenotypeGenesUpDown[phenotypeGeneIdsUpDown[i]] = true;
 	}
 
-	//Read driver list with the statistics
-	vector<DriverGeneFromFile> driverGenesFromFileSensitive(totalGenes);
-	string driverFilenameSensitive = dbPath + "/sensitive/driver_list.txt";
-	readDriverGenesFromFile(driverFilenameSensitive.c_str(), &driverGenesFromFileSensitive, &geneSymbolToId);
-	cout << "Read drivers (sensitive) from file\n";
+//	/*
+//	 * Read driver list with the statistics
+//	 */
+//
+//	vector<DriverGeneFromFile> driverGenesFromFileSensitive(totalGenes);
+//	string driverFilenameSensitive = dbPath + "/sensitive/driver_list.txt";
+//	readDriverGenesFromFile(driverFilenameSensitive.c_str(), &driverGenesFromFileSensitive, &geneSymbolToId);
+//	cout << "Read drivers (sensitive) from file\n";
+//
+//	vector<DriverGeneFromFile> driverGenesFromFileStringent(totalGenes);
+//	string driverFilenameStringent = dbPath + "/stringent/driver_list.txt";
+//	readDriverGenesFromFile(driverFilenameStringent.c_str(), &driverGenesFromFileStringent, &geneSymbolToId);
+//	cout << "Read drivers (stringent) from file\n";
 
-	vector<DriverGeneFromFile> driverGenesFromFileStringent(totalGenes);
-	string driverFilenameStringent = dbPath + "/stringent/driver_list.txt";
-	readDriverGenesFromFile(driverFilenameStringent.c_str(), &driverGenesFromFileStringent, &geneSymbolToId);
-	cout << "Read drivers (stringent) from file\n";
 
-	//Read cancer benchmark gene list
+	/*
+	 * Read mutated gene list with their statistics
+	 */
+
+	vector<MutatedGeneFromFile> mutatedGenesFromFile(totalGenes);
+	string mutatedGeneFilenameStringent = dbPath + "/" + cancerType + "/ALTERATION.dat";
+	readMutatedGenesFromFile(mutatedGeneFilenameStringent.c_str(), &mutatedGenesFromFile, &geneSymbolToId);
+	cout << "\tRead mutated genes from file (stringent) \n";
+
+	/*
+	 * Read cancer benchmark gene list
+	 */
+
 	vector<int> cancerBenchmarkGenes;
-	readBenchmarkGeneList(benchmarkGeneListFilename, &cancerBenchmarkGenes, &geneSymbolToId);
+	vector<string> cancerBenchmarkGeneNames;
+	readBenchmarkGeneList(benchmarkGeneListFilename, &cancerBenchmarkGenes, &geneSymbolToId, &cancerBenchmarkGeneNames);
 	vector<bool> isCancerBenchmarkGenes(totalGenes);
 	int numBenchmarkGenes = cancerBenchmarkGenes.size();
 	for (int i = 0; i < numBenchmarkGenes; ++i) {
 		isCancerBenchmarkGenes[cancerBenchmarkGenes[i]] = true;
 	}
+	cout << "\tRead " << numBenchmarkGenes << " cancer genes from Cancer Gene Census\n";
+
+	/*
+	 * Read drug-gene association from GDSC
+	 */
+
+	//read drug list
+	map<int, string> drugIdToName;
+	map<string, int> drugNameToId;
+	string drugsListFilename = dbPath + "/GDSC_drug_list.txt";
+	readDrugsListFromFile(drugsListFilename.c_str(), &drugIdToName, &drugNameToId);
+	int numDrugs = drugIdToName.size();
+	cout << "\tRead " << numDrugs << " drugs from GDSC\n";
+
+	//read gene-drug assoc
+	vector< vector<int> > geneDrugsAssocList(totalGenes);
+	string drugsGeneAssocFilename = dbPath + "/GDSC_drug_gene_assoc.txt";
+	readGenesDrugsAssocFromFile(drugsGeneAssocFilename.c_str(), &geneDrugsAssocList, &geneSymbolToId);
+	int numGenesAssociatedWithDrugs = 0;
+	for(int gi = 0; gi < totalGenes; gi++){
+		int drugCount = geneDrugsAssocList[gi].size();
+		if(drugCount > 0){
+			numGenesAssociatedWithDrugs++;
+//			cout << geneIdToSymbol[gi] << "\t" << drugCount << endl;
+		}
+	}
+	cout << "\tRead " << numGenesAssociatedWithDrugs << " genes associated with drugs from GDSC\n";
+
+	/*
+	 * Construct modules for input samples
+	 */
+
+	cout << "constructing modules for input samples ...\n";
 
 	//A vector for collecting mutated genes and the corresponding explained genes for all samples (sample, mutated genes, explained genes)
 	vector< vector<MutatedAndExplianedGenes> > mutatedAndExplainedGenesListReal;
@@ -286,7 +353,7 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 		for (int mi = 0; mi < numMutatedGenes; ++mi) {	// for each mutated genes
 			int mutatedGeneId = mutatedGeneIds[mi];
 			MutatedAndExplianedGenes* meg = &mutatedAndExplainedGenes[mutatedGeneId];
-//			meg->isExplainedGenesUpDown = new vector<bool>(totalGenes * 2, false);	//already init above
+
 			//BFS for explained genes of the current mutated gene
 			BFSforExplainedGenesIdOnlyUpDownIncludingMutatedGene(&network, mutatedGeneId, L, D, F,
 					meg->isExplainedGenesUpDown, &sampleGeneExpression, si, &geneIdToSymbol, &geneSymbolToId);
@@ -296,19 +363,25 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 		mutatedGeneIdsListReal.push_back(mutatedGeneIds);
 
 //		cout << sampleIdToName[si] << " has " << numMutatedGenes << endl;
-
 //		cout << "added modules of " << sampleIdToName[si] << " to a list" << endl;
 
 	}
 
-	//Read MODULE.dat
-	string moduleFilename = dbPath + "/MODULE.dat";
+	cout << "\ttotal input sample = " << sampleIdToName.size() << endl;
+
+	/*
+	 * Read MODULE file from database
+	 */
+
+	cout << "reading modules from database ..." << endl;
+
+	string moduleFilename = dbPath + "/" + cancerType + "/MODULE.dat";
 
 	//get id and name of samples (id of dbSamples start from totalSamples, the number of input samples);
 	map<string, int> sampleNameToId;
 	readModulesFromFile(&moduleFilename, &sampleIdToName, &sampleNameToId, &geneIdToSymbol, &geneSymbolToId,
 			&mutatedAndExplainedGenesListReal, &mutatedGeneIdsListReal);
-	cout << "total sample = " << sampleIdToName.size() << endl;
+	cout << "\ttotal sample = " << sampleIdToName.size() << endl;
 
 	//update size of samples
 	int totalSamples = sampleIdToName.size();
@@ -317,49 +390,45 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 	 * Print the modules of pooled samples
 	 */
 
-	//OUTPUT: print all modules in all samples (as original)
-	vector<string>* outputStr = new vector<string>;
-	for (int i = 0; i < totalSamples; ++i) {
-		vector<MutatedAndExplianedGenes> mutatedAndExplainedGenes = mutatedAndExplainedGenesListReal[i];
-		vector<int> mutatedGeneIds = mutatedGeneIdsListReal[i];
-
-		if(i == 0){
-			cout << "sample 0 has " << mutatedGeneIds.size() << endl;
-		}
-
-		//for each mutated genes
-		for (unsigned int j = 0; j < mutatedGeneIds.size(); ++j) {
-			int currentMutatedGeneId = mutatedGeneIds[j];
-			string str = sampleIdToName[i] + "\t" + geneIdToSymbol[currentMutatedGeneId] + "\t";
-			vector<bool>* isExplainedGenesUpDownForAMutatedGene = mutatedAndExplainedGenes[currentMutatedGeneId].isExplainedGenesUpDown;
-			int numMember = 0;
-			for (int k = 0; k < totalGenesUpDown; ++k) {
-				if(isExplainedGenesUpDownForAMutatedGene->at(k)){
-					if(k < totalGenes){
-						str += geneIdToSymbol[k] + "_UP" + ";";
-						numMember++;
-					}else{
-						str += geneIdToSymbol[k-totalGenes] + "_DOWN" + ";";
-						numMember++;
-					}
-				}
-			}
-			if(numMember > 0){
-				outputStr->push_back(str);
-			}
-		}
-	}
-	string outModulefilename = outDir + "/MODULE.dat";
-	writeStrVector(outModulefilename.c_str(), outputStr);
-	delete outputStr;
+//	//OUTPUT: print all modules in all samples (as original)
+//	vector<string>* outputStr = new vector<string>;
+//	for (int i = 0; i < totalSamples; ++i) {
+//		vector<MutatedAndExplianedGenes> mutatedAndExplainedGenes = mutatedAndExplainedGenesListReal[i];
+//		vector<int> mutatedGeneIds = mutatedGeneIdsListReal[i];
+//
+//		//for each mutated genes
+//		for (unsigned int j = 0; j < mutatedGeneIds.size(); ++j) {
+//			int currentMutatedGeneId = mutatedGeneIds[j];
+//			string str = sampleIdToName[i] + "\t" + geneIdToSymbol[currentMutatedGeneId] + "\t";
+//			vector<bool>* isExplainedGenesUpDownForAMutatedGene = mutatedAndExplainedGenes[currentMutatedGeneId].isExplainedGenesUpDown;
+//			int numMember = 0;
+//			for (int k = 0; k < totalGenesUpDown; ++k) {
+//				if(isExplainedGenesUpDownForAMutatedGene->at(k)){
+//					if(k < totalGenes){
+//						str += geneIdToSymbol[k] + "_UP" + ";";
+//						numMember++;
+//					}else{
+//						str += geneIdToSymbol[k-totalGenes] + "_DOWN" + ";";
+//						numMember++;
+//					}
+//				}
+//			}
+//			if(numMember > 0){
+//				outputStr->push_back(str);
+//			}
+//		}
+//	}
+//	string outModulefilename = outDir + "/MODULE.dat";
+//	writeStrVector(outModulefilename.c_str(), outputStr);
+//	delete outputStr;
 
 	/*
-	 * SENSITIVE
+	 * STRINGENT ONLY
 	 */
 
-	cout << "SENSITIVE mode ...\n";
+	cout << "STRINGENT mode ...\n";
 
-	mode = 0;
+	int mode = 1;
 
 	{
 		//collect all mutated genes in all samples => use mutatedGeneIdsListReal (samples, mutated genes, explained genes)
@@ -396,87 +465,41 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 		cout << "\ttrimming explained genes for all samples ...\n";
 		trimSomeExplainedGenes(&modulesListOfAllSamples, &network, L, D, &geneIdToSymbol);
 
+		//write only final module of input sample
 		cout << "\twriting final module to FINAL_MODULE.dat ...\n";
-		string outFinalModuleFilenameSensitive = outDir + "/sensitive/FINAL_MODULE.dat";
-		saveModules(&modulesListOfAllSamples, &mutatedAndExplainedGenesListReal, outFinalModuleFilenameSensitive, &geneIdToSymbol, &sampleIdToName);
+		string outFinalModuleFilenameStringent = outDir + "/FINAL_MODULE.dat";
+		saveModulesOfInputSamples(&modulesListOfAllSamples, &mutatedAndExplainedGenesListReal, outFinalModuleFilenameStringent,
+				&geneIdToSymbol, &sampleIdToName, totalInputSamples);
 
-		cout << "\tcalculating IMPACT scores for all samples ...\n";
+		cout << "\tcalculating IMPACT scores for all input samples ...\n";
+		vector< vector<Driver> > driversOfAllSamples(totalInputSamples);
+		string outDriverOfAllSamplesDirName = outDir + "/samples";
 
-		vector< vector<Driver> > driversOfAllSamples(totalSamples);
-		string outDriverOfAllSamplesFilename;
-		if(mode == 0){
-			outDriverOfAllSamplesFilename = outDir + "/sensitive/driver_all_samples.dat";
-		}else{
-			outDriverOfAllSamplesFilename = outDir + "/stringent/driver_all_samples.dat";
-		}
-
-		//TODO update this function, now only gene expression for input is available, so use the saved statistics
-		//TODO calculated only impact score for the input samples
+		//calculated impact score for the input samples
 		calculateImpactScoresForAllInputSamples(totalInputSamples, &modulesListOfAllSamples, &driversOfAllSamples,
-				&originalGeneExpressionMatrix, &genesEx, totalGenes, F, &geneIdToSymbol, outDriverOfAllSamplesFilename,
+				&originalGeneExpressionMatrix, &genesEx, totalGenes, F, &geneIdToSymbol,
 				&sampleIdToName);
 
-//		vector<double> driverAggregatedScores(totalGenes, 0);
-//		vector<int> driversFrequency(totalGenes, 0);
-//		vector<int> pointMutationDriversFrequency(totalGenes, 0);
-//		vector<int> deletionDriversFrequency(totalGenes,0);
-//		vector<int> amplificationDriversFrequency(totalGenes,0);
-//		vector<int> mutationFrequency(totalGenes,0);
-//		vector<int> pointMutationFrequency(totalGenes,0);
-//		vector<int> deletionFrequency(totalGenes,0);
-//		vector<int> amplificationFrequency(totalGenes,0);
-//
-//		//TODO updated this function to read the statistics from database
-//		cout << "\taggregating IMPACT scores across all samples ...\n";
-//		aggregateDriversAcrossSamples(&driversOfAllSamples, &driverAggregatedScores, &driversFrequency, &geneIdToSymbol, totalGenes);
-//
-//		//TODO remove this
-////		cout << "getting driver frequency ...\n";
-//		getDetailDriversFreqeuncy(&driversOfAllSamples,
-//				&pointMutationDriversFrequency, &deletionDriversFrequency, &amplificationDriversFrequency,
-//				&originalPointMutationsMatrix, &originalCNVsMatrix,
-//				&genesPointMut, &genesCNV);
-//
-//		//TODO remove this
-////		cout << "getting mutation frequency ...\n";
-//		getMutationFrequency(&originalMutationMatrix, &mutationFrequency, &genesMut);
-//		getDetailMutationFrequency(&originalPointMutationsMatrix, &originalCNVsMatrix, &genesPointMut, &genesCNV,
-//				&pointMutationFrequency, &deletionFrequency, &amplificationFrequency);
-//
-		//TODO print for only input samples
-		string outSampleResultDirName = outDir + "/sensitive/samples/";
+		cout << "\taggregating IMPACT scores across all samples ...\n";
+		vector<double> driverAggregatedScores(totalGenes, 0);
+		vector<int> driversFrequency(totalGenes, 0);
+		aggregateDriversAcrossSamples(&driversOfAllSamples, &driverAggregatedScores, &driversFrequency, &geneIdToSymbol);
+
 		cout << "\tprinting impact scores for all samples ...\n";
 		printSampleDriverListForInputSamples(totalInputSamples, &driversOfAllSamples,
-				outSampleResultDirName, &geneIdToSymbol, &sampleIdToName,
-				&driverGenesFromFileSensitive, &originalPointMutationsMatrix, &originalCNVsMatrix,
-				&genesPointMut, &genesCNV, &isCancerBenchmarkGenes);
+				outDriverOfAllSamplesDirName, &geneIdToSymbol, &sampleIdToName,
+				&mutatedGenesFromFile, &cancerBenchmarkGeneNames,
+				&originalPointMutationsMatrix, &originalCNVsMatrix, &genesPointMut, &genesCNV,
+				&drugIdToName, &geneDrugsAssocList);
 
-//
-//
-//		cout << "\tprinting aggregated impact scores ...\n";
-//		string outDriverListfilename = outDir + "/sensitive/driver_list.txt";
-//		printAggregatedDriverList(&driverGenes, outDriverListfilename, &geneIdToSymbol, &sampleIdToName,
-//				&driverAggregatedScores, &driversFrequency, &mutationFrequency,
-//				&pointMutationDriversFrequency, &deletionDriversFrequency, &amplificationDriversFrequency,
-//				&pointMutationFrequency, &deletionFrequency, &amplificationFrequency, &isCancerBenchmarkGenes);
+
+		cout << "\tprinting aggregated impact scores ...\n";
+		string outDriverListfilename = outDir + "/driver_list.txt";
+		printAggregatedDriverListForInputSamples(&driverGenes, outDriverListfilename, &geneIdToSymbol, &sampleIdToName,
+				&driverAggregatedScores, &mutatedGenesFromFile, &cancerBenchmarkGeneNames, &drugIdToName, &geneDrugsAssocList);
 
 	}
 
-	/*
-	 * STRINGENT
-	 */
-
-	{
-		//TODO create bipartite graph
-
-		//TODO greedy set cover algorithm
-
-		//TODO construct modules, merge, and trim
-
-		//TODO calculate the IMPACT score for each input sample
-
-		//TODO print out the result into outDir
-	}
 
 	/*
 	 * Clean-up
