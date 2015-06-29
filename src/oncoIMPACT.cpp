@@ -12,6 +12,7 @@
 #include <sstream>
 #include "database.h"
 #include "discovery.h"
+#include "annotator.h"
 #include "header/utilities.h"
 
 using namespace std;
@@ -269,7 +270,20 @@ int main( int argc, char *argv[] ) {
 			cout << "Start constructing oncoIMPACT database ..." << endl;
 			discovery(outDir, networkFilename, expFilename, snpFilename, cnvFilename,
 					benchmarkGeneListFilename, dbPath, numThreads, cancerType);
+
+			cout << "Start annotate the results ..." << endl;
+
+			string mSigDbPath = dbPath + "/MSigDB/";
+			string outputPrefix = outDir + "/";
+			string moduleFileName = outDir + "/FINAL_MODULE.dat";
+			double cutoff = 0.05;
+			int top = 10;
+			string geneListFileName = dbPath + "/driver_net_background_gene_list.dat";
+			annotator(mSigDbPath, moduleFileName, outputPrefix, cutoff, top, geneListFileName);
+
 		}
+
+
 
 
 //	}	//end if-else for discovery mode

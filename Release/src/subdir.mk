@@ -4,16 +4,19 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 CPP_SRCS += \
+../src/annotator.cpp \
 ../src/database.cpp \
 ../src/discovery.cpp \
 ../src/oncoIMPACT.cpp 
 
 OBJS += \
+./src/annotator.o \
 ./src/database.o \
 ./src/discovery.o \
 ./src/oncoIMPACT.o 
 
 CPP_DEPS += \
+./src/annotator.d \
 ./src/database.d \
 ./src/discovery.d \
 ./src/oncoIMPACT.d 
