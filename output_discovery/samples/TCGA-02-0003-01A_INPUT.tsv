@@ -1,7 +1,4 @@
 GENE	TYPE	SAMPLE_IMPACT	DB_IMPACT	DB_DRIVER_FREQUENCY	DB_MUTATION_FREQUENCY	CANCER_CENSUS	GDSC_DRUGS
-CDK4	AMPL	356.521	75.552	0.183	0.183	Y	SB 216763[http://www.cancerrxgene.org/translation/Drug/1025];Vorinostat[http://www.cancerrxgene.org/translation/Drug/1012];
-TP53	MUT	356.521	162.535	0.306	0.306	Y	Nutlin-3a[http://www.cancerrxgene.org/translation/Drug/1047];Thapsigargin[http://www.cancerrxgene.org/translation/Drug/180];Obatoclax Mesylate[http://www.cancerrxgene.org/translation/Drug/182];AZD-2281[http://www.cancerrxgene.org/translation/Drug/1017];AKT inhibitor VIII[http://www.cancerrxgene.org/translation/Drug/171];
-EGFR	AMPL_MUT	356.521	262.780	0.576	0.581	Y	BIBW2992[http://www.cancerrxgene.org/translation/Drug/1032];Bosutinib[http://www.cancerrxgene.org/translation/Drug/1019];
-PIK3R1	MUT	356.521	54.482	0.092	0.092	Y	Gefitinib[http://www.cancerrxgene.org/translation/Drug/1010];PHA-665752[http://www.cancerrxgene.org/translation/Drug/6];
-SEC61G	AMPL	8.567	65.693	0.245	0.419	N	
-AKAP6	MUT	3.018	1.669	0.013	0.013	N	
+CDK4	AMPL	69.635	0.000	0.000	0.016	Y	SB 216763[http://www.cancerrxgene.org/translation/Drug/1025];Vorinostat[http://www.cancerrxgene.org/translation/Drug/1012];
+TP53	MUT	69.635	1522.436	0.536	0.536	Y	Nutlin-3a[http://www.cancerrxgene.org/translation/Drug/1047];Thapsigargin[http://www.cancerrxgene.org/translation/Drug/180];Obatoclax Mesylate[http://www.cancerrxgene.org/translation/Drug/182];AZD-2281[http://www.cancerrxgene.org/translation/Drug/1017];AKT inhibitor VIII[http://www.cancerrxgene.org/translation/Drug/171];
+GLI1	AMPL	69.635	76.623	0.024	0.032	N	

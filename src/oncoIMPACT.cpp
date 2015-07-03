@@ -32,7 +32,7 @@ int main( int argc, char *argv[] ) {
 
 	if ( argc != 3 ){ // argc should be 3 for correct execution
 		cout<<"usage: "<< argv[0] <<" --discovery <config_file>\n";
-		return 0;
+		return 1;
 	}else{
 		modeStr = argv[1];
 		configFilename = argv[2];
@@ -46,247 +46,195 @@ int main( int argc, char *argv[] ) {
 		}else{
 			cout << "invalid mode\n";
 			cout<<"usage: "<< argv[0] <<" --discovery <config_file>\n";
-			return 0;
+			return 1;
 		}
 	}
 
-//	/*
-//	 * DATABASE
-//	 */
-//
-//	if(oncoIMPACTMode == 0){
-//
-//		//variables
-//		string outDir;
-//		string networkFilename = "";
-//		string expFilename;
-//		string snpFilename;
-//		string cnvFilename;
-//		string benchmarkGeneListFilename;
-//		int numThreads = 1;
-//		//0 = sensitive, 1 = stringent
-//		int mode = 0; //default mode = sensitive
-//
-//		//read config file
-//		ifstream inConfigFile;
-//		inConfigFile.open(configFilename.c_str(), std::ifstream::in);
-//		int countArvInConfigFile = 0;
-//		if (inConfigFile.is_open()) {
-//
-//			//read the output from the
-//			while (inConfigFile.good()) {
-//				string line;
-//				if (!getline(inConfigFile, line))
-//					break;
-//
-//				//comment or empty lines
-//				if(line[0] == '#' || line.size() == 0){
-//					continue;
-//				}
-//
-//				istringstream lineStrem(line);
-//				string configName;
-//
-//				int i = 0;
-//				while (lineStrem) {	//for each column (sample)
-//					string token;
-//
-//					if (!getline(lineStrem, token, '='))
-//						break;
-//
-//					if(i == 0){ //read config name
-//						configName = token;
-//					}else if(i == 1){	//read config content
-//						if(configName.compare("outDir") == 0){
-//							outDir = token;
-//							countArvInConfigFile++;
-//							cout << configName << " = " << outDir << endl;
-//						}else if(configName.compare("network") == 0){
-//							countArvInConfigFile++;
-//							networkFilename = token;
-//							cout << configName << " = " << networkFilename << endl;
-//						}else if(configName.compare("numThreads") == 0){
-//							countArvInConfigFile++;
-//							numThreads = atoi(token.c_str());
-//							cout << configName << " = " << numThreads << endl;
-//						}else if(configName.compare("exp") == 0){
-//							countArvInConfigFile++;
-//							expFilename = token;
-//							cout << configName << " = " << expFilename << endl;
-//						}else if(configName.compare("snp") == 0){
-//							countArvInConfigFile++;
-//							snpFilename = token;
-//							cout << configName << " = " << snpFilename << endl;
-//						}else if(configName.compare("cnv") == 0){
-//							countArvInConfigFile++;
-//							cnvFilename = token;
-//							cout << configName << " = " << cnvFilename << endl;
-//						}else if(configName.compare("benchmarkGeneList") == 0){
-//							countArvInConfigFile++;
-//							benchmarkGeneListFilename = token;
-//							cout << configName << " = " << benchmarkGeneListFilename << endl;
-//						}else if(configName.compare("dataType") == 0){
-//							if(token.compare("ARRAY") == 0){	//use sensitive mode
-//								mode = 0;
-//							}else if(token.compare("RNA_SEQ") == 0){	//use stringent mode
-//								mode = 1;
-//							}
-//							cout << configName << " = " << token << endl;
-//						}
-//					}
-//
-//					i++;
-//				}
-//
-//			}
-//			inConfigFile.close();
-//		} else {
-//			cerr << "Error opening configuration file\n";
-//			return 1;
-//		}
-//
-//		if(countArvInConfigFile != 7){
-//			cout << "Incorrect configuration file\n";
-//			return 1;
-//		}else{
-//			cout << "Start constructing oncoIMPACT database ..." << endl;
-//			database(outDir, networkFilename, expFilename, snpFilename, cnvFilename,
-//					benchmarkGeneListFilename, numThreads, mode);
-//		}
-//	}else{
 
 	/*
 	 * DISCOVERY
 	 */
 
-		string outDir;
+	string outDir;
 
-		string networkFilename;
-		string expFilename;
-		string snpFilename;
-		string cnvFilename;
-		string benchmarkGeneListFilename;
+	string networkFilename;
+	string expFilename;
+	string snpFilename;
+	string cnvFilename;
+	string benchmarkGeneListFilename;
 
-		string dbPath = "";
+	string dbPath = "";
 
-		string cancerType;
+	int numThreads = 1;
 
-		int numThreads = 1;
-		//0 = sensitive, 1 = stringent
-		int mode = 1; //default mode = stringent
+	//0 = sensitive, 1 = stringent
+	//int mode = 1; //default mode = stringent //Now only the stringent mode is in used
 
-		ifstream inConfigFile;
-		inConfigFile.open(configFilename.c_str(), std::ifstream::in);
+	//0 = ARRAY, 1 = RNA_SEQ
+	int dataType = -1;
+	int inputDataType = -1;
+	bool isDataTypeMatch = false;
+	bool noFoldchangeCutoff = false;
+	string cancerType;
+	map<string, string> cancerTypeDataTypeMap;
 
-		int countArvInConfigFile = 0;
-		if (inConfigFile.is_open()) {
+	ifstream inConfigFile;
+	inConfigFile.open(configFilename.c_str(), std::ifstream::in);
 
-			//read the output from the
-			while (inConfigFile.good()) {
-				string line;
-				if (!getline(inConfigFile, line))
+	int countArvInConfigFile = 0;
+	if (inConfigFile.is_open()) {
+
+		//read the output from the
+		while (inConfigFile.good()) {
+			string line;
+			if (!getline(inConfigFile, line))
+				break;
+
+			//comment or empty lines
+			if(line[0] == '#' || line.size() == 0){
+				continue;
+			}
+
+			istringstream lineStrem(line);
+			string configName;
+
+			int i = 0;
+			while (lineStrem) {	//for each column (sample)
+				string token;
+
+				if (!getline(lineStrem, token, '='))
 					break;
 
-				//comment or empty lines
-				if(line[0] == '#' || line.size() == 0){
-					continue;
-				}
+				if(i == 0){ //read config name
+					configName = token;
+				}else if(i == 1){	//read config content
+					if(configName.compare("outDir") == 0){
+						outDir = token;
+						countArvInConfigFile++;
+						cout << configName << " = " << outDir << endl;
+					}else if(configName.compare("numThreads") == 0){
+						countArvInConfigFile++;
+						numThreads = atoi(token.c_str());
+						cout << configName << " = " << numThreads << endl;
+					}else if(configName.compare("exp") == 0){
+						countArvInConfigFile++;
+						expFilename = token;
+						cout << configName << " = " << expFilename << endl;
+					}else if(configName.compare("snp") == 0){
+						countArvInConfigFile++;
+						snpFilename = token;
+						cout << configName << " = " << snpFilename << endl;
+					}else if(configName.compare("cnv") == 0){
+						countArvInConfigFile++;
+						cnvFilename = token;
+						cout << configName << " = " << cnvFilename << endl;
+					}else if(configName.compare("dbPath") == 0){
+						countArvInConfigFile++;
+						dbPath = token;
+						cout << configName << " = " << dbPath << endl;
 
-				istringstream lineStrem(line);
-				string configName;
+						//TODO read the cancer type list
+						string cancerListFilename = dbPath + "/cancer_type_list.dat";
+						if(readCancerTypeList(cancerListFilename.c_str(), &cancerTypeDataTypeMap) == 0){
+							cout << "read cancer type list" << endl;
+						}else{
+							cerr << "read cancer type list" << endl;
+							return 1;
+						}
 
-				int i = 0;
-				while (lineStrem) {	//for each column (sample)
-					string token;
 
-					if (!getline(lineStrem, token, '='))
-						break;
+					}else if(configName.compare("cancerType") == 0){
+						countArvInConfigFile++;
+						cancerType = token;
+						cout << configName << " = " << cancerType << endl;
 
-					if(i == 0){ //read config name
-						configName = token;
-					}else if(i == 1){	//read config content
-						if(configName.compare("outDir") == 0){
-							outDir = token;
-							countArvInConfigFile++;
-							cout << configName << " = " << outDir << endl;
-//						}else if(configName.compare("network") == 0){
-//							countArvInConfigFile++;
-//							networkFilename = token;
-//							cout << configName << " = " << networkFilename << endl;
-						}else if(configName.compare("numThreads") == 0){
-							countArvInConfigFile++;
-							numThreads = atoi(token.c_str());
-							cout << configName << " = " << numThreads << endl;
-						}else if(configName.compare("exp") == 0){
-							countArvInConfigFile++;
-							expFilename = token;
-							cout << configName << " = " << expFilename << endl;
-						}else if(configName.compare("snp") == 0){
-							countArvInConfigFile++;
-							snpFilename = token;
-							cout << configName << " = " << snpFilename << endl;
-						}else if(configName.compare("cnv") == 0){
-							countArvInConfigFile++;
-							cnvFilename = token;
-							cout << configName << " = " << cnvFilename << endl;
-//						}else if(configName.compare("benchmarkGeneList") == 0){
-//							countArvInConfigFile++;
-//							benchmarkGeneListFilename = token;
-//							cout << configName << " = " << benchmarkGeneListFilename << endl;
-						}else if(configName.compare("dbPath") == 0){
-							countArvInConfigFile++;
-							dbPath = token;
-							cout << configName << " = " << dbPath << endl;
-						}else if(configName.compare("cancerType") == 0){
-							countArvInConfigFile++;
-							cancerType = token;
-							cout << configName << " = " << cancerType << endl;
-						}else if(configName.compare("dataType") == 0){
-							if(token.compare("ARRAY") == 0){	//use sensitive mode
-								mode = 0;
-							}else if(token.compare("RNA_SEQ") == 0){
-								mode = 1;
+						//TODO check the data type of the input cancer type
+						map<string, string>::iterator it = cancerTypeDataTypeMap.find(cancerType);
+						if(it == cancerTypeDataTypeMap.end()){
+							cerr << "oncoIMPACT does not have the input cancer type in database" << endl;
+							return 1;
+						}else{
+							string dataTypeStr = it->second;
+							if(dataTypeStr.compare("ARRAY") == 0){	//use sensitive mode
+								dataType = 0;
+							}else if(dataTypeStr.compare("RNA_SEQ") == 0){
+								dataType = 1;
 							}
-							cout << configName << " = " << endl;
+
+						}
+
+					}else if(configName.compare("dataType") == 0){
+						if(token.compare("ARRAY") == 0){	//use sensitive mode
+							inputDataType = 0;
+						}else if(token.compare("RNA_SEQ") == 0){
+							inputDataType = 1;
+						}
+						cout << configName << " = " << token << endl;
+
+						//TODO check data type
+						if(dataType == inputDataType and dataType != -1){
+							isDataTypeMatch = true;
+							cout << "The data type of the database matches with the database" << endl;
+						}else{
+							isDataTypeMatch = false;
+							cout << "The data type of the input DOES NOT MATCH with the database" << endl;
+							cout << "Please uncomment 'noFoldChangeCutOff=yes' in the configuration file to allow oncoIMPACT run (ignore this if you already uncommented the line)" << endl;
+						}
+					}else if(configName.compare("noFoldChangeCutOff") == 0){
+						if(token.compare("yes") == 0){
+							noFoldchangeCutoff = true;
+						}else{
+							noFoldchangeCutoff = false;
 						}
 					}
-
-					i++;
 				}
 
+				i++;
 			}
-			inConfigFile.close();
-		} else {
-			cerr << "Error opening configuration file\n";
+
 		}
+		inConfigFile.close();
+	} else {
+		cerr << "Error opening configuration file\n";
+		return 1;
+	}
 
-		if(countArvInConfigFile != 7){
-			cout << "Incorrect configuration file\n";
-		}else{
+	if(countArvInConfigFile != 7){
+		cout << "Incorrect configuration file\n";
+		return 1;
+	}else{
 
-			networkFilename = dbPath + "/network_FIsInGene_041709.txt";
-			benchmarkGeneListFilename = dbPath + "/Census_all_04_06_2015.tsv";
-
-			cout << "Start constructing oncoIMPACT database ..." << endl;
-			discovery(outDir, networkFilename, expFilename, snpFilename, cnvFilename,
-					benchmarkGeneListFilename, dbPath, numThreads, cancerType);
-
-			cout << "Start annotate the results ..." << endl;
-
-			string mSigDbPath = dbPath + "/MSigDB/";
-			string outputPrefix = outDir + "/";
-			string moduleFileName = outDir + "/FINAL_MODULE.dat";
-			double cutoff = 0.05;
-			int top = 10;
-			string geneListFileName = dbPath + "/driver_net_background_gene_list.dat";
-			annotator(mSigDbPath, moduleFileName, outputPrefix, cutoff, top, geneListFileName);
-
+		//TODO check matching of data type
+		if(!isDataTypeMatch){
+			if(noFoldchangeCutoff){
+				cout << "oncoIMPACT WILL NOT use any cutoff value for differential expression" << endl;
+			}else{
+				//cout << "Please uncomment 'noFoldChangeCutOff=yes' in the configuration file to allow oncoIMPACT run" << endl;
+				cout << "No fold change cutoff is used when the data type of the input DOES NOT MATCH with the database" << endl;
+				return 1;
+			}
 		}
 
 
+		networkFilename = dbPath + "/network_FIsInGene_041709.txt";
+		benchmarkGeneListFilename = dbPath + "/Census_all_04_06_2015.tsv";
 
+		cout << "Start constructing oncoIMPACT database ..." << endl;
+		discovery(outDir, networkFilename, expFilename, snpFilename, cnvFilename,
+				benchmarkGeneListFilename, dbPath, numThreads, cancerType, noFoldchangeCutoff);
 
-//	}	//end if-else for discovery mode
+		cout << "Start annotate the results ..." << endl;
+
+		string mSigDbPath = dbPath + "/MSigDB/";
+		string outputPrefix = outDir + "/";
+		string moduleFileName = outDir + "/FINAL_MODULE.dat";
+		double cutoff = 0.05;
+		int top = 10;
+		string geneListFileName = dbPath + "/driver_net_background_gene_list.dat";
+		annotator(mSigDbPath, moduleFileName, outputPrefix, cutoff, top, geneListFileName);
+
+	}
+
 
 	return 0;
 }

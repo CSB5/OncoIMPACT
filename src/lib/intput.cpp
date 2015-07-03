@@ -389,6 +389,51 @@ void readBenchmarkGeneList(string benchmarkGeneListFilename, vector<int>* cancer
 
 }
 
+int readCancerTypeList(const char* filename, map<string, string>* cancerTypeDataTypeMap){
+	ifstream inFile;
+	inFile.open(filename, std::ifstream::in);
+
+	if (inFile.is_open()) {
+
+		//for each row
+		while (inFile.good()) {
+
+			string cancerType = "";
+			string dataType = "";
+
+			string s;
+			if (!getline(inFile, s))
+				break;
+
+			istringstream rowStr(s);
+
+			int i = 0;
+			bool found = false;
+			while (rowStr) {	//for each column
+				string s;
+
+				if (!getline(rowStr, s, '\t'))
+					break;
+				if(i == 0){ 	//cancer type
+					cancerType = s;
+				}else if(i == 1){	//data type
+					dataType = s;
+				}
+
+				i++;	//go to the next column (sample)
+			}
+
+			cancerTypeDataTypeMap->insert(pair<string, string>(cancerType, dataType));
+
+		}
+		inFile.close();
+		return 0;
+	} else {
+		cerr << "Error opening cancer_type_list.dat file\n";
+		return 1;
+	}
+}
+
 void readPhenotypeGenesFromFile(const char* filename, vector<int>* phenotypeGeneIdsUpDown, map<string, int>* geneSymbolToId){
 	ifstream inFile;
 	inFile.open(filename, ifstream::in);

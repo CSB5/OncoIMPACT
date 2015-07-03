@@ -36,7 +36,7 @@
 using namespace std;
 
 int discovery(string outDir, string networkFilename, string expFilename, string snpFilename, string cnvFilename,
-		string benchmarkGeneListFilename, string dbPath, int numThreads, string cancerType){
+		string benchmarkGeneListFilename, string dbPath, int numThreads, string cancerType, bool noFoldchangeCutoff){
 
 //	//create sub-directory to store output files
 	#if defined(_WIN32)	//_WIN32 - Defined for applications for Win32 and Win64
@@ -239,6 +239,13 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 	}
 
 	cout << "\tParameters (L,D,F) are set to " << L << ", " << D << ", " << F << endl;
+
+	//TODO if the data type does not match, do not use cut off value for fold-change (F)
+	if(noFoldchangeCutoff){
+		F = 0.0;
+		cout << "\tThe parameters (L,D,F) are set to " << L << ", " << D << ", " << F << " because the data types do not match" << endl;
+	}
+
 
 	/*
 	 * Read phenotype genes from file

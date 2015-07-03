@@ -1,9 +1,3 @@
 GENE	TYPE	SAMPLE_IMPACT	DB_IMPACT	DB_DRIVER_FREQUENCY	DB_MUTATION_FREQUENCY	CANCER_CENSUS	GDSC_DRUGS
-AP2A2	DEL	266.673	12.213	0.017	0.017	N	
-INS	DEL	266.673	11.608	0.017	0.017	N	
-PIK3CD	AMPL	266.673	5.330	0.013	0.013	N	
-CSNK2A1	DEL	266.673	2.387	0.004	0.004	N	
-TP53	MUT	266.673	162.535	0.306	0.306	Y	Nutlin-3a[http://www.cancerrxgene.org/translation/Drug/1047];Thapsigargin[http://www.cancerrxgene.org/translation/Drug/180];Obatoclax Mesylate[http://www.cancerrxgene.org/translation/Drug/182];AZD-2281[http://www.cancerrxgene.org/translation/Drug/1017];AKT inhibitor VIII[http://www.cancerrxgene.org/translation/Drug/171];
-RALGDS	MUT	12.980	4.369	0.013	0.013	Y	
-DCHS1	DEL	3.936	0.146	0.017	0.022	N	
-TRPV6	MUT	2.684	4.975	0.017	0.026	N	
+FGFR2	AMPL	43.889	0.000	0.000	0.032	Y	PD-173074[http://www.cancerrxgene.org/translation/Drug/1049];A-443654[http://www.cancerrxgene.org/translation/Drug/86];
+TP53	MUT	43.889	1522.436	0.536	0.536	Y	Nutlin-3a[http://www.cancerrxgene.org/translation/Drug/1047];Thapsigargin[http://www.cancerrxgene.org/translation/Drug/180];Obatoclax Mesylate[http://www.cancerrxgene.org/translation/Drug/182];AZD-2281[http://www.cancerrxgene.org/translation/Drug/1017];AKT inhibitor VIII[http://www.cancerrxgene.org/translation/Drug/171];

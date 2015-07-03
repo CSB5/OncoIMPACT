@@ -100,10 +100,12 @@ void calculateImpactScoresForAllInputSamples(int totalInputSamples, vector< list
 		int totalGenes, double F, vector<string>* geneIdToSymbol, vector<string>* sampleIdToName){
 
 	//map the gene id to the row id in the gene expression matrix
-	vector<int> rowId(totalGenes);
+	vector<int> rowId(totalGenes, -1);
 	for (int i = 0; i < totalGenes; ++i) {
 		rowId[i] = findIndex(GenesEx, i);
 	}
+
+	cout << "total input samples = " << totalInputSamples << endl;
 
 	//for each sample i
 	for (int i = 0; i < totalInputSamples; ++i) {
@@ -113,6 +115,9 @@ void calculateImpactScoresForAllInputSamples(int totalInputSamples, vector< list
 //		outputDrivers->push_back("SAMPLE_ID\tDRIVER\tIMPACT_SCORE\tIS_DEREGULATED\tMODULE_SIZE\tNUM_DRIVERS_IN_MODULE");
 
 		list<Module> modules = modulesListOfAllSamples->at(i);
+
+		cout << "\t" << sampleIdToName->at(i) << endl;
+//		cout << modules.size() << endl;
 
 		//for each module
 		for (list<Module>::iterator it = modules.begin(); it != modules.end(); it++) {
@@ -136,15 +141,21 @@ void calculateImpactScoresForAllInputSamples(int totalInputSamples, vector< list
 
 			for(list<int>::iterator git = module.phenotypeGeneIdsUpDown.begin(); git != module.phenotypeGeneIdsUpDown.end(); git++){
 				int currentPhenotypeGeneId = *git;
+
 				if(currentPhenotypeGeneId < totalGenes){	//up
-					score += fabs(originalGeneExpressionMatrix->at(rowId[currentPhenotypeGeneId])[i]);
+					if(rowId[currentPhenotypeGeneId] != -1){
+						score += fabs(originalGeneExpressionMatrix->at(rowId[currentPhenotypeGeneId])[i]);
+					}
 				}else{										//down
-					score += fabs(originalGeneExpressionMatrix->at(rowId[currentPhenotypeGeneId - totalGenes])[i]);
+					if(rowId[currentPhenotypeGeneId - totalGenes] != -1){
+						score += fabs(originalGeneExpressionMatrix->at(rowId[currentPhenotypeGeneId - totalGenes])[i]);
+					}
 				}
 				moduleSize++;
 			}
 
 			//save the drivers and their scores
+
 			for(list<int>::iterator git = module.driverGeneIds.begin(); git != module.driverGeneIds.end(); git++){
 				Driver driver;
 				driver.geneId = *git;

@@ -108,6 +108,9 @@ void readModulesFromFile(string* moduleFileName, vector<string>* sampleIdToName,
 		vector<string>* geneIdToSymbol, map<string, int>* geneSymbolToId,
 		vector< vector<MutatedAndExplianedGenes> >* mutatedAndExplainedGenesListReal, vector< vector<int> >* mutatedGeneIdsListReal);
 
+int readCancerTypeList(const char* filename, map<string, string>* cancerTypeDataTypeMap);
+
+
 bool replaceStr(std::string& str, const std::string& from, const std::string& to);
 
 /*

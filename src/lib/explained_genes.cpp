@@ -485,7 +485,7 @@ void BFSforExplainedGenesIdOnlyUpDownIncludingMutatedGene(TIntAdjList* network, 
 						isExplainedGenesUpDown->at(geneId) = true;
 						countExpalinedGenes++;
 //						cout << geneIdToSymbol->at(geneId) << " is at level " << currentLevel << endl;
-					}else{											// down regulated
+					}else if(sampleGeneExpression->at(geneId) < 0.0){	// down regulated
 						isExplainedGenesUpDown->at(geneId + totalGenes) = true; //+9452
 						countExpalinedGenes++;
 //						cout << geneIdToSymbol->at(geneId) << " is at level " << currentLevel << endl;

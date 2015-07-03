@@ -146,7 +146,7 @@ int readNetwork(const char* filename, TIntAdjList* network,
 		}
 		inFile.close();
 	} else {
-		//cerr << "Error opening file\n";
+		cerr << "Error opening network file\n";
 		return 1;
 	}
 
