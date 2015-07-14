@@ -112,10 +112,10 @@ int main( int argc, char *argv[] ) {
 						outDir = token;
 						countArvInConfigFile++;
 						cout << configName << " = " << outDir << endl;
-					}else if(configName.compare("numThreads") == 0){
-						countArvInConfigFile++;
-						numThreads = atoi(token.c_str());
-						cout << configName << " = " << numThreads << endl;
+//					}else if(configName.compare("numThreads") == 0){
+//						countArvInConfigFile++;
+//						numThreads = atoi(token.c_str());
+//						cout << configName << " = " << numThreads << endl;
 					}else if(configName.compare("exp") == 0){
 						countArvInConfigFile++;
 						expFilename = token;
@@ -199,12 +199,12 @@ int main( int argc, char *argv[] ) {
 		return 1;
 	}
 
-	if(countArvInConfigFile != 7){
+	if(countArvInConfigFile != 6){
 		cout << "Incorrect configuration file\n";
 		return 1;
 	}else{
 
-		//TODO check matching of data type
+		//check matching of data type
 		if(!isDataTypeMatch){
 			if(noFoldchangeCutoff){
 				cout << "oncoIMPACT WILL NOT use any cutoff value for differential expression" << endl;

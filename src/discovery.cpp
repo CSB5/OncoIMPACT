@@ -501,7 +501,7 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 
 
 		cout << "\tprinting aggregated impact scores ...\n";
-		string outDriverListfilename = outDir + "/driver_list.txt";
+		string outDriverListfilename = outDir + "/driver_list.dat";
 		printAggregatedDriverListForInputSamples(&driverGenes, outDriverListfilename, &geneIdToSymbol, &sampleIdToName,
 				&driverAggregatedScores, &mutatedGenesFromFile, &cancerBenchmarkGeneNames, &drugIdToName, &geneDrugsAssocList);
 

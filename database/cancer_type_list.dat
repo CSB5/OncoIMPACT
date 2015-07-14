@@ -1,8 +1,8 @@
-BLCA	RNA_SEQ
-COAD	RNA_SEQ
-GBM	ARRAY
-LIHC	RNA_SEQ
-LUAD	RNA_SEQ
-OV	ARRAY
-PRAD	RNA_SEQ
-STAD	RNA_SEQ
+BLCA	RNA_SEQ	Bladder urothelial carcinoma
+COAD	RNA_SEQ	Colon adenocarcinoma
+GBM	ARRAY	Glioblastoma multiforme
+LIHC	RNA_SEQ	Liver hepatocellular carcinoma
+LUAD	RNA_SEQ	Lung adenocarcinoma
+OV	ARRAY	Ovarian serous cystadenocarcinoma
+PRAD	RNA_SEQ	Prostate adenocarcinoma
+STAD	RNA_SEQ	Stomach adenocarcinoma
