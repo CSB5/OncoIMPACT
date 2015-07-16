@@ -74,6 +74,8 @@ int annotator(string mSigDbPath, string moduleFileName, string outputPrefix, dou
 	cout << "\tannotating ... \n";
 	vector<string> outputStr;
 
+	outputStr.push_back("MODULE_ID\tDRIVER_GENES\tANNOTATION(P_VALUE)");
+
 	for (int i = 0; i < numModules; ++i) {
 
 		//get size of gene sets and overlap

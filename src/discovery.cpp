@@ -38,19 +38,20 @@ using namespace std;
 int discovery(string outDir, string networkFilename, string expFilename, string snpFilename, string cnvFilename,
 		string benchmarkGeneListFilename, string dbPath, int numThreads, string cancerType, bool noFoldchangeCutoff){
 
+	//TODO do not have to generate this
 //	//create sub-directory to store output files
 	#if defined(_WIN32)	//_WIN32 - Defined for applications for Win32 and Win64
 //		_mkdir((outDir + "/sensitive").c_str());
 //		_mkdir((outDir + "/stringent").c_str());
 //		_mkdir((outDir + "/sensitive/samples").c_str());
 //		_mkdir((outDir + "/stringent/samples").c_str());
-		_mkdir((outDir + "/samples").c_str());
+//		_mkdir((outDir + "/samples").c_str());
 	#else
 //		mkdir((outDir + "/sensitive").c_str(), 0777); // notice that 777 is different than 0777
 //		mkdir((outDir + "/stringent").c_str(), 0777); // notice that 777 is different than 0777
 //		mkdir((outDir + "/sensitive/samples").c_str(), 0777); // notice that 777 is different than 0777
 //		mkdir((outDir + "/stringent/samples").c_str(), 0777); // notice that 777 is different than 0777
-		mkdir((outDir + "/samples").c_str(), 0777);
+//		mkdir((outDir + "/samples").c_str(), 0777);
 	#endif
 
 	/*
@@ -240,7 +241,7 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 
 	cout << "\tParameters (L,D,F) are set to " << L << ", " << D << ", " << F << endl;
 
-	//TODO if the data type does not match, do not use cut off value for fold-change (F)
+	//if the data type does not match, do not use cut off value for fold-change (F)
 	if(noFoldchangeCutoff){
 		F = 0.0;
 		cout << "\tThe parameters (L,D,F) are set to " << L << ", " << D << ", " << F << " because the data types do not match" << endl;
@@ -474,13 +475,14 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 
 		//write only final module of input sample
 		cout << "\twriting final module to FINAL_MODULE.dat ...\n";
-		string outFinalModuleFilenameStringent = outDir + "/FINAL_MODULE.dat";
+		string outFinalModuleFilenameStringent = "FINAL_MODULE.dat";
 		saveModulesOfInputSamples(&modulesListOfAllSamples, &mutatedAndExplainedGenesListReal, outFinalModuleFilenameStringent,
 				&geneIdToSymbol, &sampleIdToName, totalInputSamples);
 
 		cout << "\tcalculating IMPACT scores for all input samples ...\n";
 		vector< vector<Driver> > driversOfAllSamples(totalInputSamples);
-		string outDriverOfAllSamplesDirName = outDir + "/samples";
+		//string outDriverOfAllSamplesDirName = outDir + "/samples";
+		string sampleDriversFileName = "sample_driver_list.dat";
 
 		//calculated impact score for the input samples
 		calculateImpactScoresForAllInputSamples(totalInputSamples, &modulesListOfAllSamples, &driversOfAllSamples,
@@ -492,16 +494,17 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 		vector<int> driversFrequency(totalGenes, 0);
 		aggregateDriversAcrossSamples(&driversOfAllSamples, &driverAggregatedScores, &driversFrequency, &geneIdToSymbol);
 
+		//TODO change this function to print only single file
 		cout << "\tprinting impact scores for all samples ...\n";
 		printSampleDriverListForInputSamples(totalInputSamples, &driversOfAllSamples,
-				outDriverOfAllSamplesDirName, &geneIdToSymbol, &sampleIdToName,
+				sampleDriversFileName, &geneIdToSymbol, &sampleIdToName,
 				&mutatedGenesFromFile, &cancerBenchmarkGeneNames,
 				&originalPointMutationsMatrix, &originalCNVsMatrix, &genesPointMut, &genesCNV,
 				&drugIdToName, &geneDrugsAssocList);
 
 
 		cout << "\tprinting aggregated impact scores ...\n";
-		string outDriverListfilename = outDir + "/driver_list.dat";
+		string outDriverListfilename = "driver_list.dat";
 		printAggregatedDriverListForInputSamples(&driverGenes, outDriverListfilename, &geneIdToSymbol, &sampleIdToName,
 				&driverAggregatedScores, &mutatedGenesFromFile, &cancerBenchmarkGeneNames, &drugIdToName, &geneDrugsAssocList);
 

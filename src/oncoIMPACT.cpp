@@ -26,7 +26,7 @@ int main( int argc, char *argv[] ) {
 	//oncoIMPACT --database|--discovery <config_file>
 
 	string modeStr;
-	string configFilename;
+	string configFilename = "userConfig.cfg";
 
 	int oncoIMPACTMode = -1; //0 = database, 1 = discovery
 
@@ -55,15 +55,15 @@ int main( int argc, char *argv[] ) {
 	 * DISCOVERY
 	 */
 
-	string outDir;
+	string outDir = "";
 
 	string networkFilename;
-	string expFilename;
-	string snpFilename;
-	string cnvFilename;
+	string expFilename = "EXPR.txt";
+	string snpFilename = "SNP.txt";
+	string cnvFilename = "CNV.txt";
 	string benchmarkGeneListFilename;
 
-	string dbPath = "";
+	string dbPath = "database";
 
 	int numThreads = 1;
 
@@ -77,6 +77,15 @@ int main( int argc, char *argv[] ) {
 	bool noFoldchangeCutoff = false;
 	string cancerType;
 	map<string, string> cancerTypeDataTypeMap;
+
+	//Read the cancer type list
+	string cancerListFilename = dbPath + "/cancer_type_list.dat";
+	if(readCancerTypeList(cancerListFilename.c_str(), &cancerTypeDataTypeMap) == 0){
+		cout << "read cancer type list" << endl;
+	}else{
+		cerr << "read cancer type list" << endl;
+		return 1;
+	}
 
 	ifstream inConfigFile;
 	inConfigFile.open(configFilename.c_str(), std::ifstream::in);
@@ -108,47 +117,47 @@ int main( int argc, char *argv[] ) {
 				if(i == 0){ //read config name
 					configName = token;
 				}else if(i == 1){	//read config content
-					if(configName.compare("outDir") == 0){
-						outDir = token;
-						countArvInConfigFile++;
-						cout << configName << " = " << outDir << endl;
+//					if(configName.compare("outDir") == 0){
+//						outDir = token;
+//						countArvInConfigFile++;
+//						cout << configName << " = " << outDir << endl;
 //					}else if(configName.compare("numThreads") == 0){
 //						countArvInConfigFile++;
 //						numThreads = atoi(token.c_str());
 //						cout << configName << " = " << numThreads << endl;
-					}else if(configName.compare("exp") == 0){
-						countArvInConfigFile++;
-						expFilename = token;
-						cout << configName << " = " << expFilename << endl;
-					}else if(configName.compare("snp") == 0){
-						countArvInConfigFile++;
-						snpFilename = token;
-						cout << configName << " = " << snpFilename << endl;
-					}else if(configName.compare("cnv") == 0){
-						countArvInConfigFile++;
-						cnvFilename = token;
-						cout << configName << " = " << cnvFilename << endl;
-					}else if(configName.compare("dbPath") == 0){
-						countArvInConfigFile++;
-						dbPath = token;
-						cout << configName << " = " << dbPath << endl;
+//					}else if(configName.compare("exp") == 0){
+//						countArvInConfigFile++;
+//						expFilename = token;
+//						cout << configName << " = " << expFilename << endl;
+//					}else if(configName.compare("snp") == 0){
+//						countArvInConfigFile++;
+//						snpFilename = token;
+//						cout << configName << " = " << snpFilename << endl;
+//					}else if(configName.compare("cnv") == 0){
+//						countArvInConfigFile++;
+//						cnvFilename = token;
+//						cout << configName << " = " << cnvFilename << endl;
+//					}else if(configName.compare("dbPath") == 0){
+//						countArvInConfigFile++;
+//						dbPath = token;
+//						cout << configName << " = " << dbPath << endl;
 
-						//TODO read the cancer type list
-						string cancerListFilename = dbPath + "/cancer_type_list.dat";
-						if(readCancerTypeList(cancerListFilename.c_str(), &cancerTypeDataTypeMap) == 0){
-							cout << "read cancer type list" << endl;
-						}else{
-							cerr << "read cancer type list" << endl;
-							return 1;
-						}
+//						//Read the cancer type list
+//						string cancerListFilename = dbPath + "/cancer_type_list.dat";
+//						if(readCancerTypeList(cancerListFilename.c_str(), &cancerTypeDataTypeMap) == 0){
+//							cout << "read cancer type list" << endl;
+//						}else{
+//							cerr << "read cancer type list" << endl;
+//							return 1;
+//						}
 
 
-					}else if(configName.compare("cancerType") == 0){
+					if(configName.compare("cancerType") == 0){
 						countArvInConfigFile++;
 						cancerType = token;
 						cout << configName << " = " << cancerType << endl;
 
-						//TODO check the data type of the input cancer type
+						//check the data type of the input cancer type
 						map<string, string>::iterator it = cancerTypeDataTypeMap.find(cancerType);
 						if(it == cancerTypeDataTypeMap.end()){
 							cerr << "oncoIMPACT does not have the input cancer type in database" << endl;
@@ -164,6 +173,7 @@ int main( int argc, char *argv[] ) {
 						}
 
 					}else if(configName.compare("dataType") == 0){
+						countArvInConfigFile++;
 						if(token.compare("ARRAY") == 0){	//use sensitive mode
 							inputDataType = 0;
 						}else if(token.compare("RNA_SEQ") == 0){
@@ -171,7 +181,7 @@ int main( int argc, char *argv[] ) {
 						}
 						cout << configName << " = " << token << endl;
 
-						//TODO check data type
+						//Check input data type
 						if(dataType == inputDataType and dataType != -1){
 							isDataTypeMatch = true;
 							cout << "The data type of the database matches with the database" << endl;
@@ -180,12 +190,12 @@ int main( int argc, char *argv[] ) {
 							cout << "The data type of the input DOES NOT MATCH with the database" << endl;
 							cout << "Please uncomment 'noFoldChangeCutOff=yes' in the configuration file to allow oncoIMPACT run (ignore this if you already uncommented the line)" << endl;
 						}
-					}else if(configName.compare("noFoldChangeCutOff") == 0){
-						if(token.compare("yes") == 0){
-							noFoldchangeCutoff = true;
-						}else{
-							noFoldchangeCutoff = false;
-						}
+//					}else if(configName.compare("noFoldChangeCutOff") == 0){
+//						if(token.compare("yes") == 0){
+//							noFoldchangeCutoff = true;
+//						}else{
+//							noFoldchangeCutoff = false;
+//						}
 					}
 				}
 
@@ -199,7 +209,7 @@ int main( int argc, char *argv[] ) {
 		return 1;
 	}
 
-	if(countArvInConfigFile != 6){
+	if(countArvInConfigFile != 2){
 		cout << "Incorrect configuration file\n";
 		return 1;
 	}else{
@@ -226,8 +236,10 @@ int main( int argc, char *argv[] ) {
 		cout << "Start annotate the results ..." << endl;
 
 		string mSigDbPath = dbPath + "/MSigDB/";
-		string outputPrefix = outDir + "/";
-		string moduleFileName = outDir + "/FINAL_MODULE.dat";
+		//string outputPrefix = outDir + "/";
+		string outputPrefix = outDir;
+		//string moduleFileName = outDir + "/FINAL_MODULE.dat";
+		string moduleFileName = "FINAL_MODULE.dat";
 		double cutoff = 0.05;
 		int top = 10;
 		string geneListFileName = dbPath + "/driver_net_background_gene_list.dat";

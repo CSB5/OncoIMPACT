@@ -111,6 +111,8 @@ void saveModulesOfInputSamples(vector<list<Module> > * modulesListOfAllSamples, 
 	int totalGenesUpDown = totalGenes * 2;
 	vector<string> outputStr;
 
+	//outputStr.push_back("MODULE_ID\tDRIVER_GENES\tPHENOTYPE_GENES\tEXPLAINED_GENES\tNUMBER_OF_GENES");
+
 	//get a list of nodes (gene symbol, type)
 	vector<int> geneIds;
 	for (int i = 0; i < numInputSamples; ++i) {
@@ -337,10 +339,83 @@ void printSampleDriverList(vector<vector<Driver> >* driversOfAllSamples,
 }
 
 void printSampleDriverListForInputSamples(int totalInputSamples, vector<vector<Driver> >* driversOfAllSamples,
-		string pathname, vector<string>* geneIdToSymbol, vector<string>* sampleIdToName,
+		string sampleDriversFileName, vector<string>* geneIdToSymbol, vector<string>* sampleIdToName,
 		vector<MutatedGeneFromFile>* mutatedGeneFromFile, vector<string>* cancerBenchmarkGeneNames,
 		TIntegerMatrix* originalPointMutationsMatrix, TIntegerMatrix* originalCNVsMatrix, vector<int>* genesPointMut, vector<int>* genesCNV,
 		map<int, string>* drugIdToName, vector< vector<int> >* geneDrugsAssocList) {
+
+	//FOR WRITE SEPARATED FILES FOR SAMPLES
+//	for (int i = 0; i < totalInputSamples; ++i) {
+//		vector<Driver> drivers = driversOfAllSamples->at(i);
+//		int numDrivers = drivers.size();
+//
+//		list<SampleDriver> sampleDriversList;
+//
+//		//for each driver
+//		for (int j = 0; j < numDrivers; ++j) {
+//			SampleDriver driver;
+//			driver.geneId = drivers[j].geneId;
+//			driver.gene = geneIdToSymbol->at(drivers[j].geneId);
+//			driver.type = getDriverType(drivers[j].geneId, i,
+//					originalPointMutationsMatrix, originalCNVsMatrix,
+//					genesPointMut, genesCNV);
+//			driver.impactScore = drivers[j].impactScore;
+//			driver.databaseImpactScore = mutatedGeneFromFile->at(drivers[j].geneId).impactScore;
+//			driver.databaseDriverFrequency = mutatedGeneFromFile->at(drivers[j].geneId).driverFreq;
+//			driver.databaseMutationFrequency = mutatedGeneFromFile->at(drivers[j].geneId).mutationFreq;
+//
+//			string geneName = geneIdToSymbol->at(driver.geneId);
+//			if (find(cancerBenchmarkGeneNames->begin(), cancerBenchmarkGeneNames->end(), geneName) != cancerBenchmarkGeneNames->end()){
+//				driver.isCancerCensus = true;
+//			}else{
+//				driver.isCancerCensus = false;
+//			}
+//
+//
+//			sampleDriversList.push_back(driver);
+//		}
+//
+//		string filename = pathname + "/" + sampleIdToName->at(i) + ".tsv";
+//		vector<string> outputStr;
+//		string header = "GENE\tTYPE\tSAMPLE_IMPACT\tDB_IMPACT\t";
+//		header += "DB_DRIVER_FREQUENCY\tDB_MUTATION_FREQUENCY\tCANCER_CENSUS\tGDSC_DRUGS";
+////		header += "DB_DRIVER_FREQUENCY\tDB_DRIVER_SNV_FREQUENCY\tDB_DRIVER_DELTION_FREQUENCY\tDBDRIVER_AMPLIFICATION_FREQUENCY\t";
+////		header += "DB_MUTATION_FREQUENCY\tDB_SNV_FREQUENCY\tDB_DELTION_FREQUENCY\tDB_AMPLIFICATION_FREQUENCY\t";
+////		header += "CANCER_CENSUS\tPAN_CANCER\t";
+//		outputStr.push_back(header);
+//
+//		sampleDriversList.sort(sortByImpactScore);
+//		for (list<SampleDriver>::iterator it = sampleDriversList.begin();
+//				it != sampleDriversList.end(); it++) {
+//			string str = it->gene + "\t" + it->type + "\t"
+//					+ doubleToStr(it->impactScore, 3) + "\t"
+//					+ doubleToStr(it->databaseImpactScore, 3) + "\t"
+//					+ doubleToStr(it->databaseDriverFrequency, 3) + "\t"
+//					+ doubleToStr(it->databaseMutationFrequency, 3) + "\t";
+//			if(it->isCancerCensus){
+//				str += "Y\t";
+//			}else{
+//				str += "N\t";
+//			}
+//			//get drug info
+//			int numDrugs = geneDrugsAssocList->at(it->geneId).size();
+//			for (int di = 0; di < numDrugs; ++di) {
+//				int drugId = geneDrugsAssocList->at(it->geneId)[di];
+//				string drugUrl = "http://www.cancerrxgene.org/translation/Drug/" + intToStr(drugId);
+//				str += drugIdToName->find(drugId)->second + "[" + drugUrl + "]" + ";";
+//			}
+//
+//			outputStr.push_back(str);
+//		}
+//
+//		writeStrVector(filename.c_str(), &outputStr);
+//
+//	}
+
+	vector<string> outputStr;
+	string header = "SAMPLE_NAME\tGENE\tTYPE\tSAMPLE_IMPACT\tDB_IMPACT\t";
+	header += "DB_DRIVER_FREQUENCY\tDB_MUTATION_FREQUENCY\tCANCER_CENSUS\tGDSC_DRUGS";
+	outputStr.push_back(header);
 
 	for (int i = 0; i < totalInputSamples; ++i) {
 		vector<Driver> drivers = driversOfAllSamples->at(i);
@@ -372,19 +447,12 @@ void printSampleDriverListForInputSamples(int totalInputSamples, vector<vector<D
 			sampleDriversList.push_back(driver);
 		}
 
-		string filename = pathname + "/" + sampleIdToName->at(i) + ".tsv";
-		vector<string> outputStr;
-		string header = "GENE\tTYPE\tSAMPLE_IMPACT\tDB_IMPACT\t";
-		header += "DB_DRIVER_FREQUENCY\tDB_MUTATION_FREQUENCY\tCANCER_CENSUS\tGDSC_DRUGS";
-//		header += "DB_DRIVER_FREQUENCY\tDB_DRIVER_SNV_FREQUENCY\tDB_DRIVER_DELTION_FREQUENCY\tDBDRIVER_AMPLIFICATION_FREQUENCY\t";
-//		header += "DB_MUTATION_FREQUENCY\tDB_SNV_FREQUENCY\tDB_DELTION_FREQUENCY\tDB_AMPLIFICATION_FREQUENCY\t";
-//		header += "CANCER_CENSUS\tPAN_CANCER\t";
-		outputStr.push_back(header);
+
 
 		sampleDriversList.sort(sortByImpactScore);
 		for (list<SampleDriver>::iterator it = sampleDriversList.begin();
 				it != sampleDriversList.end(); it++) {
-			string str = it->gene + "\t" + it->type + "\t"
+			string str = sampleIdToName->at(i) + "\t" + it->gene + "\t" + it->type + "\t"
 					+ doubleToStr(it->impactScore, 3) + "\t"
 					+ doubleToStr(it->databaseImpactScore, 3) + "\t"
 					+ doubleToStr(it->databaseDriverFrequency, 3) + "\t"
@@ -405,9 +473,9 @@ void printSampleDriverListForInputSamples(int totalInputSamples, vector<vector<D
 			outputStr.push_back(str);
 		}
 
-		writeStrVector(filename.c_str(), &outputStr);
-
 	}
+
+	writeStrVector(sampleDriversFileName.c_str(), &outputStr);
 }
 
 //Usage: sort(sampleDriversList.begin(), sampleDriversList.end(), sortByImpactScore);
