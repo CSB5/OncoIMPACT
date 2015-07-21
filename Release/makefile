@@ -45,7 +45,7 @@ all: oncoIMPACT-garuda.exe
 oncoIMPACT-garuda.exe: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C++ Linker'
-	g++ -fopenmp -o "oncoIMPACT-garuda.exe" $(OBJS) $(USER_OBJS) $(LIBS)
+	g++ -fopenmp -static-libgcc -static-libstdc++ -o "oncoIMPACT-garuda.exe" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
