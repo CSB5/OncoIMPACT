@@ -6,3 +6,4 @@ LUAD	RNA_SEQ	Lung adenocarcinoma
 OV	ARRAY	Ovarian serous cystadenocarcinoma
 PRAD	RNA_SEQ	Prostate adenocarcinoma
 STAD	RNA_SEQ	Stomach adenocarcinoma
+READ	RNA_SEQ	Rectum adenocarcinoma
