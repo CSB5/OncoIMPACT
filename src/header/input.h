@@ -40,7 +40,9 @@ struct CopyNumberVariation{
 	vector<int>* sample; //optional for saving sample id
 };
 
-//For discovery mode
+/*
+ * For discovery mode
+ */
 
 //GENE	DRIVER_FREQUENCY	DRIVER_SNV_FREQUENCY	DRIVER_DELTION_FREQUENCY	DRIVER_AMPLIFICATION_FREQUENCY	CANCER_CENSUS	PAN_CANCER	IMPACT	MUTATION_FREQUENCY	SNV_FREQUENCY	DELTION_FREQUENCY	AMPLIFICATION_FREQUENCY
 //EGFR	0.393	0.262	0.000	0.241	Y	NA	120.1447552328	0.393	0.262	0.000	0.241
@@ -73,10 +75,23 @@ struct MutatedGeneFromFile{
 	double impactScore = 0.0;
 };
 
-//struct DrugsForGene{
-//	int geneId;
-//	vector<int>* drugIds;
-//};
+void readPhenotypeGenesFromFile(const char* filename, vector<int>* phenotypeGeneIdsUpDown, map<string, int>* geneSymbolToId);
+void readDriverGenesFromFile(const char* filename, vector<DriverGeneFromFile>* driverGenesFromFile, map<string, int>* geneSymbolToId);
+void readMutatedGenesFromFile(const char* filename, vector<MutatedGeneFromFile>* mutatedGenesFromFile, map<string, int>* geneSymbolToId);
+
+void readDrugsListFromFile(const char* filename, map<int, string>* drugIdToName, map<string, int>* drugNameToId);
+void readGenesDrugsAssocFromFile(const char* filename, vector< vector<int> >* geneDrugsAssocList, map<string, int>* geneSymbolToId);
+
+void readModulesFromFile(string* moduleFileName, vector<string>* sampleIdToName, map<string, int>* sampleNameToId,
+		vector<string>* geneIdToSymbol, map<string, int>* geneSymbolToId,
+		vector< vector<MutatedAndExplianedGenes> >* mutatedAndExplainedGenesListReal, vector< vector<int> >* mutatedGeneIdsListReal);
+void readModulesFromFileOnlySaveBipartiteGraph(string* moduleFileName, vector<string>* sampleIdToName, map<string, int>* sampleNameToId,
+		vector<string>* geneIdToSymbol, map<string, int>* geneSymbolToId,
+		vector<BipartiteEdge>* bipartiteGraphDatabase, vector< vector<int> >* mutatedGeneIdsListReal, vector<bool>* isPhenotypeGenesUpDown);
+
+int readCancerTypeList(const char* filename, map<string, string>* cancerTypeDataTypeMap);
+bool replaceStr(std::string& str, const std::string& from, const std::string& to);
+
 
 /*
  * Functions for importing data
@@ -96,22 +111,6 @@ void readBenchmarkGeneList(string benchmarkGeneListFilename, vector<int>* cancer
 
 int findIndex(vector<int>* geneIds, int currentGeneId);
 
-//For discovery mode
-void readPhenotypeGenesFromFile(const char* filename, vector<int>* phenotypeGeneIdsUpDown, map<string, int>* geneSymbolToId);
-void readDriverGenesFromFile(const char* filename, vector<DriverGeneFromFile>* driverGenesFromFile, map<string, int>* geneSymbolToId);
-void readMutatedGenesFromFile(const char* filename, vector<MutatedGeneFromFile>* mutatedGenesFromFile, map<string, int>* geneSymbolToId);
-
-void readDrugsListFromFile(const char* filename, map<int, string>* drugIdToName, map<string, int>* drugNameToId);
-void readGenesDrugsAssocFromFile(const char* filename, vector< vector<int> >* geneDrugsAssocList, map<string, int>* geneSymbolToId);
-
-void readModulesFromFile(string* moduleFileName, vector<string>* sampleIdToName, map<string, int>* sampleNameToId,
-		vector<string>* geneIdToSymbol, map<string, int>* geneSymbolToId,
-		vector< vector<MutatedAndExplianedGenes> >* mutatedAndExplainedGenesListReal, vector< vector<int> >* mutatedGeneIdsListReal);
-
-int readCancerTypeList(const char* filename, map<string, string>* cancerTypeDataTypeMap);
-
-
-bool replaceStr(std::string& str, const std::string& from, const std::string& to);
 
 /*
  * Functions for calculate data statistics

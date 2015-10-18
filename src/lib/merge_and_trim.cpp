@@ -76,15 +76,12 @@ void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedA
 		int numDriverGenes = driverGenes->size();
 		for (int i = 0; i < numDriverGenes; ++i) {
 			isDriverGenes[driverGenes->at(i).geneId] = true;
-//			cout << "\tgene " << driverGenes->at(i).geneId << " covered # samples = " << driverGenes->at(i).sampleIds.size() << endl;
+			//cout << "\tgene " << driverGenes->at(i).geneId << " covered # samples = " << driverGenes->at(i).sampleIds.size() << endl;
 		}
 	}else{
 		//initialize
 		for (int i = 0; i < totalSamples; ++i) {
-			vector<bool> isDriverGenesOfASample(totalGenes);
-			for (int j = 0; j < totalGenes; ++j) {
-				isDriverGenesOfASample[j] = false;
-			}
+			vector<bool> isDriverGenesOfASample(totalGenes, false);
 			isDriverGenesForSamples.push_back(isDriverGenesOfASample);
 		}
 
@@ -95,7 +92,7 @@ void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedA
 			int numSamples = sampleIds.size();
 			for (int j = 0; j < numSamples; ++j) {
 				isDriverGenesForSamples[sampleIds[j]][driverGeneId] = true;
-//				cout << "sample " << sampleIds[j] << " driver id " << driverGeneId << endl;
+				//cout << "sample " << sampleIds[j] << " driver id " << driverGeneId << endl;
 
 			}
 		}
@@ -222,6 +219,184 @@ void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedA
 //					if(i == 323){
 //						cout << "found in module id = " << it->moduleId << endl;
 //					}
+					moduleIdsToMerge.push_back(it->moduleId);
+					isPhenotypeGeneInThisSample = true;
+				}
+			}
+
+			if (isPhenotypeGeneInThisSample) {	//then merge modules
+				int numModulesToMerge = moduleIdsToMerge.size();
+				if (numModulesToMerge > 1) {
+					int currentModuleId = moduleIdsToMerge[0];
+					for (int k = 1; k < numModulesToMerge; ++k) {
+						int moduleId = moduleIdsToMerge[k];
+						//merge module moduleId into the currentModuleId and deleted moduleId
+						mergeModules(currentModuleId, moduleId, modulesList);
+					}
+				}	//no sharing phenotype gene, do not need to merge
+			}
+		}
+
+		//cout << "sample #" << i << " has " << modulesListOfAllSamples->at(i).size() << " modules after merging\n";
+
+	}
+}
+
+void findModulesInAllInputSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedAndExplainedGenesListReal, vector< list<Module> >* modulesListOfAllSamples,
+		vector< vector<int> >* mutatedGeneIdsListReal, vector<bool>* isPhenotypeGenesUpDown, vector<DriverGene>* driverGenes, vector<int>* phenotypeGeneIdsUpDown, int mode){
+	int totalSamples = mutatedGeneIdsListReal->size();
+	int totalInputSamples = mutatedAndExplainedGenesListReal->size();
+	int totalGenesUpDown = isPhenotypeGenesUpDown->size();
+	int totalGenes = totalGenesUpDown / 2;
+
+	//for sensitive mode
+	vector<bool> isDriverGenes(totalGenes);
+
+	//for stringent mode
+	vector< vector<bool> > isDriverGenesForSamples;
+
+	if(mode == 0){
+		//initialize
+		for (int i = 0; i < totalGenes; ++i) {
+			isDriverGenes[i] = false;
+		}
+
+		int numDriverGenes = driverGenes->size();
+		for (int i = 0; i < numDriverGenes; ++i) {
+			isDriverGenes[driverGenes->at(i).geneId] = true;
+			//cout << "\tgene " << driverGenes->at(i).geneId << " covered # samples = " << driverGenes->at(i).sampleIds.size() << endl;
+		}
+	}else{
+		//initialize
+		for (int i = 0; i < totalSamples; ++i) {
+			vector<bool> isDriverGenesOfASample(totalGenes, false);
+			isDriverGenesForSamples.push_back(isDriverGenesOfASample);
+		}
+
+		int numDriverGenes = driverGenes->size();
+		for (int i = 0; i < numDriverGenes; ++i) {
+			int driverGeneId = driverGenes->at(i).geneId;
+			vector<int> sampleIds = driverGenes->at(i).sampleIds;
+			int numSamples = sampleIds.size();
+			for (int j = 0; j < numSamples; ++j) {
+				isDriverGenesForSamples[sampleIds[j]][driverGeneId] = true;
+				//cout << "sample " << sampleIds[j] << " driver id " << driverGeneId << endl;
+
+			}
+		}
+	}
+
+
+	// for each input samples
+	for (int i = 0; i < totalInputSamples; ++i) {
+
+		//get a list of modules of sample i (this vector has size of totalGene)
+		vector<MutatedAndExplianedGenes> mutatedAndExplainedGenes = mutatedAndExplainedGenesListReal->at(i);
+
+		//get a list of driver gene ids of sample i
+		list<int> driverGeneIdsForASample;
+		vector<int> mutatedGeneIdsList = mutatedGeneIdsListReal->at(i);
+
+
+		//0 = sensitive, 1 = stringent
+		if(mode == 0){
+			for (unsigned j = 0; j < mutatedGeneIdsList.size(); ++j) {
+				int currentMutatedGeneId = mutatedGeneIdsList[j];
+				if (isDriverGenes[currentMutatedGeneId]) { //current mutated gene is a driver in at least one sample
+
+					//check if current mutated gene is connected to at least one phenotype in this sample
+					bool isConnectedWithPhenotype = false;
+					vector<bool>* isExplainedGenesUpDown = mutatedAndExplainedGenes[currentMutatedGeneId].isExplainedGenesUpDown;
+					for (int k = 0; k < totalGenesUpDown; ++k) {
+						if(isExplainedGenesUpDown->at(k)){
+							if(isPhenotypeGenesUpDown->at(k)){
+								isConnectedWithPhenotype = true;
+							}
+						}
+					}
+					//then the current mutated gene is a possible driver
+					if(isConnectedWithPhenotype){
+						driverGeneIdsForASample.push_back(currentMutatedGeneId);
+					}
+				}
+			}
+		// stringent mode
+		}else{
+			for (unsigned j = 0; j < mutatedGeneIdsList.size(); ++j) {
+				int currentMutatedGeneId = mutatedGeneIdsList[j];
+
+				//current mutated gene is a driver of the current sample
+				if (isDriverGenesForSamples[i][currentMutatedGeneId]) {
+					driverGeneIdsForASample.push_back(currentMutatedGeneId);
+				}
+			}
+			//cout << "added a list of driver genes of a current sample " << i << endl;
+		}
+
+
+		//create module (prepare for merging and trimming)
+		list<Module> modules;
+		int j = 0;	// for assigning module id
+		for(list<int>::iterator it = driverGeneIdsForASample.begin(); it != driverGeneIdsForASample.end(); it++, j++){
+
+			int currentDriverGeneId = *it;
+
+			//get the list of explained genes of the current driver gene in sample i
+			vector<bool>* isExplainedGenesUpDown = mutatedAndExplainedGenes[currentDriverGeneId].isExplainedGenesUpDown;
+
+			Module currentModule;
+
+			currentModule.moduleId = j;
+			currentModule.driverGeneIds.push_back(currentDriverGeneId);
+
+			for (int k = 0; k < totalGenesUpDown; ++k) {
+				if(isExplainedGenesUpDown->at(k)){
+					if(isPhenotypeGenesUpDown->at(k)){
+						currentModule.phenotypeGeneIdsUpDown.push_back(k);
+					}else{
+						currentModule.explainedGeneIdsUpDown.push_back(k);
+					}
+				}
+			}
+
+			//add the module to module list
+			modules.push_back(currentModule);
+		}
+
+		//cout << "sample #" << i << " has " << modules.size() << " driver genes\n";
+
+		//delete the drivers that do not connect to any phenotype genes in this sample
+		//on sample level, if the driver genes do not connect to any phenotype genes on the sample, they are not drivers
+		for(list<Module>::iterator it = modules.begin(); it != modules.end(); ){
+			Module currentModule  = *it;
+			if(currentModule.phenotypeGeneIdsUpDown.size() == 0){		//there is no phenotype gene in this module
+				it = modules.erase(it);
+			}else{												//there are at least one phenotype gene in this module
+				it++;
+			}
+		}
+
+		//add modules data to the modulesListOfAllSamples
+		list<Module>* modulesList = &modulesListOfAllSamples->at(i);
+		copy(modules.begin(), modules.end(), std::back_inserter(*modulesList));
+
+		//merge modules that share phenotype genes
+		//for each phenotype gene, find which modules contain it
+		int numPhenotypeGenes = phenotypeGeneIdsUpDown->size();
+
+		// for each phenotype gene
+		for (int j = 0; j < numPhenotypeGenes; ++j) {
+
+			int currentPhenotypeGeneId = phenotypeGeneIdsUpDown->at(j);
+			vector<int> moduleIdsToMerge;
+			bool isPhenotypeGeneInThisSample = false;
+
+			//for each module, find if it contains phenotype gene, currentPhenotypeGeneId
+			for(list<Module>::iterator it = modulesList->begin(); it != modulesList->end(); it++){
+				list<int> phenotypeGeneIdsOfAModule = it->phenotypeGeneIdsUpDown;
+				bool found = (find(phenotypeGeneIdsOfAModule.begin(), phenotypeGeneIdsOfAModule.end(), currentPhenotypeGeneId)
+						!= phenotypeGeneIdsOfAModule.end());
+				if(found){ // phenotypeGeneIds is a phenotype genes in this module of sample i
 					moduleIdsToMerge.push_back(it->moduleId);
 					isPhenotypeGeneInThisSample = true;
 				}

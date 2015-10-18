@@ -453,7 +453,7 @@ void BFSforExplainedGenesIdOnlyUpDownIncludingMutatedGene(TIntAdjList* network, 
 	int currentGeneId;
 	int currentLevel = 0;
 
-	//consider all nodes that are in <= L distant (Note that the level value start from 0, so use < L)
+	//consider all nodes that are in <= L distance (Note that the level value start from 0, so use < L)
 	while (!q.empty() && currentLevel < L) {
 		//read the root node
 		currentGeneId = q.front();
@@ -474,21 +474,19 @@ void BFSforExplainedGenesIdOnlyUpDownIncludingMutatedGene(TIntAdjList* network, 
 				// |fold change| > F
 				int geneId = (*network)[currentGeneId][j];
 
-//				cout << "gene id " << geneId << " is checking\n";
-
+				//cout << "gene id " << geneId << " is checking\n";
 				if (fabs(sampleGeneExpression->at(geneId)) >= F) {
 
-//					cout << "gene id " << geneId << " is explained\n";
-
+					//cout << "gene id " << geneId << " is an explained gene\n";
 					// is explained gene
 					if(sampleGeneExpression->at(geneId) > 0.0){ 	// up regulated
 						isExplainedGenesUpDown->at(geneId) = true;
 						countExpalinedGenes++;
-//						cout << geneIdToSymbol->at(geneId) << " is at level " << currentLevel << endl;
+						//cout << geneIdToSymbol->at(geneId) << " is at level " << currentLevel << endl;
 					}else if(sampleGeneExpression->at(geneId) < 0.0){	// down regulated
 						isExplainedGenesUpDown->at(geneId + totalGenes) = true; //+9452
 						countExpalinedGenes++;
-//						cout << geneIdToSymbol->at(geneId) << " is at level " << currentLevel << endl;
+						//cout << geneIdToSymbol->at(geneId) << " is at level " << currentLevel << endl;
 					}
 
 					int degree = getNodeDegree(network, geneId);
@@ -501,7 +499,7 @@ void BFSforExplainedGenesIdOnlyUpDownIncludingMutatedGene(TIntAdjList* network, 
 					}
 				}
 
-//				cout << "gene id " << geneId << " is ckecked\n";
+				//cout << "gene id " << geneId << " is ckecked\n";
 
 				// mark visited
 				visited[geneId] = true;
@@ -510,20 +508,18 @@ void BFSforExplainedGenesIdOnlyUpDownIncludingMutatedGene(TIntAdjList* network, 
 		}
 	}
 
-	//because the permuted mutated genes label contain all the gene in the network,
-	//it is possible that the current mutated gene is not in the gene expression matrix.. not a problem
-//	cout << "before checking if the mutated gene is also deregulated\n";
+	//	because the permuted mutated genes label contains all the gene in the network,
+	//	it is possible that the current mutated gene is not in the gene expression matrix... not a problem because the expression matrix contains all genes
 
-	//add the mutated gene itself to the list of mutated genes
+	//add the mutated gene itself to the list of mutated genes (for 'IncludingMutatedGene')
 	if (countExpalinedGenes > 0 and fabs(sampleGeneExpression->at(mutatedGeneId)) >= F) {
 
 		if(sampleGeneExpression->at(mutatedGeneId) > 0.0){ 	// up regulated
 			isExplainedGenesUpDown->at(mutatedGeneId) = true;
-		}else{											// down regulated
-			isExplainedGenesUpDown->at(mutatedGeneId + totalGenes) = true; //+9452
+		}else{												// down regulated
+			isExplainedGenesUpDown->at(mutatedGeneId + totalGenes) = true;
 		}
 	}
-//	cout << "after checking if the mutated gene is also deregulated\n";
 
 	delete[] visited;
 }

@@ -27,6 +27,9 @@ void mergeModules(int currentModuleId, int moduleId, list<Module>* modulesList);
 
 void findModulesInAllSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedAndExplainedGenesListReal, vector< list<Module> >* modulesListOfAllSamples,
 		vector< vector<int> >* mutatedGeneIdsListReal, vector<bool>* isPhenotypeGenesUpDown, vector<DriverGene>* driverGenes, vector<int>* phenotypeGeneIds, int mode);
+void findModulesInAllInputSamples(vector<vector<MutatedAndExplianedGenes> >* mutatedAndExplainedGenesListReal, vector< list<Module> >* modulesListOfAllSamples,
+		vector< vector<int> >* mutatedGeneIdsListReal, vector<bool>* isPhenotypeGenesUpDown, vector<DriverGene>* driverGenes, vector<int>* phenotypeGeneIds, int mode);
+
 
 void trimSomeExplainedGenes(vector< list<Module> >* modulesListOfAllSamples, TIntAdjList* network, int L, int D, vector<string>* geneIdToSymbol);
 

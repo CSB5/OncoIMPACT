@@ -11,7 +11,7 @@
 #include <ctime>
 #include <algorithm>
 #include <iostream>
-#include "omp.h"
+#include <omp.h>
 
 void findParameters(vector<JSDivergence>* jsDivergences, vector<int>* Ls,
 		vector<int>* Ds, vector<double>* Fs, int totalGenes,

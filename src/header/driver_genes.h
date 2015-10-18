@@ -10,22 +10,24 @@
 
 #include "utilities.h"
 #include "explained_genes.h"
+#include "data_structures.h"
 #include <list>
 
-struct BipartitePhenotypeNode{
-	int phenotypeGeneIdUpDown;
-	int sampleId;
-};
-
-struct BipartiteEdge{
-	//int mutatedGeneId;	//is known from the index
-	list<BipartitePhenotypeNode> phenotypeGeneIdsAndSampleIds;
-};
-
-struct DriverGene{
-	int geneId;
-	vector<int> sampleIds;
-};
+// Moved to data_structure.h
+//struct BipartitePhenotypeNode{
+//	int phenotypeGeneIdUpDown;
+//	int sampleId;
+//};
+//
+//struct BipartiteEdge{
+//	//int mutatedGeneId;	//is known from the index
+//	list<BipartitePhenotypeNode> phenotypeGeneIdsAndSampleIds;
+//};
+//
+//struct DriverGene{
+//	int geneId;
+//	vector<int> sampleIds;
+//};
 
 void getAllMutatedGenes(vector< vector<int> >* mutatedGeneIdsListReal, vector<bool>* isMutatedGenes, list<int>* mutatedGeneIdsList);
 

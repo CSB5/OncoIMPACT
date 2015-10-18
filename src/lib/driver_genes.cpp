@@ -32,11 +32,8 @@ void getAllMutatedGenes(vector< vector<int> >* mutatedGeneIdsListReal, vector<bo
 
 void createBipartiteGraph(vector<vector<MutatedAndExplianedGenes> >* mutatedAndExplainedGenesListReal,
 		vector< vector<int> >* mutatedGeneIdsListReal, vector<bool>* isPhenotypeGenesUpDown,
-		vector<BipartiteEdge>* bipartiteEdges, vector<string>* geneIdToSymbol){
+		vector<BipartiteEdge>* bipartiteGraph, vector<string>* geneIdToSymbol){
 	int totalSamples = mutatedAndExplainedGenesListReal->size();
-	int totalGenesUpDown = isPhenotypeGenesUpDown->size();
-//	int totalGenes = totalGenesUpDown / 2;
-
 
 	//for each sample i
 	for (int i = 0; i < totalSamples; ++i) {
@@ -62,7 +59,7 @@ void createBipartiteGraph(vector<vector<MutatedAndExplianedGenes> >* mutatedAndE
 						BipartitePhenotypeNode node;
 						node.phenotypeGeneIdUpDown = k;		//this is fine because each sample has either up or down
 						node.sampleId = i;
-						bipartiteEdges->at(currentMutatedGeneId).phenotypeGeneIdsAndSampleIds.push_back(node);
+						bipartiteGraph->at(currentMutatedGeneId).phenotypeGeneIdsAndSampleIds.push_back(node);
 					}
 				}
 			}

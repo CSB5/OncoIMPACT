@@ -105,7 +105,7 @@ void calculateImpactScoresForAllInputSamples(int totalInputSamples, vector< list
 		rowId[i] = findIndex(GenesEx, i);
 	}
 
-	cout << "total input samples = " << totalInputSamples << endl;
+	//cout << "total input samples = " << totalInputSamples << endl;
 
 	//for each sample i
 	for (int i = 0; i < totalInputSamples; ++i) {
@@ -116,7 +116,7 @@ void calculateImpactScoresForAllInputSamples(int totalInputSamples, vector< list
 
 		list<Module> modules = modulesListOfAllSamples->at(i);
 
-		cout << "\t" << sampleIdToName->at(i) << endl;
+		cout << "\t\t" << sampleIdToName->at(i) << "..." << endl;
 //		cout << modules.size() << endl;
 
 		//for each module

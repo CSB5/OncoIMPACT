@@ -520,7 +520,7 @@ void readDrugsListFromFile(const char* filename, map<int, string>* drugIdToName,
 			//save drug id and name
 			drugIdToName->insert(pair<int, string>(drugId, drugName));
 			drugNameToId->insert(pair<string, int>(drugName, drugId));
-//			cout << drugName << endl;
+			//cout << drugName << endl;
 		}
 		inFile.close();
 	} else {
@@ -858,6 +858,165 @@ void readModulesFromFile(string* moduleFileName, vector<string>* sampleIdToName,
 						}
 					}
 //					cout << endl;
+
+					break;	//go to the next line
+				}
+
+				i++;	//go to the next column
+			}
+		}
+		inFile.close();
+
+
+	} else {
+		cerr << "Error opening file\n";
+	}
+
+}
+
+void readModulesFromFileOnlySaveBipartiteGraph(string* moduleFileName, vector<string>* sampleIdToName, map<string, int>* sampleNameToId,
+		vector<string>* geneIdToSymbol, map<string, int>* geneSymbolToId,
+		vector<BipartiteEdge>* bipartiteGraphDatabase, vector< vector<int> >* mutatedGeneIdsListReal, vector<bool>* isPhenotypeGenesUpDown){
+
+	ifstream inFile;
+	char delim = '\t';
+
+	int numInputSamples = sampleIdToName->size();
+	int currentSampleId = numInputSamples;	//pool input sample modules and database modules together
+
+	//read samples and their ids
+	inFile.open(moduleFileName->c_str(), std::ifstream::in);
+
+	if (inFile.is_open()) {
+
+		while (inFile.good()) {
+			string rowStr;
+			if (!getline(inFile, rowStr))
+				break;
+
+			istringstream rowStream(rowStr);
+
+			int i = 0;		// for read sample name in the first column;
+
+			while (rowStream) {
+
+				string colStr;
+				if (!getline(rowStream, colStr, delim))
+					break;
+
+				if(i == 0){		//read sample name
+
+					//check if sample's name already added to the module list (of input samples)
+					vector<string>::iterator it = find(sampleIdToName->begin(), sampleIdToName->end(), colStr);
+					if( it == sampleIdToName->end()){	//not found
+						//add the sample to the list
+						sampleIdToName->push_back(colStr);
+						sampleNameToId->insert(pair<string, int>(colStr, currentSampleId));
+						//cout << "sample " << currentSampleId << " = " << colStr << " is added\n";
+
+						//initialize mutatedGeneIdsListReal for the current sample
+						mutatedGeneIdsListReal->push_back(vector<int>());
+
+						currentSampleId++;
+					}else{	//found in the module list, then skip
+					}
+
+					break;
+				}
+				i++;
+			}
+
+		}
+		inFile.close();
+
+	} else {
+		cerr << "Error opening file\n";
+	}
+
+	//read modules into mutatedAndExplainedGenesListReal
+
+	inFile.open(moduleFileName->c_str(), std::ifstream::in);
+
+	currentSampleId = -1;
+	int currentMutatedGeneId = -1;
+	int numDbSamples = sampleIdToName->size() - numInputSamples;
+	int totalGenes = geneIdToSymbol->size();
+	int totalGenesUpDown = totalGenes * 2;
+
+	if (inFile.is_open()) {
+
+		while (inFile.good()) {
+			string rowStr;
+			if (!getline(inFile, rowStr))
+				break;
+
+			vector<string> members;
+			vector<string> drivers;
+
+			istringstream rowStream(rowStr);
+
+			int i = 0;	// for read gene in the first column;
+
+			while (rowStream) {
+
+				string colStr;
+				if (!getline(rowStream, colStr, delim))
+					break;
+
+				if(i == 0){					//sample name
+					//cout << colStr << endl;
+					map<string, int>::iterator it = sampleNameToId->find(colStr);
+					if(it == sampleNameToId->end()){	//not found, so this sample is one of the input samples
+						currentSampleId = -1;
+						break;	//skip to the next module (line)
+					}else{
+						currentSampleId = it->second;
+					}
+
+				}else if(i == 1){			//read mutated gene
+					map<string, int>::iterator it = geneSymbolToId->find(colStr);
+					currentMutatedGeneId = it->second;
+					//cout << currentSampleId << " " << currentMutatedGeneId << endl;
+					mutatedGeneIdsListReal->at(currentSampleId).push_back(currentMutatedGeneId);
+
+				}else if(i == 2){			//read explained genes
+					istringstream geneList(colStr);
+					while(geneList){
+
+						string gene;
+						if (!getline(geneList, gene, ';'))
+							break;
+
+						size_t foundUp = gene.find("_UP");
+						size_t foundDown = gene.find("_DOWN");
+					  	trimStr(gene, "_");
+						map<string, int>::iterator it = geneSymbolToId->find(gene);
+						if (foundUp!=std::string::npos){
+							//the gene is upregulated
+							int currentExplainedGeneId = it->second;
+							// if the updregulated explained gene is a phonotype gene
+							if(isPhenotypeGenesUpDown->at(currentExplainedGeneId)){
+								BipartitePhenotypeNode node;
+								node.phenotypeGeneIdUpDown = currentExplainedGeneId;
+								node.sampleId = currentSampleId;
+								bipartiteGraphDatabase->at(currentMutatedGeneId).phenotypeGeneIdsAndSampleIds.push_back(node);
+							}
+							//cout << gene << "_UP" << "\t";
+						}
+						if (foundDown!=std::string::npos){
+							//the gene is downregulated
+							int currentExplainedGeneId = it->second + totalGenes;
+							// if the downdregulated explained gene is a phonotype gene
+							if(isPhenotypeGenesUpDown->at(currentExplainedGeneId)){
+								BipartitePhenotypeNode node;
+								node.phenotypeGeneIdUpDown = currentExplainedGeneId;
+								node.sampleId = currentSampleId;
+								bipartiteGraphDatabase->at(currentMutatedGeneId).phenotypeGeneIdsAndSampleIds.push_back(node);
+							}
+							//cout << gene << "_DOWN" << "\t";
+						}
+					}
+					//cout << endl;
 
 					break;	//go to the next line
 				}

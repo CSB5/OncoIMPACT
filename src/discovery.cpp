@@ -36,22 +36,22 @@
 using namespace std;
 
 int discovery(string outDir, string networkFilename, string expFilename, string snpFilename, string cnvFilename,
-		string benchmarkGeneListFilename, string dbPath, int numThreads, string cancerType, bool noFoldchangeCutoff){
+		string benchmarkGeneListFilename, string dbPath, string cancerType, bool noFoldchangeCutoff){
 
-	//TODO do not have to generate this
-//	//create sub-directory to store output files
+	// For garuda: do not have to generate this, so store all output in the current directory
+	// create sub-directory to store output files
 	#if defined(_WIN32)	//_WIN32 - Defined for applications for Win32 and Win64
-//		_mkdir((outDir + "/sensitive").c_str());
-//		_mkdir((outDir + "/stringent").c_str());
-//		_mkdir((outDir + "/sensitive/samples").c_str());
-//		_mkdir((outDir + "/stringent/samples").c_str());
-//		_mkdir((outDir + "/samples").c_str());
+		//		_mkdir((outDir + "/sensitive").c_str());
+		//		_mkdir((outDir + "/stringent").c_str());
+		//		_mkdir((outDir + "/sensitive/samples").c_str());
+		//		_mkdir((outDir + "/stringent/samples").c_str());
+		//		_mkdir((outDir + "/samples").c_str());
 	#else
-//		mkdir((outDir + "/sensitive").c_str(), 0777); // notice that 777 is different than 0777
-//		mkdir((outDir + "/stringent").c_str(), 0777); // notice that 777 is different than 0777
-//		mkdir((outDir + "/sensitive/samples").c_str(), 0777); // notice that 777 is different than 0777
-//		mkdir((outDir + "/stringent/samples").c_str(), 0777); // notice that 777 is different than 0777
-//		mkdir((outDir + "/samples").c_str(), 0777);
+		//		mkdir((outDir + "/sensitive").c_str(), 0777); // notice that 777 is different than 0777
+		//		mkdir((outDir + "/stringent").c_str(), 0777); // notice that 777 is different than 0777
+		//		mkdir((outDir + "/sensitive/samples").c_str(), 0777); // notice that 777 is different than 0777
+		//		mkdir((outDir + "/stringent/samples").c_str(), 0777); // notice that 777 is different than 0777
+		//		mkdir((outDir + "/samples").c_str(), 0777);
 	#endif
 
 	/*
@@ -62,7 +62,7 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 	cout << "reading network file and create mapping <id, geneSymbol> ..."	<< endl;
 	map<string, int> geneSymbolToId;
 	vector<string> geneIdToSymbol;
-	TIntAdjList network;
+	TIntAdjList network;	//adjacency list
 	readNetwork(networkFilename.c_str(), &network, &geneIdToSymbol, &geneSymbolToId, '\t');
 	int totalGenes = network.size();
 	int totalGenesUpDown = totalGenes * 2;
@@ -82,12 +82,11 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 	readGeneExpression(expFilename.c_str(), &geneExpression, '\t',
 			&geneSymbolToId, &sampleIdToName);
 
-	int totalInputSamples = originalGeneExpressionMatrix[0].size(); // = originalMutationMatrix.size()
+	int totalInputSamples = originalGeneExpressionMatrix[0].size();
 	int numGenesEx = originalGeneExpressionMatrix.size();
 
-	cout << "\ttotal genes in gene expression matrix is " << numGenesEx << endl;
-	cout << "\ttotal samples in gene expression matrix is " << totalInputSamples
-			<< endl;
+	cout << "\ttotal genes in gene expression matrix (consider only genes that are in the network) is " << numGenesEx << endl;
+	cout << "\ttotal samples in gene expression matrix is " << totalInputSamples << endl;
 
 	//Read SNP (row = gene, col = samples)
 	cout << "reading point mutation matrix ..." << endl;
@@ -98,12 +97,11 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 	pointMutations.matrix = &originalPointMutationsMatrix;
 	readPointMutations(snpFilename.c_str(), &pointMutations, '\t', &geneSymbolToId);
 
-	totalInputSamples = originalPointMutationsMatrix[0].size(); // = originalMutationMatrix.size()
+	totalInputSamples = originalPointMutationsMatrix[0].size();
 	int numGenesPointMut = originalPointMutationsMatrix.size();
 
 	cout << "\ttotal genes in point mutation matrix is " << numGenesPointMut << endl;
-	cout << "\ttotal samples in point mutation matrix is " << totalInputSamples
-			<< endl;
+	cout << "\ttotal samples in point mutation matrix is " << totalInputSamples << endl;
 
 	//Read CNV
 	cout << "reading CNV matrix ..." << endl;
@@ -118,8 +116,7 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 	int numGenesCNV = originalCNVsMatrix.size();
 
 	cout << "\ttotal genes in CNV matrix is " << numGenesCNV << endl;
-	cout << "\ttotal samples in CNV matrix is " << totalInputSamples
-			<< endl;
+	cout << "\ttotal samples in CNV matrix is " << totalInputSamples << endl;
 
 	/*
 	 * Combining point mutation and CNV matrix
@@ -148,7 +145,7 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 	cout << "combining point mutation matrix and CNV matrix ..." << endl;
 
 	int numGenesMut = genesMut.size();
-	TIntegerMatrix originalMutationMatrix;
+	TIntegerMatrix originalMutationMatrix;	// for both SNP and CNV
 	//for each mutated gene i
 	for (int i = 0; i < numGenesMut; ++i) {
 		int currentGeneId = genesMut[i];
@@ -169,6 +166,8 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 				hasAMutatedGene[j] = 1;
 			}
 		}
+
+		// save the status of the current gene i for all samples
 		originalMutationMatrix.push_back(hasAMutatedGene);
 	}
 
@@ -179,27 +178,26 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 	totalInputSamples = originalMutationMatrix[0].size();
 
 	cout << "\ttotal genes in mutation matrix is " << numGenesMut << endl;
-	cout << "\ttotal samples in mutation matrix is " << totalInputSamples
-			<< endl;
+	cout << "\ttotal samples in mutation matrix is " << totalInputSamples << endl;
 
 	/*
 	 * Rename input samples to avoid using the same name as samples in the database
 	 */
 
+	//TODO remove the suffix at the end
 	for (int si = 0; si < totalInputSamples; ++si) {
 		sampleIdToName[si] = sampleIdToName[si] + "_INPUT";
-		//cout << sampleIdToName[si] << endl;
 	}
-
-	cout << "read files from database ..." << endl;
 
 	/*
 	 * Read parameters from file
 	 */
 
-	int L = 0;
-	int D = 0;
+	cout << "read files from database ..." << endl;
+
 	double F = 0.0;
+	int D = 0;
+	int L = 0;
 
 	ifstream inParameterFile;
 	string parameterFilename = dbPath + "/" + cancerType + "/JS.dat";	//F D L
@@ -211,11 +209,11 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 			string line;
 			if (!getline(inParameterFile, line)){
 				cerr << "Error reading parameter file (JS.dat)\n";
-				return 0;
+				return 1;
 			}
 
 			//getline(inParameterFile, line);	//skip the header
-			//cout << line << endl;
+
 			istringstream lineStream(line);
 
 			int ci = 0;
@@ -237,6 +235,7 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 		inParameterFile.close();
 	} else {
 		cerr << "Error opening parameter file (JS.dat)\n";
+		return 1;
 	}
 
 	cout << "\tParameters (L,D,F) are set to " << L << ", " << D << ", " << F << endl;
@@ -263,20 +262,6 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 		isPhenotypeGenesUpDown[phenotypeGeneIdsUpDown[i]] = true;
 	}
 
-//	/*
-//	 * Read driver list with the statistics
-//	 */
-//
-//	vector<DriverGeneFromFile> driverGenesFromFileSensitive(totalGenes);
-//	string driverFilenameSensitive = dbPath + "/sensitive/driver_list.txt";
-//	readDriverGenesFromFile(driverFilenameSensitive.c_str(), &driverGenesFromFileSensitive, &geneSymbolToId);
-//	cout << "Read drivers (sensitive) from file\n";
-//
-//	vector<DriverGeneFromFile> driverGenesFromFileStringent(totalGenes);
-//	string driverFilenameStringent = dbPath + "/stringent/driver_list.txt";
-//	readDriverGenesFromFile(driverFilenameStringent.c_str(), &driverGenesFromFileStringent, &geneSymbolToId);
-//	cout << "Read drivers (stringent) from file\n";
-
 
 	/*
 	 * Read mutated gene list with their statistics
@@ -289,6 +274,7 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 
 	/*
 	 * Read cancer benchmark gene list
+	 * (consider only genes found in the network)
 	 */
 
 	vector<int> cancerBenchmarkGenes;
@@ -313,7 +299,7 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 	int numDrugs = drugIdToName.size();
 	cout << "\tRead " << numDrugs << " drugs from GDSC\n";
 
-	//read gene-drug assoc
+	//read gene-drug association
 	vector< vector<int> > geneDrugsAssocList(totalGenes);
 	string drugsGeneAssocFilename = dbPath + "/GDSC_drug_gene_assoc.txt";
 	readGenesDrugsAssocFromFile(drugsGeneAssocFilename.c_str(), &geneDrugsAssocList, &geneSymbolToId);
@@ -322,7 +308,7 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 		int drugCount = geneDrugsAssocList[gi].size();
 		if(drugCount > 0){
 			numGenesAssociatedWithDrugs++;
-//			cout << geneIdToSymbol[gi] << "\t" << drugCount << endl;
+			//cout << geneIdToSymbol[gi] << "\t" << drugCount << endl;
 		}
 	}
 	cout << "\tRead " << numGenesAssociatedWithDrugs << " genes associated with drugs from GDSC\n";
@@ -334,14 +320,14 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 	cout << "constructing modules for input samples ...\n";
 
 	//A vector for collecting mutated genes and the corresponding explained genes for all samples (sample, mutated genes, explained genes)
-	vector< vector<MutatedAndExplianedGenes> > mutatedAndExplainedGenesListReal;
+	vector< vector<MutatedAndExplianedGenes> > mutatedAndExplainedGenesListRealOfInputSample;
 	vector< vector<int> > mutatedGeneIdsListReal;	//to save a list of mutated gene ids for each sample
 
 	//add modules for input samples
 	for (int si = 0; si < totalInputSamples; ++si) {
 
 		//get gene expression of a current sample
-		vector<double> sampleGeneExpression(totalGenes);// to save expression of of all genes in the network
+		vector<double> sampleGeneExpression(totalGenes);// to save expression of all genes in the network
 		getGeneExpressionFromSampleId(&originalGeneExpressionMatrix, &genesEx,
 				&sampleGeneExpression, si);
 
@@ -352,7 +338,7 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 
 		vector<MutatedAndExplianedGenes> mutatedAndExplainedGenes(totalGenes); //contains explained genes of each driver
 
-		//to tell whether each gene is an explained gene in this sample i
+		//to tell whether each gene is an explained gene in this sample si
 		//initialize the mutatedAndExplainedGenes for all genes
 		for (int gi = 0; gi < totalGenes; ++gi) {
 			mutatedAndExplainedGenes[gi].isExplainedGenesUpDown = new vector<bool>(totalGenes * 2, false);
@@ -367,11 +353,13 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 					meg->isExplainedGenesUpDown, &sampleGeneExpression, si, &geneIdToSymbol, &geneSymbolToId);
 		}
 
-		mutatedAndExplainedGenesListReal.push_back(mutatedAndExplainedGenes);
+		// save module of input sample si
+		mutatedAndExplainedGenesListRealOfInputSample.push_back(mutatedAndExplainedGenes);
+		// save list of mutated genes for sample si
 		mutatedGeneIdsListReal.push_back(mutatedGeneIds);
 
-//		cout << sampleIdToName[si] << " has " << numMutatedGenes << endl;
-//		cout << "added modules of " << sampleIdToName[si] << " to a list" << endl;
+		//cout << sampleIdToName[si] << " has " << numMutatedGenes << endl;
+		//cout << "added modules of " << sampleIdToName[si] << " to a list" << endl;
 
 	}
 
@@ -385,17 +373,26 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 
 	string moduleFilename = dbPath + "/" + cancerType + "/MODULE.dat";
 
-	//get id and name of samples (id of dbSamples start from totalSamples, the number of input samples);
-	map<string, int> sampleNameToId;
-	readModulesFromFile(&moduleFilename, &sampleIdToName, &sampleNameToId, &geneIdToSymbol, &geneSymbolToId,
-			&mutatedAndExplainedGenesListReal, &mutatedGeneIdsListReal);
+	// get id and name of samples
+	// id of dbSamples start from totalSamples (the number of input samples);
+	map<string, int> sampleNameToId;	//contain only database samples
+	// However, sampleIdToName contains all samples
+
+	//TODO memory usage was reduced here
+	//create bipartite graph storing bipartite edges calculated from database samples
+	//Note that bipartite edges calculated from input samples will be added to the same graph in the following step
+	vector<BipartiteEdge>* bipartiteGraph = new vector<BipartiteEdge>(totalGenes);
+	readModulesFromFileOnlySaveBipartiteGraph(&moduleFilename, &sampleIdToName, &sampleNameToId, &geneIdToSymbol, &geneSymbolToId,
+			bipartiteGraph, &mutatedGeneIdsListReal, &isPhenotypeGenesUpDown);
+	// Note that mutatedGeneIdsListReal contain list of mutated genes of all samples (database and input)
+
 	cout << "\ttotal sample = " << sampleIdToName.size() << endl;
 
 	//update size of samples
 	int totalSamples = sampleIdToName.size();
 
 	/*
-	 * Print the modules of pooled samples
+	 * FOR DEBUGGING: Print the modules of pooled samples
 	 */
 
 //	//OUTPUT: print all modules in all samples (as original)
@@ -445,12 +442,14 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 		getAllMutatedGenes(&mutatedGeneIdsListReal, &isMutatedGenes, &mutatedGeneIdsList);
 		cout << "\ttotal number of mutated genes is " << mutatedGeneIdsList.size() << endl;
 
-		vector< list<Module> > modulesListOfAllSamples(totalSamples);	//to save all modules in all samples
+		vector< list<Module> > modulesListOfAllInputSamples(totalInputSamples);	//to save all modules in all input samples
 
 		//create bipartite graph ( mutated gene --- phenotype gene ). This is done at sample level, so have to remember sample id.
 		//BipartiteEdge: each mutated gene contains a pair of (phenotype gene id, sample id)
-		vector<BipartiteEdge>* bipartiteGraph = new vector<BipartiteEdge>(totalGenes);
-		createBipartiteGraph(&mutatedAndExplainedGenesListReal, &mutatedGeneIdsListReal,
+		//create bipartite graph of input samples
+
+		//add new bipartite edges created from input sample to the same bipartite graph
+		createBipartiteGraph(&mutatedAndExplainedGenesListRealOfInputSample, &mutatedGeneIdsListReal,
 				&isPhenotypeGenesUpDown, bipartiteGraph, &geneIdToSymbol);
 
 		vector<DriverGene> driverGenes;	//driver gene id with sample ids
@@ -467,16 +466,16 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 
 		//merge modules and trim explained genes for each sample
 		//use mutatedAndExplainedGenesListReal (samples, mutated genes, explained genesUpDown)
-		findModulesInAllSamples(&mutatedAndExplainedGenesListReal, &modulesListOfAllSamples,
+		findModulesInAllInputSamples(&mutatedAndExplainedGenesListRealOfInputSample, &modulesListOfAllInputSamples,
 				&mutatedGeneIdsListReal, &isPhenotypeGenesUpDown, &driverGenes, &phenotypeGeneIdsUpDown, mode);
 
 		cout << "\ttrimming explained genes for all samples ...\n";
-		trimSomeExplainedGenes(&modulesListOfAllSamples, &network, L, D, &geneIdToSymbol);
+		trimSomeExplainedGenes(&modulesListOfAllInputSamples, &network, L, D, &geneIdToSymbol);
 
 		//write only final module of input sample
 		cout << "\twriting final module to FINAL_MODULE.dat ...\n";
 		string outFinalModuleFilenameStringent = "FINAL_MODULE.dat";
-		saveModulesOfInputSamples(&modulesListOfAllSamples, &mutatedAndExplainedGenesListReal, outFinalModuleFilenameStringent,
+		saveModulesOfInputSamples(&modulesListOfAllInputSamples, &mutatedAndExplainedGenesListRealOfInputSample, outFinalModuleFilenameStringent,
 				&geneIdToSymbol, &sampleIdToName, totalInputSamples);
 
 		cout << "\tcalculating IMPACT scores for all input samples ...\n";
@@ -485,7 +484,7 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 		string sampleDriversFileName = "sample_driver_list.dat";
 
 		//calculated impact score for the input samples
-		calculateImpactScoresForAllInputSamples(totalInputSamples, &modulesListOfAllSamples, &driversOfAllSamples,
+		calculateImpactScoresForAllInputSamples(totalInputSamples, &modulesListOfAllInputSamples, &driversOfAllSamples,
 				&originalGeneExpressionMatrix, &genesEx, totalGenes, F, &geneIdToSymbol,
 				&sampleIdToName);
 
@@ -494,7 +493,6 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 		vector<int> driversFrequency(totalGenes, 0);
 		aggregateDriversAcrossSamples(&driversOfAllSamples, &driverAggregatedScores, &driversFrequency, &geneIdToSymbol);
 
-		//TODO change this function to print only single file
 		cout << "\tprinting impact scores for all samples ...\n";
 		printSampleDriverListForInputSamples(totalInputSamples, &driversOfAllSamples,
 				sampleDriversFileName, &geneIdToSymbol, &sampleIdToName,
@@ -516,13 +514,15 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 	 */
 
 	//delete the vector<int>* mutatedAndExplainedGenesListReal
-	for (int i = 0; i < totalSamples; ++i) {
-		vector<MutatedAndExplianedGenes> mutatedAndExplainedGenes = mutatedAndExplainedGenesListReal[i];
+	for (int i = 0; i < totalInputSamples; ++i) {
+		vector<MutatedAndExplianedGenes> mutatedAndExplainedGenes = mutatedAndExplainedGenesListRealOfInputSample[i];
 		for (int gi = 0; gi < totalGenes; ++gi) {
 			vector<bool>* isExplainedGenesUpDown = mutatedAndExplainedGenes[gi].isExplainedGenesUpDown;
 			delete isExplainedGenesUpDown;
 		}
 	}
+
+	cout << "DONE!" << endl;
 
 	return 0;
 }

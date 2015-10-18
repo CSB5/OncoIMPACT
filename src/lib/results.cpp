@@ -578,7 +578,6 @@ void printAggregatedDriverListForInputSamples(vector<DriverGene>* driverGenes, s
 			"GENE\tAGGREGATED_IMACT\tDB_IMPACT\tDB_DRIVER_FREQUENCY\tDB_DRIVER_SNV_FREQUENCY\tDB_DRIVER_DELTION_FREQUENCY\tDB_DRIVER_AMPLIFICATION_FREQUENCY\t"
 					"DB_MUTATION_FREQUENCY\tDB_SNV_FREQUENCY\tDB_DELTION_FREQUENCY\tDB_AMPLIFICATION_FREQUENCY\tCANCER_CENSUS\tDRUGS");
 
-	int totalSamples = sampleIdToName->size();
 	int totalDrivers = driverGenes->size();
 
 	list<AggregatedDriverForInputSample> aggregatedDriversList;
