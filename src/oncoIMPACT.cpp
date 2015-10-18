@@ -193,7 +193,7 @@ int main( int argc, char *argv[] ) {
 		}
 
 		cout << "Start constructing oncoIMPACT database ..." << endl;
-		if(!discovery(outDir, networkFilename, expFilename, snpFilename, cnvFilename,
+		if(discovery(outDir, networkFilename, expFilename, snpFilename, cnvFilename,
 				benchmarkGeneListFilename, dbPath, cancerType, noFoldchangeCutoff)){
 			return 1;
 		}
