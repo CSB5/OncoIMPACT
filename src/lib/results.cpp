@@ -7,6 +7,9 @@
 
 #include <iostream>
 #include <string>
+#include <regex>
+#include <fstream>
+#include <sstream>
 #include "../header/results.h"
 #include "../header/utilities.h"
 
@@ -146,10 +149,13 @@ void saveModulesOfInputSamples(vector<list<Module> > * modulesListOfAllSamples, 
 					}
 				}
 
-				str += geneIdToSymbol->at(*g) + ";";
+				str += geneIdToSymbol->at(*g) + ",";
 //				cout << "for driver " << geneIdToSymbol->at(*g) << endl;
 
 			}
+
+			// remove , at the end
+			str.pop_back();
 
 			str += "\t";
 
@@ -162,13 +168,16 @@ void saveModulesOfInputSamples(vector<list<Module> > * modulesListOfAllSamples, 
 
 				if(currentPhenotypeGeneId < totalGenes){
 					//up
-					str += geneIdToSymbol->at(currentPhenotypeGeneId) + "_UP" + ";";
+					str += geneIdToSymbol->at(currentPhenotypeGeneId) + "_UP" + ",";
 				}else{
 					//down
-					str += geneIdToSymbol->at(currentPhenotypeGeneId - totalGenes) + "_DOWN" + ";";
+					str += geneIdToSymbol->at(currentPhenotypeGeneId - totalGenes) + "_DOWN" + ",";
 				}
 
 			}
+
+			// remove , at the end
+			str.pop_back();
 
 			str += "\t";
 
@@ -181,12 +190,17 @@ void saveModulesOfInputSamples(vector<list<Module> > * modulesListOfAllSamples, 
 
 				if(currentExplainedGeneId < totalGenes){
 					//up
-					str += geneIdToSymbol->at(currentExplainedGeneId) + "_UP" + ";";
+					str += geneIdToSymbol->at(currentExplainedGeneId) + "_UP" + ",";
 				}else{
 					//down
-					str += geneIdToSymbol->at(currentExplainedGeneId - totalGenes) + "_DOWN" + ";";
+					str += geneIdToSymbol->at(currentExplainedGeneId - totalGenes) + "_DOWN" + ",";
 				}
 
+			}
+
+			if(numExplainedGenes > 0){
+				// remove , at the end
+				str.pop_back();
 			}
 
 			str += "\t" + intToStr(numDrivers) + "_" + intToStr(numPhenotypeGenes) + "_" + intToStr(numExplainedGenes);
@@ -467,7 +481,14 @@ void printSampleDriverListForInputSamples(int totalInputSamples, vector<vector<D
 			for (int di = 0; di < numDrugs; ++di) {
 				int drugId = geneDrugsAssocList->at(it->geneId)[di];
 				string drugUrl = "http://www.cancerrxgene.org/translation/Drug/" + intToStr(drugId);
-				str += drugIdToName->find(drugId)->second + "[" + drugUrl + "]" + ";";
+				str += drugIdToName->find(drugId)->second + "[" + drugUrl + "]" + ",";
+			}
+
+			if(numDrugs > 0){
+				// remove , at the end
+				str.pop_back();
+			}else if(numDrugs == 0){
+				str += "N/A";
 			}
 
 			outputStr.push_back(str);
@@ -476,6 +497,158 @@ void printSampleDriverListForInputSamples(int totalInputSamples, vector<vector<D
 	}
 
 	writeStrVector(sampleDriversFileName.c_str(), &outputStr);
+}
+
+void printSampleDriverListWithAnnotations(string sampleDriversFileName,
+		string sampleModulesAnnotationFileName, string sampleDriversWithAnnotationFileName){
+
+	vector<string> outputStr;
+	string header = "SAMPLE_NAME\tGENE\tTYPE\tSAMPLE_IMPACT\tDB_IMPACT\t";
+	header += "DB_DRIVER_FREQUENCY\tDB_MUTATION_FREQUENCY\tCANCER_CENSUS\tGDSC_DRUGS\tANNOTATIONS\tANNOTATIONS_P_VALUES";
+	outputStr.push_back(header);
+
+	std::map<string, string> annotationPerModulePerSample;
+	regex reg("\\.[0-9]+$");
+
+	// read annotation info from FINAL_MODULE_ANNOTATIONS.dat
+	ifstream inFile;
+	inFile.open(sampleModulesAnnotationFileName, std::ifstream::in);
+
+	if (inFile.is_open()) {
+
+		//read the header line
+		string headerStr;
+		getline(inFile, headerStr);
+
+		while (inFile.good()) { //for each row (sample module)
+
+			int numDriverPerModule = 0;
+			string annotationInfo = "";
+			string sampleName = "";
+			vector<string> driverGeneNames;
+
+			string sr;
+			if (!getline(inFile, sr))
+				break;
+
+			istringstream ss(sr);
+			int i = 0;	// for read the first column
+
+			while (ss) {	//for each column
+				string sc;
+
+				if (!getline(ss, sc, '\t'))
+					break;
+				if(i == 0){ 			//read sample_name.module_id
+					sampleName = regex_replace(sc, reg, "");
+					//cout << sampleName << endl;
+				}else if(i == 1){		//read driver genes
+
+					istringstream sg(sc);
+					while(sg){
+						string geneName;
+						if (!getline(sg, geneName, ',')){
+							break;
+						}
+
+						driverGeneNames.push_back(geneName);
+						numDriverPerModule++;
+
+						//cout << geneName << endl;
+
+					}
+				}else if(i == 2){
+					annotationInfo += sc;
+				}else if(i == 3){
+					annotationInfo += '\t' + sc;
+
+					//cout << annotationInfo << endl;
+				}
+
+				i++;	//go to the next column (sample)
+			}
+
+			// create map for annotations per module per sample
+			for (int di = 0; di < numDriverPerModule; ++di) {
+				string key = sampleName + '#' + driverGeneNames[di];
+				string value = annotationInfo;
+				annotationPerModulePerSample[key] = value;
+			}
+
+		}
+		inFile.close();
+	} else {
+		cerr << "Error opening file\n";
+	}
+
+	//FOR TESTING
+//	for(map<string,string>::iterator mit = annotationPerModulePerSample.begin();
+//			mit != annotationPerModulePerSample.end(); ++mit){
+//		cout << (*mit).first << ": " << (*mit).second << endl;
+//	}
+
+	inFile.open(sampleDriversFileName, std::ifstream::in);
+	map<string,string>::iterator ait;
+
+	if (inFile.is_open()) {
+
+		//read the header line
+		string headerStr;
+		getline(inFile, headerStr);
+
+		while (inFile.good()) { //for each row (sample module)
+
+			string otherInfo = "";
+			string sampleName = "";
+			string geneName;
+
+			string sr;
+			if (!getline(inFile, sr))
+				break;
+
+			istringstream ss(sr);
+			int i = 0;	// for read the first column
+
+			while (ss) {	//for each column
+				string sc;
+
+				if (!getline(ss, sc, '\t'))
+					break;
+				if(i == 0){
+					sampleName = sc;
+				}else if(i == 1){
+					geneName = sc;
+				}else if(i == 2){
+					otherInfo += sc;
+				}else{
+					otherInfo += '\t' + sc;
+				}
+
+				i++;	//go to the next column (sample)
+			}
+
+			// add annotations
+			string newRow = "";
+			ait = annotationPerModulePerSample.find(sampleName + '#' + geneName);
+			if(ait != annotationPerModulePerSample.end()){
+				string annotations = ait->second;
+				newRow += sampleName + '\t' + geneName + '\t' + otherInfo + '\t' + annotations;
+			}else if(ait == annotationPerModulePerSample.end()){
+				newRow += sampleName + '\t' + geneName + '\t' + otherInfo + "\tN\\A\tN\\A";
+			}
+
+			outputStr.push_back(newRow);
+
+
+		}
+		inFile.close();
+	} else {
+		cerr << "Error opening file\n";
+	}
+
+
+	writeStrVector(sampleDriversWithAnnotationFileName.c_str(), &outputStr);
+
 }
 
 //Usage: sort(sampleDriversList.begin(), sampleDriversList.end(), sortByImpactScore);
@@ -575,8 +748,8 @@ void printAggregatedDriverListForInputSamples(vector<DriverGene>* driverGenes, s
 
 	vector<string> outputStr;
 	outputStr.push_back(
-			"GENE\tAGGREGATED_IMACT\tDB_IMPACT\tDB_DRIVER_FREQUENCY\tDB_DRIVER_SNV_FREQUENCY\tDB_DRIVER_DELTION_FREQUENCY\tDB_DRIVER_AMPLIFICATION_FREQUENCY\t"
-					"DB_MUTATION_FREQUENCY\tDB_SNV_FREQUENCY\tDB_DELTION_FREQUENCY\tDB_AMPLIFICATION_FREQUENCY\tCANCER_CENSUS\tDRUGS");
+			"GENE\tAGGREGATED_IMPACT\tDB_IMPACT\tDB_DRIVER_FREQUENCY\tDB_DRIVER_SNV_FREQUENCY\tDB_DRIVER_DELTION_FREQUENCY\tDB_DRIVER_AMPLIFICATION_FREQUENCY\t"
+					"DB_MUTATION_FREQUENCY\tDB_SNV_FREQUENCY\tDB_DELTION_FREQUENCY\tDB_AMPLIFICATION_FREQUENCY\tCANCER_CENSUS\tGDSC_DRUGS");
 
 	int totalDrivers = driverGenes->size();
 
@@ -634,7 +807,11 @@ void printAggregatedDriverListForInputSamples(vector<DriverGene>* driverGenes, s
 		for (int di = 0; di < numDrugs; ++di) {
 			int drugId = geneDrugsAssocList->at(it->geneId)[di];
 			string drugUrl = "http://www.cancerrxgene.org/translation/Drug/" + intToStr(drugId);
-			str += drugIdToName->find(drugId)->second + "[" + drugUrl + "]" + ";";
+			str += drugIdToName->find(drugId)->second + "[" + drugUrl + "]" + ",";
+		}
+
+		if(numDrugs > 0){
+			str.pop_back();
 		}
 
 		outputStr.push_back(str);

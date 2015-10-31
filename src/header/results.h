@@ -79,6 +79,8 @@ void printSampleDriverListForInputSamples(int totalInputSamples, vector<vector<D
 		vector<MutatedGeneFromFile>* mutatedGeneFromFile, vector<string>* cancerBenchmarkGeneNames,
 		TIntegerMatrix* originalPointMutationsMatrix, TIntegerMatrix* originalCNVsMatrix, vector<int>* genesPointMut, vector<int>* genesCNV,
 		map<int, string>* drugIdToName, vector< vector<int> >* geneDrugsAssocList);
+void printSampleDriverListWithAnnotations(string sampleDriversFileName,
+		string sampleModulesAnnotationFileName, string sampleDriversWithAnnotationFileName);
 
 bool sortByImpactScore(const SampleDriver& first, const SampleDriver& second);
 

@@ -13,6 +13,7 @@
 #include "discovery.h"
 #include "database.h"
 #include "annotator.h"
+#include "header/results.h"
 #include "header/utilities.h"
 
 using namespace std;
@@ -206,6 +207,15 @@ int main( int argc, char *argv[] ) {
 		int top = 10;	// number of gene sets most enriched for the modules
 		string geneListFileName = dbPath + "/driver_net_background_gene_list.dat";
 		annotator(mSigDbPath, moduleFileName, outputPrefix, cutoff, top, geneListFileName);
+
+		//TODO concatenate FINAL_MODULE_ANNOTATIONS.dat and sample_driver_list_no_annotation
+		//to 'sample_driver_list.dat'
+		string sampleDriversFileName = "sample_driver_list_no_annotation.dat";
+		string sampleDriversWithAnnotationFileName = "sample_driver_list.dat";
+		string sampleModulesAnnotationFileName = "FINAL_MODULE_ANNOTATION.dat";
+		printSampleDriverListWithAnnotations(sampleDriversFileName, sampleModulesAnnotationFileName, sampleDriversWithAnnotationFileName);
+
+		cout << "DONE!" << endl;
 
 	}
 

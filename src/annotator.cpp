@@ -74,7 +74,7 @@ int annotator(string mSigDbPath, string moduleFileName, string outputPrefix, dou
 	cout << "\tannotating ... \n";
 	vector<string> outputStr;
 
-	outputStr.push_back("MODULE_ID\tDRIVER_GENES\tANNOTATION(P_VALUE)");
+	outputStr.push_back("MODULE_ID\tDRIVER_GENES\tANNOTATIONS\tANNOTATIONS_P_VALUES");
 
 	for (int i = 0; i < numModules; ++i) {
 
@@ -87,7 +87,11 @@ int annotator(string mSigDbPath, string moduleFileName, string outputPrefix, dou
 		string driverGenesList;
 		int numDrivers = currentModuleDrivers.size();
 		for (int di = 0; di < numDrivers; ++di) {
-			driverGenesList += currentModuleDrivers[di] + ";";
+			driverGenesList += currentModuleDrivers[di] + ',';
+		}
+
+		if(numDrivers > 0){
+			driverGenesList.pop_back();
 		}
 
 //		cout << "annotating " << moduleNames[i] << endl;
@@ -118,6 +122,7 @@ int annotator(string mSigDbPath, string moduleFileName, string outputPrefix, dou
 		geneSetPairs.sort(sortByPValues);
 		string str = moduleNames[i] + "\t" + driverGenesList + "\t";
 
+		// print gene set names
 		int coutGeneSets = 0;
 		for(list<GeneSetPair>::iterator it = geneSetPairs.begin(); it != geneSetPairs.end(); it++){
 //			string str = it->geneListName + "\t" + intToStr(it->sizeOfGeneList) + "\t" +
@@ -125,12 +130,39 @@ int annotator(string mSigDbPath, string moduleFileName, string outputPrefix, dou
 //			outputStr.push_back(str);
 
 			if(coutGeneSets < top){
-				str += it->geneSetName + "(" + doubleToStr(it->pValue, 25) + ");";
+				//str += it->geneSetName + "(" + doubleToStr(it->pValue, 25) + ");";
+				str += it->geneSetName + ",";
 				coutGeneSets++;
 			}else{
 				break;
 			}
 		}
+
+		//remove , at the end
+		if(coutGeneSets > 0){
+			str.pop_back();
+		}else if(coutGeneSets == 0){
+			str += "N/A\tN/A";
+		}
+
+		str += '\t';
+
+		// print p-values
+		if(coutGeneSets > 0){
+			coutGeneSets = 0;
+			str += '(';
+			for(list<GeneSetPair>::iterator it = geneSetPairs.begin(); it != geneSetPairs.end(); it++){
+				if(coutGeneSets < top){
+					str += doubleToStr(it->pValue, 25) + ",";
+					coutGeneSets++;
+				}else{
+					break;
+				}
+			}
+			str.pop_back();	//remove , at the end
+			str += ')';
+		}
+
 		outputStr.push_back(str);
 
 	}

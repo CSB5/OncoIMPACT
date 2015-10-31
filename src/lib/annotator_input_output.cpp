@@ -147,7 +147,7 @@ void readModules(string* moduleFileName, vector<string>* moduleNames, vector< ve
 					while(geneList){
 
 						string gene;
-						if (!getline(geneList, gene, ';'))
+						if (!getline(geneList, gene, ','))
 							break;
 
 						members.push_back(gene);
@@ -161,7 +161,7 @@ void readModules(string* moduleFileName, vector<string>* moduleNames, vector< ve
 						while(geneList){
 
 							string gene;
-							if (!getline(geneList, gene, ';'))
+							if (!getline(geneList, gene, ','))
 								break;
 
 							if(gene.compare("-") != 0){

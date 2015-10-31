@@ -184,7 +184,7 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 	 * Rename input samples to avoid using the same name as samples in the database
 	 */
 
-	//TODO remove the suffix at the end
+	//The suffix will be removed the suffix at the end
 	for (int si = 0; si < totalInputSamples; ++si) {
 		sampleIdToName[si] = sampleIdToName[si] + "_INPUT";
 	}
@@ -448,7 +448,7 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 		//BipartiteEdge: each mutated gene contains a pair of (phenotype gene id, sample id)
 		//create bipartite graph of input samples
 
-		//add new bipartite edges created from input sample to the same bipartite graph
+		//add new bipartite edges created from input samples to the same bipartite graph
 		createBipartiteGraph(&mutatedAndExplainedGenesListRealOfInputSample, &mutatedGeneIdsListReal,
 				&isPhenotypeGenesUpDown, bipartiteGraph, &geneIdToSymbol);
 
@@ -472,6 +472,16 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 		cout << "\ttrimming explained genes for all samples ...\n";
 		trimSomeExplainedGenes(&modulesListOfAllInputSamples, &network, L, D, &geneIdToSymbol);
 
+		/*
+		 * Printing results
+		 */
+
+		for (int i = 0; i < totalInputSamples; ++i) {
+			// trim the suffix _INPUT
+			trimStr(sampleIdToName[i], "_INPUT");
+		}
+
+
 		//write only final module of input sample
 		cout << "\twriting final module to FINAL_MODULE.dat ...\n";
 		string outFinalModuleFilenameStringent = "FINAL_MODULE.dat";
@@ -481,7 +491,7 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 		cout << "\tcalculating IMPACT scores for all input samples ...\n";
 		vector< vector<Driver> > driversOfAllSamples(totalInputSamples);
 		//string outDriverOfAllSamplesDirName = outDir + "/samples";
-		string sampleDriversFileName = "sample_driver_list.dat";
+		string sampleDriversFileName = "sample_driver_list_no_annotation.dat";
 
 		//calculated impact score for the input samples
 		calculateImpactScoresForAllInputSamples(totalInputSamples, &modulesListOfAllInputSamples, &driversOfAllSamples,
@@ -493,7 +503,7 @@ int discovery(string outDir, string networkFilename, string expFilename, string 
 		vector<int> driversFrequency(totalGenes, 0);
 		aggregateDriversAcrossSamples(&driversOfAllSamples, &driverAggregatedScores, &driversFrequency, &geneIdToSymbol);
 
-		cout << "\tprinting impact scores for all samples ...\n";
+		cout << "\tprinting impact scores for all input samples ...\n";
 		printSampleDriverListForInputSamples(totalInputSamples, &driversOfAllSamples,
 				sampleDriversFileName, &geneIdToSymbol, &sampleIdToName,
 				&mutatedGenesFromFile, &cancerBenchmarkGeneNames,
