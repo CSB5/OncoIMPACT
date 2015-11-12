@@ -91,7 +91,8 @@ int annotator(string mSigDbPath, string moduleFileName, string outputPrefix, dou
 		}
 
 		if(numDrivers > 0){
-			driverGenesList.pop_back();
+			//driverGenesList.pop_back();
+			driverGenesList.resize(driverGenesList.size()-1);
 		}
 
 //		cout << "annotating " << moduleNames[i] << endl;
@@ -140,7 +141,9 @@ int annotator(string mSigDbPath, string moduleFileName, string outputPrefix, dou
 
 		//remove , at the end
 		if(coutGeneSets > 0){
-			str.pop_back();
+			//str.pop_back();
+			str.resize(str.size()-1);
+
 		}else if(coutGeneSets == 0){
 			str += "N/A\tN/A";
 		}
@@ -159,7 +162,8 @@ int annotator(string mSigDbPath, string moduleFileName, string outputPrefix, dou
 					break;
 				}
 			}
-			str.pop_back();	//remove , at the end
+			//str.pop_back();	//remove , at the end
+			str.resize(str.size()-1);
 			str += ')';
 		}
 

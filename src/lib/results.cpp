@@ -7,7 +7,6 @@
 
 #include <iostream>
 #include <string>
-#include <regex>
 #include <fstream>
 #include <sstream>
 #include "../header/results.h"
@@ -109,7 +108,7 @@ void saveModules(vector<list<Module> > * modulesListOfAllSamples, vector<vector<
 
 void saveModulesOfInputSamples(vector<list<Module> > * modulesListOfAllSamples, vector<vector<MutatedAndExplianedGenes> >* mutatedAndExplainedGenesListReal,
 		string filename, vector<string>* geneIdToSymbol, vector<string>* sampleIdToName, int numInputSamples) {
-	int totalSamples = modulesListOfAllSamples->size();
+	// int totalSamples = modulesListOfAllSamples->size();
 	int totalGenes = geneIdToSymbol->size();
 	int totalGenesUpDown = totalGenes * 2;
 	vector<string> outputStr;
@@ -155,7 +154,8 @@ void saveModulesOfInputSamples(vector<list<Module> > * modulesListOfAllSamples, 
 			}
 
 			// remove , at the end
-			str.pop_back();
+			//str.pop_back();
+			str.resize(str.size()-1);
 
 			str += "\t";
 
@@ -177,7 +177,8 @@ void saveModulesOfInputSamples(vector<list<Module> > * modulesListOfAllSamples, 
 			}
 
 			// remove , at the end
-			str.pop_back();
+			//str.pop_back();
+			str.resize(str.size()-1);
 
 			str += "\t";
 
@@ -200,7 +201,8 @@ void saveModulesOfInputSamples(vector<list<Module> > * modulesListOfAllSamples, 
 
 			if(numExplainedGenes > 0){
 				// remove , at the end
-				str.pop_back();
+				//str.pop_back();
+				str.resize(str.size()-1);
 			}
 
 			str += "\t" + intToStr(numDrivers) + "_" + intToStr(numPhenotypeGenes) + "_" + intToStr(numExplainedGenes);
@@ -486,7 +488,8 @@ void printSampleDriverListForInputSamples(int totalInputSamples, vector<vector<D
 
 			if(numDrugs > 0){
 				// remove , at the end
-				str.pop_back();
+				//str.pop_back();
+				str.resize(str.size()-1);
 			}else if(numDrugs == 0){
 				str += "N/A";
 			}
@@ -508,11 +511,11 @@ void printSampleDriverListWithAnnotations(string sampleDriversFileName,
 	outputStr.push_back(header);
 
 	std::map<string, string> annotationPerModulePerSample;
-	regex reg("\\.[0-9]+$");
+	//regex reg("\\.[0-9]+$"); not support (only > 4.9)
 
 	// read annotation info from FINAL_MODULE_ANNOTATIONS.dat
 	ifstream inFile;
-	inFile.open(sampleModulesAnnotationFileName, std::ifstream::in);
+	inFile.open(sampleModulesAnnotationFileName.c_str(), std::ifstream::in);
 
 	if (inFile.is_open()) {
 
@@ -540,7 +543,8 @@ void printSampleDriverListWithAnnotations(string sampleDriversFileName,
 				if (!getline(ss, sc, '\t'))
 					break;
 				if(i == 0){ 			//read sample_name.module_id
-					sampleName = regex_replace(sc, reg, "");
+					//sampleName = regex_replace(sc, reg, "");
+					sampleName = remove_extension(sc.c_str());
 					//cout << sampleName << endl;
 				}else if(i == 1){		//read driver genes
 
@@ -587,7 +591,7 @@ void printSampleDriverListWithAnnotations(string sampleDriversFileName,
 //		cout << (*mit).first << ": " << (*mit).second << endl;
 //	}
 
-	inFile.open(sampleDriversFileName, std::ifstream::in);
+	inFile.open(sampleDriversFileName.c_str(), std::ifstream::in);
 	map<string,string>::iterator ait;
 
 	if (inFile.is_open()) {
@@ -811,7 +815,8 @@ void printAggregatedDriverListForInputSamples(vector<DriverGene>* driverGenes, s
 		}
 
 		if(numDrugs > 0){
-			str.pop_back();
+			//str.pop_back();
+			str.resize(str.size()-1);
 		}
 
 		outputStr.push_back(str);
