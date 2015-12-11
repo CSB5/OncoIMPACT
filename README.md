@@ -106,6 +106,13 @@ Copyright (c) 2014 Genome Institute of Singapore
 
 
 
+-----------------
+Citing OncoIMPACT
+-----------------
+Bertrand _et. al._. __Patient-specific driver gene prediction and risk assessment through integrated network analysis of cancer omics profiles.__ [_Nucleic Acid Research_ 2015, 43 (7): e44](http://nar.oxfordjournals.org/content/43/7/e44.long)
+
+
+
 --------
 Contacts
 --------
