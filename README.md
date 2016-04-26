@@ -120,4 +120,4 @@ If you want community-driven support, please visit the forum at https://sourcefo
 
 If you have a bug to report, you may raise a ticket at https://sourceforge.net/p/oncoimpact/tickets/.
 
-If you have other questions or feedback, you may direct them to Burton Chia (<chiakhb@gis.a-star.edu.sg>).
+If you have other questions or feedback, you may direct them to Denis Bertrand (<bertrandd@gis.a-star.edu.sg>) or Burton Chia (<chiakhb@gis.a-star.edu.sg>).
