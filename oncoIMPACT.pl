@@ -136,7 +136,7 @@ else{
     export_data_base() if(exists $config{'databaseExport'});
 }
 
-system("rm -r $config{'outDir'}/COMPLETE_SAMPLES $config{'outDir'}/INCOMPLETE_SAMPLES");
+# system("rm -r $config{'outDir'}/COMPLETE_SAMPLES $config{'outDir'}/INCOMPLETE_SAMPLES");
 print "done.\n";
 
 #Output the results
