@@ -4,7 +4,7 @@ use warnings;
 my ($data_dir, $large_data_dir, $js_file, $large_data_explained_pvalue_file, $large_data_module_file, $large_data_set_driver_stats, $network_type, $script_dir) = @ARGV;
 
 $main_result_dir = "$data_dir/../ANALYSIS/";
-run_exe("mkdir $main_result_dir") unless(-d $main_result_dir);
+run_exe("mkdir -p $main_result_dir") unless(-d $main_result_dir);
 
 #script path
 my $cluster_algo_path ="$script_dir/10_Cluster_Algo.pl";
